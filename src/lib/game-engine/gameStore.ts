@@ -37,6 +37,7 @@ export interface GameStore extends GameState {
   useJailFreeCard: () => boolean;
   drawCard: (deckType: 'CHANCE' | 'FATE', cardId?: string) => ChanceCard;
   applyCardEffect: (card: ChanceCard) => void;
+  applyAndDismissCurrentCard: () => void;
   dismissCard: () => void;
   endTurn: () => void;
   resetGame: () => void;
@@ -225,6 +226,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     let activePlayer = { ...state.players[state.activePlayerIndex] };
     let newDoubleStreak = isDouble ? state.doubleStreak + 1 : 0;
+    let currentJackpot = state.jackpotFund;
     const logs = [...state.eventLogs];
 
     logs.push(
@@ -246,12 +248,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
           // Max jail turns reached, must pay bail
           if (activePlayer.money >= state.settings.jailBailPrice) {
             activePlayer.money -= state.settings.jailBailPrice;
+            currentJackpot += state.settings.jailBailPrice;
             activePlayer.inJail = false;
             activePlayer.jailTurns = 0;
             logs.push(
               `${activePlayer.name} hết thời hạn tạm giam, nộp phạt ${state.settings.jailBailPrice.toLocaleString(
                 'vi-VN'
-              )}đ để ra tù.`
+              )}đ vào Quỹ Heo Đất để ra tù.`
             );
           } else {
             // Cannot pay bail
@@ -345,7 +348,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
     activePlayer.position = newPos;
 
     // 4. Tile Landing
-    let currentJackpot = state.jackpotFund;
     let tiles = [...state.tiles];
     let currentCard: ChanceCard | null = null;
     let nextPhase: GamePhase = 'TURN_END';
@@ -378,6 +380,96 @@ export const useGameStore = create<GameStore>((set, get) => ({
           landedTile.type === 'CHANCE' ? 'Cơ Hội' : 'Khí Vận'
         }: "${drawn.title}".`
       );
+
+      // Execute card effect immediately
+      if (drawn.type === 'CASH_GAIN' && drawn.amount) {
+        activePlayer.money += drawn.amount;
+      } else if (drawn.type === 'CASH_LOSS' && drawn.amount) {
+        if (activePlayer.money < drawn.amount) {
+          logs.push(`${activePlayer.name} không đủ tiền nộp phạt và bị phá sản!`);
+          currentJackpot += activePlayer.money;
+          const bk = processBankruptcy(state.players, tiles, state.activePlayerIndex, null);
+          set({
+            players: bk.players,
+            tiles: bk.tiles,
+            dice: [d1, d2],
+            isDouble: false,
+            doubleStreak: 0,
+            consecutiveDoubles: 0,
+            jackpotFund: currentJackpot,
+            winner: bk.winner,
+            gamePhase: bk.gameOver ? 'GAME_OVER' : 'TURN_END',
+            eventLogs: logs,
+          });
+          return [d1, d2];
+        } else {
+          activePlayer.money -= drawn.amount;
+          currentJackpot += drawn.amount; // Route penalty into jackpot
+        }
+      } else if (drawn.type === 'TELEPORT' && drawn.targetTileId !== undefined) {
+        const oldP = activePlayer.position;
+        const target = drawn.targetTileId;
+        if (oldP > target && target !== 8) {
+          activePlayer.money += state.settings.passGoReward;
+          logs.push(
+            `${activePlayer.name} vượt qua Cổng Làng nhận ${state.settings.passGoReward.toLocaleString(
+              'vi-VN'
+            )}đ.`
+          );
+        }
+        activePlayer.position = target;
+        if (target === 16) {
+          activePlayer.money += currentJackpot;
+          currentJackpot = 20000;
+        } else if (target === 8) {
+          activePlayer.inJail = true;
+          activePlayer.jailTurns = state.settings.maxJailTurns;
+        }
+      } else if (drawn.type === 'JAIL_FREE') {
+        activePlayer.jailFreeCards = (activePlayer.jailFreeCards || 0) + 1;
+      } else if (drawn.type === 'PAY_EACH_PLAYER' && drawn.amount) {
+        const others = state.players.filter(
+          (p, idx) => idx !== state.activePlayerIndex && !p.bankrupt
+        );
+        const totalDebt = drawn.amount * others.length;
+        if (activePlayer.money < totalDebt) {
+          logs.push(`${activePlayer.name} không đủ tiền trả cho người chơi khác và bị phá sản!`);
+          const bk = processBankruptcy(state.players, tiles, state.activePlayerIndex, null);
+          set({
+            players: bk.players,
+            tiles: bk.tiles,
+            dice: [d1, d2],
+            isDouble: false,
+            doubleStreak: 0,
+            consecutiveDoubles: 0,
+            jackpotFund: currentJackpot,
+            winner: bk.winner,
+            gamePhase: bk.gameOver ? 'GAME_OVER' : 'TURN_END',
+            eventLogs: logs,
+          });
+          return [d1, d2];
+        } else {
+          activePlayer.money -= totalDebt;
+          const updatedPlayers = state.players.map((p, idx) => {
+            if (idx === state.activePlayerIndex) return activePlayer;
+            if (!p.bankrupt) return { ...p, money: p.money + drawn.amount! };
+            return p;
+          });
+          set({
+            players: updatedPlayers,
+            tiles,
+            dice: [d1, d2],
+            isDouble,
+            doubleStreak: newDoubleStreak,
+            consecutiveDoubles: newDoubleStreak,
+            jackpotFund: currentJackpot,
+            currentCard,
+            gamePhase: nextPhase,
+            eventLogs: logs,
+          });
+          return [d1, d2];
+        }
+      }
     } else if (
       landedTile.type === 'PROPERTY' ||
       landedTile.type === 'TRANSPORT' ||
@@ -572,6 +664,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   payJailBail: () => {
     const state = get();
+    if (state.gamePhase !== 'WAITING') return false;
     const activePlayer = state.players[state.activePlayerIndex];
     if (!activePlayer || !activePlayer.inJail) return false;
 
@@ -590,12 +683,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     set({
       players: updatedPlayers,
+      jackpotFund: state.jackpotFund + bail,
       gamePhase: 'WAITING',
       eventLogs: [
         ...state.eventLogs,
         `${activePlayer.name} đã nộp tiền bảo lãnh ${bail.toLocaleString(
           'vi-VN'
-        )}đ và được tự do!`,
+        )}đ vào Quỹ Heo Đất và được tự do!`,
       ],
     });
 
@@ -604,6 +698,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   useJailFreeCard: () => {
     const state = get();
+    if (state.gamePhase !== 'WAITING') return false;
     const activePlayer = state.players[state.activePlayerIndex];
     if (!activePlayer || !activePlayer.inJail) return false;
     if (!activePlayer.jailFreeCards || activePlayer.jailFreeCards <= 0) return false;
@@ -664,10 +759,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
         if (card.amount) {
           if (activePlayer.money < card.amount) {
             logs.push(`${activePlayer.name} không đủ tiền nộp phạt và bị phá sản!`);
+            currentJackpot += activePlayer.money;
             const bk = processBankruptcy(state.players, tiles, activePlayerIndex, null);
             set({
               players: bk.players,
               tiles: bk.tiles,
+              jackpotFund: currentJackpot,
               winner: bk.winner,
               gamePhase: bk.gameOver ? 'GAME_OVER' : 'TURN_END',
               eventLogs: logs,
@@ -675,6 +772,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
             return;
           } else {
             activePlayer.money -= card.amount;
+            currentJackpot += card.amount;
           }
         }
         break;
@@ -760,6 +858,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
       gamePhase: 'TURN_END',
       eventLogs: logs,
     });
+  },
+
+  applyAndDismissCurrentCard: () => {
+    set({ currentCard: null, gamePhase: 'TURN_END' });
   },
 
   dismissCard: () => {

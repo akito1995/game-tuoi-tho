@@ -51,11 +51,11 @@ describe('Game State Machine (Zustand Store) & Monopoly Rules', () => {
       }));
 
       const initialMoney = useGameStore.getState().players[0].money;
-      // Roll [2, 4] -> sum 6, new position: (28 + 6) % 32 = 2
-      useGameStore.getState().rollDice([2, 4]);
+      // Roll [2, 3] -> sum 5, new position: (28 + 5) % 32 = 1 (Unowned Property)
+      useGameStore.getState().rollDice([2, 3]);
 
       const updatedPlayer = useGameStore.getState().players[0];
-      expect(updatedPlayer.position).toBe(2);
+      expect(updatedPlayer.position).toBe(1);
       expect(updatedPlayer.money).toBe(initialMoney + 200000);
       expect(useGameStore.getState().eventLogs.some((log) => log.includes('Xuất Phát'))).toBe(true);
     });
@@ -320,14 +320,16 @@ describe('Game State Machine (Zustand Store) & Monopoly Rules', () => {
   });
 
   describe('7. Jail Mechanics (Bail, Free Card, Roll to Escape)', () => {
-    it('should allow player to pay 100k bail to escape jail', () => {
+    it('should allow player to pay 100k bail to escape jail and route bail fee to jackpot fund', () => {
       useGameStore.setState((s) => ({
+        jackpotFund: 50000,
         players: s.players.map((p, idx) =>
           idx === 0 ? { ...p, inJail: true, jailTurns: 3, position: 8 } : p
         ),
       }));
 
       const moneyBefore = useGameStore.getState().players[0].money;
+      const jackpotBefore = useGameStore.getState().jackpotFund;
       const success = useGameStore.getState().payJailBail();
 
       expect(success).toBe(true);
@@ -335,6 +337,19 @@ describe('Game State Machine (Zustand Store) & Monopoly Rules', () => {
       expect(p1.inJail).toBe(false);
       expect(p1.jailTurns).toBe(0);
       expect(p1.money).toBe(moneyBefore - 100000);
+      expect(useGameStore.getState().jackpotFund).toBe(jackpotBefore + 100000);
+    });
+
+    it('should reject payJailBail and useJailFreeCard when gamePhase is not WAITING', () => {
+      useGameStore.setState((s) => ({
+        gamePhase: 'ROLLING',
+        players: s.players.map((p, idx) =>
+          idx === 0 ? { ...p, inJail: true, jailTurns: 3, position: 8, jailFreeCards: 1 } : p
+        ),
+      }));
+
+      expect(useGameStore.getState().payJailBail()).toBe(false);
+      expect(useGameStore.getState().useJailFreeCard()).toBe(false);
     });
 
     it('should allow player to escape jail using a jail-free card', () => {
@@ -364,12 +379,12 @@ describe('Game State Machine (Zustand Store) & Monopoly Rules', () => {
         ),
       }));
 
-      useGameStore.getState().rollDice([3, 3]); // double -> escapes and moves 6
+      useGameStore.getState().rollDice([2, 2]); // double -> escapes and moves 4
       const p1 = useGameStore.getState().players[0];
 
       expect(p1.inJail).toBe(false);
       expect(p1.jailTurns).toBe(0);
-      expect(p1.position).toBe(14); // 8 + 6
+      expect(p1.position).toBe(12); // 8 + 4
     });
 
     it('should stay in jail and decrement jailTurns if rolling non-double', () => {
@@ -425,6 +440,51 @@ describe('Game State Machine (Zustand Store) & Monopoly Rules', () => {
       useGameStore.getState().applyCardEffect(jailFreeCard);
 
       expect(useGameStore.getState().players[0].jailFreeCards).toBe(1);
+    });
+
+    it('should route penalty money into jackpotFund when player incurs CASH_LOSS', () => {
+      const lossCard = CHANCE_CARDS.find((c) => c.type === 'CASH_LOSS')!;
+      const moneyBefore = useGameStore.getState().players[0].money;
+      const jackpotBefore = useGameStore.getState().jackpotFund;
+
+      useGameStore.getState().applyCardEffect(lossCard);
+
+      const state = useGameStore.getState();
+      expect(state.players[0].money).toBe(moneyBefore - lossCard.amount!);
+      expect(state.jackpotFund).toBe(jackpotBefore + lossCard.amount!);
+    });
+
+    it('should draw and apply card effect immediately when landing on CHANCE tile during rollDice', () => {
+      // Tile 7 is CHANCE
+      useGameStore.setState((s) => ({
+        players: s.players.map((p, idx) =>
+          idx === 0 ? { ...p, position: 5 } : p
+        ),
+      }));
+
+      // Roll [1, 1] is a double (+50k bonus), lands on Tile 7 (5 + 2 = 7)
+      // To test non-double: from position 4 with [1, 2] -> sum 3 -> lands on 7
+      useGameStore.setState((s) => ({
+        players: s.players.map((p, idx) =>
+          idx === 0 ? { ...p, position: 4 } : p
+        ),
+      }));
+
+      useGameStore.getState().rollDice([1, 2]);
+
+      const state = useGameStore.getState();
+      expect(state.currentCard).not.toBeNull();
+      if (state.currentCard?.type === 'TELEPORT') {
+        expect(state.players[0].position).toBe(state.currentCard.targetTileId);
+      } else {
+        expect(state.players[0].position).toBe(7);
+      }
+      expect(state.gamePhase).toBe('CARD_DRAWN');
+
+      // Dismiss card modal
+      useGameStore.getState().applyAndDismissCurrentCard();
+      expect(useGameStore.getState().currentCard).toBeNull();
+      expect(useGameStore.getState().gamePhase).toBe('TURN_END');
     });
   });
 
