@@ -8,6 +8,9 @@ import { BOARD_TILES } from '@/lib/game-engine/boardData';
 import { Environment3D } from './Environment3D';
 import { FloatingIsland } from './FloatingIsland';
 import { BoardTiles3D } from './BoardTiles3D';
+import { MascotPawns3D } from './MascotPawns3D';
+import { Buildings3D } from './Buildings3D';
+import { Dice3D } from './Dice3D';
 
 export interface BoardCanvasProps {
   tiles?: Tile[];
@@ -18,6 +21,9 @@ export interface BoardCanvasProps {
   children?: React.ReactNode;
   className?: string;
   enableOrbit?: boolean;
+  showMascots?: boolean;
+  showBuildings?: boolean;
+  showDice?: boolean;
 }
 
 /**
@@ -42,7 +48,7 @@ function BoardCanvasFallback() {
 }
 
 /**
- * Main 3D Canvas Viewport for Cờ Tỷ Phú
+ * Main 3D Canvas Viewport for Cờ Tỷ Phú Vietnam
  */
 export function BoardCanvas({
   tiles = BOARD_TILES,
@@ -53,6 +59,9 @@ export function BoardCanvas({
   children,
   className = 'w-full h-full min-h-[500px]',
   enableOrbit = true,
+  showMascots = true,
+  showBuildings = true,
+  showDice = true,
 }: BoardCanvasProps) {
   const [mounted, setMounted] = useState(false);
 
@@ -101,7 +110,16 @@ export function BoardCanvas({
             onTileHover={onTileHover}
           />
 
-          {/* Dynamic children (Player mascots, 3D dice, houses from Task 7 & 8) */}
+          {/* Upgraded 3D Buildings & Landmarks */}
+          {showBuildings && <Buildings3D tiles={tiles} />}
+
+          {/* 3D Animated Mascots Hopping on Tiles */}
+          {showMascots && <MascotPawns3D />}
+
+          {/* 3D Rolling Dice in Central Island Arena */}
+          {showDice && <Dice3D />}
+
+          {/* Dynamic / Custom Children */}
           {children}
         </Suspense>
 
