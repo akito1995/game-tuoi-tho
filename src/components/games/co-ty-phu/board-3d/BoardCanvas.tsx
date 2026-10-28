@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
+import * as THREE from 'three';
 import { Tile } from '@/lib/game-engine/types';
 import { BOARD_TILES } from '@/lib/game-engine/boardData';
 import { Environment3D } from './Environment3D';
@@ -27,21 +28,47 @@ export interface BoardCanvasProps {
 }
 
 /**
+ * Adaptive Camera Controller: Auto-adjusts FOV and distance for mobile portrait
+ * (iPhone, Samsung Z Fold 8 narrow outer screen) vs tablet/desktop square screens.
+ */
+function AdaptiveCamera() {
+  const { camera, size } = useThree();
+
+  useEffect(() => {
+    if (camera instanceof THREE.PerspectiveCamera) {
+      const isPortraitOrNarrow = size.width < 768 || size.width / size.height < 1.05;
+      if (isPortraitOrNarrow) {
+        // Higher altitude, wider vertical FOV to keep entire board in frame on phone
+        camera.fov = 42;
+        camera.position.set(13.5, 21, 15.5);
+      } else {
+        // Cozy 3D isometric diorama view for tablet, Z Fold inner screen, and PC
+        camera.fov = 32;
+        camera.position.set(12, 16.5, 14);
+      }
+      camera.lookAt(0, 0, 0);
+      camera.updateProjectionMatrix();
+    }
+  }, [size.width, size.height, camera]);
+
+  return null;
+}
+
+/**
  * Loading fallback shown during SSR and before Canvas mounts
  */
 function BoardCanvasFallback() {
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-b from-sky-200 via-sky-100 to-emerald-50 text-slate-700">
+    <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-b from-sky-400 via-sky-200 to-amber-100 text-slate-800">
       <div className="relative flex items-center justify-center">
-        {/* Pulsing ring */}
-        <div className="h-16 w-16 animate-spin rounded-full border-4 border-amber-400 border-t-transparent" />
-        <div className="absolute text-2xl">🎲</div>
+        <div className="h-16 w-16 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+        <div className="absolute text-2xl animate-bounce">🎲</div>
       </div>
-      <p className="mt-4 font-semibold tracking-wide text-amber-900">
+      <p className="mt-4 font-bold tracking-wide text-amber-950">
         Đang khởi tạo Đảo Ngọc 3D Cờ Tỷ Phú...
       </p>
-      <p className="mt-1 text-xs text-slate-500">
-        Khám phá danh lam thắng cảnh Việt Nam
+      <p className="mt-1 text-xs font-medium text-slate-600">
+        Đồ họa 3D phong cách tuổi thơ Việt Nam
       </p>
     </div>
   );
@@ -78,7 +105,7 @@ export function BoardCanvas({
   }
 
   return (
-    <div className={`relative overflow-hidden select-none bg-gradient-to-b from-sky-200 via-sky-100 to-amber-50 ${className}`}>
+    <div className={`relative overflow-hidden select-none bg-gradient-to-b from-sky-300 via-sky-100 to-amber-100/60 ${className}`}>
       <Canvas
         shadows
         dpr={[1, 1.5]}
@@ -88,20 +115,23 @@ export function BoardCanvas({
           powerPreference: 'high-performance',
         }}
         camera={{
-          position: [0, 14, 16],
-          fov: 44,
+          position: [12, 16.5, 14],
+          fov: 34,
           near: 0.1,
-          far: 100,
+          far: 120,
         }}
       >
         <Suspense fallback={null}>
-          {/* Lighting, Sun, Fog and Clouds */}
+          {/* Auto-responsive camera for iPhone and Samsung Z Fold */}
+          <AdaptiveCamera />
+
+          {/* Cinematic Lighting, Sun, Soft Shadows, and Distant Clouds */}
           <Environment3D />
 
-          {/* Central 3D Floating Island (Terrain, lake, campfire, trees, pavilion) */}
+          {/* Solid 3D Floating Diorama Island (Lagoon, campsite, campfire, trees, mountains) */}
           <FloatingIsland />
 
-          {/* 32 Perimeter Board Tiles */}
+          {/* 32 Perimeter Board Tiles with tactile bevels & 3D props */}
           <BoardTiles3D
             tiles={tiles}
             hoveredTileId={hoveredTileId}
@@ -110,20 +140,20 @@ export function BoardCanvas({
             onTileHover={onTileHover}
           />
 
-          {/* Upgraded 3D Buildings & Landmarks */}
+          {/* Upgraded 3D Buildings & Resorts with pop-up animation */}
           {showBuildings && <Buildings3D tiles={tiles} />}
 
-          {/* 3D Animated Mascots Hopping on Tiles */}
+          {/* 3D Animated Mascots Hopping on Tiles with Pedestal Bases & Active Aura */}
           {showMascots && <MascotPawns3D />}
 
           {/* 3D Rolling Dice in Central Island Arena */}
           {showDice && <Dice3D />}
 
-          {/* Dynamic / Custom Children */}
+          {/* Custom Children */}
           {children}
         </Suspense>
 
-        {/* Orbit Controls with restricted polar angle to keep view above terrain */}
+        {/* Orbit Controls with smooth touch damping and polar clamping */}
         {enableOrbit && (
           <OrbitControls
             makeDefault
@@ -132,7 +162,7 @@ export function BoardCanvas({
             minDistance={8}
             maxDistance={28}
             minPolarAngle={Math.PI / 6}
-            maxPolarAngle={Math.PI / 2.2}
+            maxPolarAngle={Math.PI / 2.25}
             target={[0, 0, 0]}
           />
         )}

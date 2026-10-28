@@ -329,6 +329,9 @@ describe('HUD Helpers and UI Logic Suite', () => {
       expect(hud.LiveChatBox).toBeDefined();
       expect(hud.EmoteWheel).toBeDefined();
       expect(hud.CoTyPhuHUD).toBeDefined();
-    });
+      expect(hud.TurnTimerBar).toBeDefined();
+      expect(hud.DiceRevealOverlay).toBeDefined();
+      expect(hud.PropertyInspectorModal).toBeDefined();
+    }, 20000);
   });
 });

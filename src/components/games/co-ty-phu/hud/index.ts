@@ -9,4 +9,7 @@ export * from './EventLogTicker';
 export * from './GameOverModal';
 export * from './LiveChatBox';
 export * from './EmoteWheel';
+export * from './TurnTimerBar';
+export * from './DiceRevealOverlay';
+export * from './PropertyInspectorModal';
 export * from './CoTyPhuHUD';

@@ -2,38 +2,37 @@
 
 import React, { useEffect, useRef, useState, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { BoardCanvas } from '@/components/games/co-ty-phu/board-3d';
-import { CoTyPhuHUD } from '@/components/games/co-ty-phu/hud';
 import { useGameStore } from '@/lib/game-engine/gameStore';
 import { useRoomStore } from '@/lib/multiplayer/roomStore';
-import { executeBotTurn } from '@/lib/game-engine/botAI';
 import { peerService } from '@/lib/multiplayer/peerService';
+import { executeBotTurn } from '@/lib/game-engine/botAI';
 import { soundManager } from '@/lib/audio/soundManager';
 import { MascotType } from '@/lib/game-engine/types';
-import { recordGameStats, getUserProfile } from '@/components/hub/hubHelpers';
+import {
+  getUserProfile,
+  recordGameStats,
+} from '@/components/hub/hubHelpers';
 import { calculatePlayerNetWorth } from '@/components/games/co-ty-phu/hud/hudHelpers';
+import { BoardCanvas } from '@/components/games/co-ty-phu/board-3d';
+import { CoTyPhuHUD } from '@/components/games/co-ty-phu/hud';
 
 function MonopolyGameContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const roomIdQuery = searchParams.get('roomId');
-  const modeQuery = searchParams.get('mode');
 
-  // GameStore hooks
-  const players = useGameStore((state) => state.players);
-  const activePlayerIndex = useGameStore((state) => state.activePlayerIndex);
-  const gamePhase = useGameStore((state) => state.gamePhase);
-  const winner = useGameStore((state) => state.winner);
-  const tiles = useGameStore((state) => state.tiles);
-  const initGame = useGameStore((state) => state.initGame);
-
+  const players = useGameStore((s) => s.players);
+  const activePlayerIndex = useGameStore((s) => s.activePlayerIndex);
+  const gamePhase = useGameStore((s) => s.gamePhase);
   const gameOver = gamePhase === 'GAME_OVER';
+  const winner = useGameStore((s) => s.winner);
+  const tiles = useGameStore((s) => s.tiles);
+  const initGame = useGameStore((s) => s.initGame);
 
-  // RoomStore hooks
   const room = useRoomStore();
 
-  // Local state
   const [showQuitModal, setShowQuitModal] = useState(false);
+  const [inspectedTileId, setInspectedTileId] = useState<number | null>(null);
   const botRunningRef = useRef(false);
   const statsRecordedRef = useRef(false);
 
@@ -42,7 +41,6 @@ function MonopolyGameContent() {
     if (players.length === 0) {
       const profile = getUserProfile();
       const humanMascot: MascotType = (profile.mascot as MascotType) || 'PIG';
-      // Pick unique mascots for the 3 bots distinct from human player
       const ALL_MASCOTS: MascotType[] = ['PIG', 'FOX', 'CAT', 'BUFFALO'];
       const availableMascots = ALL_MASCOTS.filter((m) => m !== humanMascot);
 
@@ -65,13 +63,13 @@ function MonopolyGameContent() {
     }
   }, [room.mode, room.isHost, room.roomId, roomIdQuery]);
 
-  // Bot Automation Loop: When active player is bot and game is waiting or needs action
+  // Bot Automation Loop: When active player is bot and game needs action
+  // Runs with an unhurried, natural human-like delay (~2.2s) so human can comfortably follow moves
   useEffect(() => {
     if (gameOver) return;
     const activePlayer = players[activePlayerIndex];
     if (!activePlayer || !activePlayer.isBot) return;
 
-    // Guard against multiple concurrent bot turn executions
     if (botRunningRef.current) return;
 
     if (
@@ -81,7 +79,6 @@ function MonopolyGameContent() {
     ) {
       botRunningRef.current = true;
 
-      // Realistic human-like delay (~1.2s) before bot executes turn
       const timer = setTimeout(async () => {
         try {
           await executeBotTurn(useGameStore, { skipDelay: false });
@@ -90,7 +87,7 @@ function MonopolyGameContent() {
         } finally {
           botRunningRef.current = false;
         }
-      }, 1200);
+      }, 2200);
 
       return () => {
         clearTimeout(timer);
@@ -104,7 +101,6 @@ function MonopolyGameContent() {
     if (gameOver && !statsRecordedRef.current) {
       statsRecordedRef.current = true;
 
-      // Find local human player
       const humanPlayer =
         players.find((p) => p.id === room.myPlayerId) ||
         players.find((p) => !p.isBot) ||
@@ -114,7 +110,6 @@ function MonopolyGameContent() {
         const won = winner?.id === humanPlayer.id;
         const netWorth = calculatePlayerNetWorth(humanPlayer, tiles);
         recordGameStats({ won, netWorth });
-        // Celebratory fanfare is managed by GameOverModal exclusively to prevent conflicting audio triggers
       }
     } else if (!gameOver) {
       statsRecordedRef.current = false;
@@ -167,12 +162,19 @@ function MonopolyGameContent() {
           showMascots={true}
           showBuildings={true}
           showDice={true}
+          selectedTileId={inspectedTileId}
+          onTileClick={(tileId) => setInspectedTileId(tileId)}
           className="h-full w-full"
         />
       </div>
 
-      {/* 2D Responsive Game HUD Overlay */}
-      <CoTyPhuHUD onQuit={handleQuitRequest} onRestart={handleRestart} />
+      {/* 2D Responsive Game HUD Overlay (Optimized for iPhone, Samsung Z Fold 8, and PC) */}
+      <CoTyPhuHUD
+        onQuit={handleQuitRequest}
+        onRestart={handleRestart}
+        inspectedTileId={inspectedTileId}
+        onCloseInspectTile={() => setInspectedTileId(null)}
+      />
 
       {/* Quit Confirmation Modal */}
       {showQuitModal && (

@@ -11,33 +11,49 @@ import { RulesGuideModal } from './RulesGuideModal';
 import { GameOverModal } from './GameOverModal';
 import { LiveChatBox } from './LiveChatBox';
 import { EmoteWheel } from './EmoteWheel';
+import { TurnTimerBar } from './TurnTimerBar';
+import { DiceRevealOverlay } from './DiceRevealOverlay';
+import { PropertyInspectorModal } from './PropertyInspectorModal';
 
 export interface CoTyPhuHUDProps {
   className?: string;
   onRestart?: () => void;
   onQuit?: () => void;
+  inspectedTileId?: number | null;
+  onCloseInspectTile?: () => void;
 }
 
 /**
  * Complete Responsive 2D HUD Overlay for Cờ Tỷ Phú 3D
- * Assembles header, player cards bar, tactile dice controls, event log ticker,
- * live chat box, interactive emote reactions, and game state action modals into a cohesive layer.
+ * Optimized for Mobile (iPhone, Samsung Z Fold 8) & Desktop.
+ * Includes: Header, 60s Turn Countdown Timer, Big Dice Reveal Overlay,
+ * Player list, Property Inspector, Action modals, Rules guide, Chat & Emotes.
  */
-export function CoTyPhuHUD({ className = '', onRestart, onQuit }: CoTyPhuHUDProps) {
+export function CoTyPhuHUD({
+  className = '',
+  onRestart,
+  onQuit,
+  inspectedTileId = null,
+  onCloseInspectTile,
+}: CoTyPhuHUDProps) {
   const [isRulesOpen, setIsRulesOpen] = useState(false);
 
   return (
     <div
       className={`pointer-events-none absolute inset-0 z-20 flex flex-col justify-between overflow-hidden ${className}`}
     >
-      {/* Top: Header & Player List */}
-      <div className="pointer-events-auto flex flex-col w-full">
+      {/* Top Bar: Header, 60s Turn Timer, and Player List */}
+      <div className="pointer-events-auto flex flex-col w-full gap-1.5">
         <GameHeader onOpenRules={() => setIsRulesOpen(true)} onQuit={onQuit} />
-        <PlayerListBar className="mt-1" />
+        {/* Turn Countdown Timer Pill (Top Center) */}
+        <div className="flex justify-center -mt-0.5">
+          <TurnTimerBar turnTimeLimitSeconds={60} />
+        </div>
+        <PlayerListBar className="mt-0.5" />
       </div>
 
-      {/* Bottom: Live Chat, Emotes & Event Log (Left) & Dice Controls (Right) */}
-      <div className="pointer-events-auto flex flex-wrap items-end justify-between gap-3 p-3 sm:p-4">
+      {/* Bottom Controls: Live Chat & Emotes (Left) & Dice Controls (Right) */}
+      <div className="pointer-events-auto flex flex-wrap items-end justify-between gap-2.5 p-2.5 sm:p-4">
         {/* Bottom Left: Social Interaction & Event Log */}
         <div className="order-2 sm:order-1 flex flex-col items-start gap-2">
           <div className="flex items-center gap-2">
@@ -53,8 +69,17 @@ export function CoTyPhuHUD({ className = '', onRestart, onQuit }: CoTyPhuHUDProp
         </div>
       </div>
 
-      {/* Interactive Action Modals (Pointer events enabled internally) */}
+      {/* Interactive Overlays & Action Modals (Pointer events enabled internally) */}
       <div className="pointer-events-auto">
+        {/* Big 2-Dice Popup with Double Celebration */}
+        <DiceRevealOverlay />
+
+        {/* Property Inspector Card (on tile tap) */}
+        <PropertyInspectorModal
+          tileId={inspectedTileId}
+          onClose={onCloseInspectTile || (() => {})}
+        />
+
         <PropertyActionModal />
         <ChanceCardModal />
         <RulesGuideModal

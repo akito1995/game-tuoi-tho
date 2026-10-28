@@ -556,6 +556,7 @@ function SingleMascotPawn({
     pathStep: 0,
     progress: 1.0, // 1.0 = resting
     isHopping: false,
+    hopDelay: 0, // Delay before hopping begins (allows 3D dice roll and Big Dice overlay to show first)
     hopSpeed: 3.8, // Hops per second
     lastTarget: player.position,
     facingAngle: 0,
@@ -570,6 +571,7 @@ function SingleMascotPawn({
       s.pathStep = 0;
       s.progress = 0;
       s.isHopping = fullPath.length > 1;
+      s.hopDelay = fullPath.length > 1 ? 1.1 : 0; // 1.1s window for big dice reveal & doubles celebration
       s.lastTarget = player.position;
     }
   }, [player.position]);
@@ -584,6 +586,16 @@ function SingleMascotPawn({
     const offset = getPlayerTileOffset(slotIndexOnTile, totalPlayersOnSameTile);
 
     if (s.isHopping && s.path.length > 1 && s.pathStep < s.path.length - 1) {
+      if (s.hopDelay > 0) {
+        s.hopDelay -= delta;
+        const curPos = getTile3DPosition(s.currentTile);
+        groupRef.current.position.set(
+          curPos[0] + offset[0],
+          curPos[1] + offset[1],
+          curPos[2] + offset[2]
+        );
+        return;
+      }
       s.progress += delta * s.hopSpeed;
 
       const fromTile = s.path[s.pathStep];
@@ -667,50 +679,54 @@ function SingleMascotPawn({
 
   return (
     <group ref={groupRef}>
+      {/* Pedestal Base */}
+      <mesh position={[0, 0.03, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.3, 0.32, 0.06, 16]} />
+        <meshStandardMaterial color={palette.primary} roughness={0.3} metalness={0.4} />
+      </mesh>
+      <mesh position={[0, 0.065, 0]}>
+        <cylinderGeometry args={[0.26, 0.28, 0.02, 16]} />
+        <meshStandardMaterial color="#fbbf24" roughness={0.2} metalness={0.8} />
+      </mesh>
+
       {/* Mesh container with squash & stretch */}
-      <group ref={meshHolderRef}>
+      <group ref={meshHolderRef} position={[0, 0.06, 0]}>
         <MascotModel mascot={player.mascot} />
       </group>
 
-      {/* Dynamic Nametag Badge */}
-      <Billboard position={[0, 0.68, 0]} follow lockX={false} lockY={false} lockZ={false}>
-        <mesh position={[0, 0, -0.005]}>
-          <planeGeometry args={[0.62, 0.2]} />
-          <meshBasicMaterial color="#0f172a" transparent opacity={0.75} />
-        </mesh>
-        <Text
-          position={[0, 0.02, 0]}
-          fontSize={0.09}
-          color="#ffffff"
-          anchorX="center"
-          anchorY="middle"
-        >
-          {player.name}
-        </Text>
-        <Text
-          position={[0, -0.05, 0]}
-          fontSize={0.065}
-          color={palette.accent}
-          anchorX="center"
-          anchorY="middle"
-        >
-          {`${(player.money / 1000).toFixed(0)}k đ`}
-        </Text>
-      </Billboard>
-
-      {/* Active Turn Floating Golden Gem / Arrow Indicator */}
+      {/* Ground Glowing Aura Ring for Active Player */}
       {isActiveTurn && (
-        <group ref={turnArrowRef} position={[0, 0.9, 0]}>
-          <mesh>
-            <octahedronGeometry args={[0.09, 0]} />
+        <group position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.36, 0.48, 24]} />
+          <meshBasicMaterial color="#fbbf24" transparent opacity={0.85} side={THREE.DoubleSide} />
+        </group>
+      )}
+
+      {/* Active Turn Floating Crown & Clean Name Badge */}
+      {isActiveTurn && (
+        <group ref={turnArrowRef} position={[0, 1.05, 0]}>
+          <mesh castShadow>
+            <octahedronGeometry args={[0.12, 0]} />
             <meshStandardMaterial
               color="#fbbf24"
               emissive="#f59e0b"
-              emissiveIntensity={0.6}
-              roughness={0.2}
-              metalness={0.8}
+              emissiveIntensity={1.2}
+              roughness={0.1}
+              metalness={0.9}
             />
           </mesh>
+          <Billboard follow lockX={false} lockY={false} lockZ={false} position={[0, 0.28, 0]}>
+            <Text
+              fontSize={0.14}
+              color="#fef08a"
+              anchorX="center"
+              anchorY="middle"
+              outlineWidth={0.02}
+              outlineColor="#78350f"
+            >
+              {player.name}
+            </Text>
+          </Billboard>
         </group>
       )}
     </group>
