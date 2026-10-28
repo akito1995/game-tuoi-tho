@@ -5,6 +5,7 @@ import { useFrame } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
 import * as THREE from 'three';
 import { BOARD_TILES } from '@/lib/game-engine/boardData';
+import { CityLandmark3D } from './CityLandmarks3D';
 import { Tile, ColorGroupType } from '@/lib/game-engine/types';
 import {
   getTileLayoutInfo,
@@ -504,8 +505,11 @@ function SingleTile3D({
         <FloatingCardCube type={tile.type} />
       )}
 
-      {/* Miniature House & Streetscape on Regular Properties */}
-      {isRegularProperty && (
+      {/* Iconic 3D Isometric Landmark for this specific city */}
+      <CityLandmark3D tileId={tile.id} />
+
+      {/* Fallback Miniature House if tile has no custom monument */}
+      {isRegularProperty && ![1, 3, 4, 5, 6, 9, 10, 11, 12, 13, 15, 17, 19, 20, 21, 22, 23, 25, 27, 28, 30, 31].includes(tile.id) && (
         <PropertyMiniatureHouse
           tileIndex={tile.id}
           colorGroup={tile.colorGroup}

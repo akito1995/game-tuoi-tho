@@ -1,6 +1,7 @@
 export * from './tilePositions';
 export * from './board3dHelpers';
 export * from './BoardTiles3D';
+export * from './CityLandmarks3D';
 export * from './BoardTableFrame';
 export * from './MiniWorldDiorama3D';
 export * from './FloatingIsland';
