@@ -246,37 +246,41 @@ Run: `npm run build` to ensure no SSR/hydration mismatches.
 
 ---
 
-### Task 8: 2D HUD Overlays (Player Cards, Action Modals & Chance Cards)
+### Task 8: 2D HUD Overlays (Player Cards, Action Modals, Chance Cards & Rules Guide)
 
 **Files:**
 - Create: `src/components/games/co-ty-phu/hud/PlayerListBar.tsx`
 - Create: `src/components/games/co-ty-phu/hud/DiceControlPanel.tsx`
 - Create: `src/components/games/co-ty-phu/hud/PropertyActionModal.tsx`
 - Create: `src/components/games/co-ty-phu/hud/ChanceCardModal.tsx`
+- Create: `src/components/games/co-ty-phu/hud/RulesGuideModal.tsx`
 - Create: `src/components/games/co-ty-phu/hud/EventLogTicker.tsx`
 - Create: `src/components/games/co-ty-phu/hud/GameHeader.tsx`
 
 **Interfaces:**
 - Consumes: `useGameStore`, Lucide icons, soundManager
-- Produces: Crisp, playful, and responsive HUD overlay for desktop and mobile players.
+- Produces: Crisp, playful, and responsive HUD overlay for desktop and mobile players, including full visual rules guide.
 
 - [ ] **Step 1: Implement GameHeader.tsx & PlayerListBar.tsx**
-Display round count, jackpot fund, active turn banner, and player summary cards (avatar, cash, total net worth, property badges).
+Display round count, jackpot fund, active turn banner, "📖 Luật Chơi" button, and player summary cards (avatar, cash, total net worth, property badges).
 
-- [ ] **Step 2: Implement DiceControlPanel.tsx**
+- [ ] **Step 2: Implement RulesGuideModal.tsx**
+Tabbed interactive guide with illustrations and quick tips: 1. Mục tiêu, 2. Cách chơi 1 lượt, 3. Xây nhà & Độc quyền x2, 4. Các ô đặc biệt & Quỹ Heo Đất.
+
+- [ ] **Step 3: Implement DiceControlPanel.tsx**
 Roll dice button with tactile feedback, turn timer, and end-turn actions.
 
-- [ ] **Step 3: Implement PropertyActionModal.tsx & ChanceCardModal.tsx**
+- [ ] **Step 4: Implement PropertyActionModal.tsx & ChanceCardModal.tsx**
 Popups for buying land, upgrading to resort, paying rent, and revealing humorous Vietnamese chance cards.
 
-- [ ] **Step 4: Implement EventLogTicker.tsx**
+- [ ] **Step 5: Implement EventLogTicker.tsx**
 Real-time scrolling ticker at bottom-left reporting game events (purchases, rent paid, double rolls, jail notices).
 
-- [ ] **Step 5: Verify build**
+- [ ] **Step 6: Verify build**
 Run: `npm run build`
 
-- [ ] **Step 6: Commit**
-`git add src/components/games/co-ty-phu/hud/ && git commit -m "feat(hud): implement responsive player list, action modals and event log"`
+- [ ] **Step 7: Commit**
+`git add src/components/games/co-ty-phu/hud/ && git commit -m "feat(hud): implement player list, action modals, event log and visual rules guide modal"`
 
 ---
 

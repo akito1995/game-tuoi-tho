@@ -154,6 +154,17 @@ Tựa game đầu tiên mở màn là **Cờ Tỷ Phú 3D Việt Nam**, được
 
 ---
 
+### 4.7. Hướng Dẫn & Sổ Tay Luật Chơi (How to Play Modal)
+- Nút bấm **"📖 Luật Chơi"** nổi bật trên thanh tiêu đề bàn cờ và tại thẻ game ở Sảnh Hub.
+- Khi người chơi (đặc biệt là người mới) bấm vào, sẽ mở ra một Modal minh họa trực quan, sinh động dạng tab hoặc slide:
+  1. **Mục Tiêu:** Làm sao để trở thành Tỷ Phú duy nhất hoặc người có tổng tài sản lớn nhất sau các vòng đấu.
+  2. **Quy Trình 1 Lượt:** Đổ xúc xắc ➔ Nhảy ô ➔ Mua đất / Nâng cấp nhà ➔ Trả tiền thuê nếu vào đất đối thủ.
+  3. **Hệ Thống Bất Động Sản:** Đất trống ➔ Nhà cấp 1 ➔ Nhà cấp 2 ➔ Biệt thự ➔ Siêu Resort (càng cao tiền phạt càng lớn, sở hữu trọn bộ màu thì nhân đôi x2 tiền thuê).
+  4. **Các Ô Đặc Biệt:** Nhận 200k khi qua Xuất Phát; Vào Tù nếu đi bão/đổ 3 lần đôi liên tiếp; Ô Lễ Hội được hốt trọn Quỹ Heo Đất tích lũy.
+  5. **Mẹo & Chiến Thuật:** Cách quản lý dòng tiền, thương lượng và né tránh resort của đối thủ.
+
+---
+
 ## 5. Kế Hoạch Triển Khai (Milestones)
 
 1. **Giai đoạn 1: Khởi tạo Project & Cấu trúc Sảnh Game (Hub Portal)**
