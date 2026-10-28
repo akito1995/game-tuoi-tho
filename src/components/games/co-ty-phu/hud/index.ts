@@ -7,4 +7,6 @@ export * from './ChanceCardModal';
 export * from './RulesGuideModal';
 export * from './EventLogTicker';
 export * from './GameOverModal';
+export * from './LiveChatBox';
+export * from './EmoteWheel';
 export * from './CoTyPhuHUD';

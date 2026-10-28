@@ -316,7 +316,7 @@ describe('HUD Helpers and UI Logic Suite', () => {
   });
 
   describe('HUD Component Module Exports', () => {
-    it('exports all 8 HUD components and master container from index', async () => {
+    it('exports all HUD components and master container from index', async () => {
       const hud = await import('@/components/games/co-ty-phu/hud');
       expect(hud.GameHeader).toBeDefined();
       expect(hud.PlayerListBar).toBeDefined();
@@ -326,6 +326,8 @@ describe('HUD Helpers and UI Logic Suite', () => {
       expect(hud.RulesGuideModal).toBeDefined();
       expect(hud.EventLogTicker).toBeDefined();
       expect(hud.GameOverModal).toBeDefined();
+      expect(hud.LiveChatBox).toBeDefined();
+      expect(hud.EmoteWheel).toBeDefined();
       expect(hud.CoTyPhuHUD).toBeDefined();
     });
   });

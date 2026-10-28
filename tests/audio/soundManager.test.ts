@@ -377,7 +377,15 @@ describe('SoundManager', () => {
     it('exports soundManager singleton instance', () => {
       expect(soundManager).toBeDefined();
       expect(typeof soundManager.playDiceRoll).toBe('function');
+      expect(typeof soundManager.playEmoteSound).toBe('function');
       expect(typeof soundManager.getSettings).toBe('function');
+    });
+
+    it('plays emote sound effects without throwing', () => {
+      expect(() => soundManager.playEmoteSound('❤️')).not.toThrow();
+      expect(() => soundManager.playEmoteSound('🩴')).not.toThrow();
+      expect(() => soundManager.playEmoteSound('💸')).not.toThrow();
+      expect(() => soundManager.playEmoteSound('😂')).not.toThrow();
     });
   });
 });

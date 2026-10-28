@@ -543,6 +543,64 @@ export class SoundManager {
     }
   }
 
+  /**
+   * Expressive emote reaction sound (bubble pop, heart chime, sandal thud, coin scatter)
+   */
+  public playEmoteSound(emoji?: string): void {
+    if (!this.settings.sfxEnabled) return;
+    const ctx = this.ensureAudioContext();
+    if (!ctx) return;
+
+    try {
+      const now = ctx.currentTime;
+
+      // Money emoji: coin sound effect
+      if (emoji === '💸' || emoji === '💰') {
+        this.playCoinSound();
+        return;
+      }
+
+      // Sandal / troll: comical pitch-down thud
+      if (emoji === '🩴') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(340, now);
+        osc.frequency.exponentialRampToValueAtTime(70, now + 0.16);
+
+        gain.gain.setValueAtTime(0.25 * this.settings.volume, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.16);
+        return;
+      }
+
+      // Heart / Fire / Laugh / Clap / Default: gentle cheerful harmonic pop
+      const freqs = emoji === '❤️' ? [523.25, 659.25, 783.99] : [440.0, 554.37, 659.25];
+      freqs.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const t = now + idx * 0.05;
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, t);
+
+        gain.gain.setValueAtTime(0.2 * this.settings.volume, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.12);
+      });
+    } catch {
+      // Safe fallback
+    }
+  }
+
   // ==========================================
   // Vietnamese Pentatonic BGM Engine
   // ==========================================

@@ -9,6 +9,8 @@ import { PropertyActionModal } from './PropertyActionModal';
 import { ChanceCardModal } from './ChanceCardModal';
 import { RulesGuideModal } from './RulesGuideModal';
 import { GameOverModal } from './GameOverModal';
+import { LiveChatBox } from './LiveChatBox';
+import { EmoteWheel } from './EmoteWheel';
 
 export interface CoTyPhuHUDProps {
   className?: string;
@@ -18,7 +20,7 @@ export interface CoTyPhuHUDProps {
 /**
  * Complete Responsive 2D HUD Overlay for Cờ Tỷ Phú 3D
  * Assembles header, player cards bar, tactile dice controls, event log ticker,
- * and game state action modals into a cohesive layer.
+ * live chat box, interactive emote reactions, and game state action modals into a cohesive layer.
  */
 export function CoTyPhuHUD({ className = '', onRestart }: CoTyPhuHUDProps) {
   const [isRulesOpen, setIsRulesOpen] = useState(false);
@@ -33,10 +35,14 @@ export function CoTyPhuHUD({ className = '', onRestart }: CoTyPhuHUDProps) {
         <PlayerListBar className="mt-1" />
       </div>
 
-      {/* Bottom: Event Log Ticker (Left) & Dice Controls (Right) */}
+      {/* Bottom: Live Chat, Emotes & Event Log (Left) & Dice Controls (Right) */}
       <div className="pointer-events-auto flex flex-wrap items-end justify-between gap-3 p-3 sm:p-4">
-        {/* Bottom Left: Event Log */}
-        <div className="order-2 sm:order-1">
+        {/* Bottom Left: Social Interaction & Event Log */}
+        <div className="order-2 sm:order-1 flex flex-col items-start gap-2">
+          <div className="flex items-center gap-2">
+            <LiveChatBox />
+            <EmoteWheel />
+          </div>
           <EventLogTicker />
         </div>
 
