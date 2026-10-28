@@ -26,6 +26,8 @@ export type ColorGroupType =
 
 export type MascotType = 'PIG' | 'FOX' | 'CAT' | 'BUFFALO';
 
+export type PropertyBuildTier = 'LAND' | 'TOWNHOUSE' | 'APARTMENT' | 'LANDMARK';
+
 export interface Tile {
   id: number;
   name: string;
@@ -54,6 +56,7 @@ export interface Player {
   bankrupt: boolean;
   isBot: boolean;
   jailFreeCards?: number;
+  isSpectator?: boolean;
 }
 
 export type CardActionType =
@@ -63,11 +66,19 @@ export type CardActionType =
   | 'JAIL_FREE'
   | 'PAY_EACH_PLAYER';
 
+export type CardCategoryType =
+  | 'FORTUNE'
+  | 'ATTACK'
+  | 'REWARD'
+  | 'PENALTY'
+  | 'TRAVEL';
+
 export interface ChanceCard {
   id: string;
   title: string;
   description: string;
   type: CardActionType;
+  category?: CardCategoryType;
   amount?: number;
   targetTileId?: number;
 }
@@ -89,6 +100,7 @@ export interface GameSettings {
   passGoReward: number;
   jailBailPrice: number;
   maxJailTurns: number;
+  maxJackpotFund?: number;
 }
 
 export interface GameState {
@@ -105,4 +117,9 @@ export interface GameState {
   winner: Player | null;
   eventLogs: string[];
   currentRound?: number;
+  pendingDebt?: {
+    debtorPlayerId: string;
+    creditorPlayerId: string | null; // null means bank
+    amount: number;
+  } | null;
 }

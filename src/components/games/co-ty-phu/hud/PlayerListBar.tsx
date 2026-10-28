@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Skull, Lock, Bot, User, Coins } from 'lucide-react';
+import { Skull, Lock, Bot, User, Coins, Eye } from 'lucide-react';
 import { useGameStore } from '@/lib/game-engine/gameStore';
 import {
   getMascotInfo,
@@ -87,10 +87,11 @@ export function PlayerListBar({ className = '' }: PlayerListBarProps) {
                   </span>
                 )}
 
-                {/* Bankrupt tag */}
+                {/* Bankrupt / Spectator tag */}
                 {isBankrupt && (
-                  <span className="rounded bg-red-600/30 px-1 py-0.2 text-[9px] font-bold text-red-400 border border-red-500/40">
-                    Phá Sản
+                  <span className="flex items-center gap-1 rounded bg-slate-800/90 px-1.5 py-0.5 text-[9px] font-bold text-slate-300 border border-slate-600 shadow-sm">
+                    <Eye className="h-2.5 w-2.5 text-cyan-400" />
+                    <span>Đang Xem</span>
                   </span>
                 )}
               </div>

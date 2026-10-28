@@ -115,11 +115,11 @@ export function DiceControlPanel({ className = '' }: DiceControlPanelProps) {
           </div>
         </div>
 
-        {/* Double Bonus Badge */}
+        {/* Double Extra Turn Badge (No cash bonus per user rule) */}
         {isDouble && (
           <div className="flex items-center gap-1.5 rounded-full border border-amber-400 bg-amber-400/20 px-3 py-0.5 text-xs font-extrabold text-amber-300 animate-pulse">
             <Sparkles className="h-3.5 w-3.5 text-amber-400" />
-            <span>ĐỔI ĐÔI! +50k & Thêm 1 Lượt</span>
+            <span>SỐ ĐÔI! ĐƯỢC ĐỔ THÊM LƯỢT</span>
             {doubleStreak > 1 && (
               <span className="text-[10px] text-amber-200">
                 ({doubleStreak}/3 lần)
@@ -131,19 +131,19 @@ export function DiceControlPanel({ className = '' }: DiceControlPanelProps) {
 
       {/* Jail Bail Actions (If active human player is in Jail) */}
       {inJail && isHumanTurn && gamePhase === 'WAITING' && (
-        <div className="flex flex-col w-full gap-1.5 pt-1 border-t border-white/10">
-          <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-red-300">
-            <Lock className="h-3 w-3 text-red-400" />
+        <div className="flex flex-col w-full gap-2 pt-2 border-t border-white/15">
+          <div className="flex items-center justify-center gap-1.5 text-xs font-extrabold text-red-400">
+            <Lock className="h-3.5 w-3.5 text-red-500" />
             <span>Đang ở Trại Giam (còn {activePlayer.jailTurns} lượt)</span>
           </div>
 
-          <div className="flex gap-2 w-full">
+          <div className="flex flex-col sm:flex-row gap-2 w-full">
             <button
               onClick={handlePayBail}
               disabled={!canAffordBail}
-              className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-bold transition-all ${
+              className={`flex-1 rounded-xl px-3 py-2 text-xs font-black uppercase tracking-wider shadow-md transition-all ${
                 canAffordBail
-                  ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-md active:scale-95'
+                  ? 'bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white active:scale-95 ring-2 ring-red-400/50'
                   : 'bg-slate-800 text-slate-500 cursor-not-allowed'
               }`}
             >
@@ -153,7 +153,7 @@ export function DiceControlPanel({ className = '' }: DiceControlPanelProps) {
             {jailFreeCards > 0 && (
               <button
                 onClick={handleUseJailCard}
-                className="flex items-center justify-center gap-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-1.5 text-xs font-bold shadow-md active:scale-95 transition-all"
+                className="flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white px-3 py-2 text-xs font-black uppercase tracking-wider shadow-md active:scale-95 transition-all ring-2 ring-emerald-400/50"
               >
                 <Key className="h-3.5 w-3.5" />
                 <span>Dùng Thẻ ({jailFreeCards})</span>
@@ -165,14 +165,18 @@ export function DiceControlPanel({ className = '' }: DiceControlPanelProps) {
 
       {/* Primary Action Buttons */}
       <div className="flex w-full items-center gap-2">
-        {/* Roll Dice Button */}
+        {/* Roll Dice Button (Lắc Xí Ngầu or ĐỔ TIẾP on Double) */}
         {canRoll ? (
           <button
             onClick={handleRollDice}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 px-4 py-3 text-sm font-extrabold uppercase tracking-wider text-slate-950 shadow-lg shadow-amber-500/30 transition-all hover:scale-102 hover:brightness-110 active:scale-95 animate-pulse"
+            className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-black uppercase tracking-wider shadow-lg transition-all hover:scale-102 hover:brightness-110 active:scale-95 ${
+              isDouble
+                ? 'bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 ring-4 ring-yellow-400/60 shadow-yellow-500/40 animate-pulse'
+                : 'bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 text-slate-950 shadow-amber-500/30'
+            }`}
           >
             <Dices className="h-5 w-5" />
-            <span>ĐỔ XÚC XẮC</span>
+            <span>{isDouble ? 'ĐỔ TIẾP' : 'ĐỔ XÚC XẮC'}</span>
           </button>
         ) : canEnd ? (
           <button

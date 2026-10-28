@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
-import { Canvas, useThree } from '@react-three/fiber';
+import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { Tile } from '@/lib/game-engine/types';
+import { useGameStore } from '@/lib/game-engine/gameStore';
+import { getTile3DPosition } from './tilePositions';
 import { BOARD_TILES } from '@/lib/game-engine/boardData';
 import { Environment3D } from './Environment3D';
 import { BoardTableFrame } from './BoardTableFrame';
@@ -34,6 +36,12 @@ export interface BoardCanvasProps {
  */
 function AdaptiveCamera() {
   const { camera, size } = useThree();
+  const activePlayerIndex = useGameStore((s) => s.activePlayerIndex);
+  const players = useGameStore((s) => s.players);
+  const gamePhase = useGameStore((s) => s.gamePhase);
+
+  const activePlayer = players[activePlayerIndex];
+  const lookTargetRef = React.useRef(new THREE.Vector3(0, 0, 0));
 
   useEffect(() => {
     if (camera instanceof THREE.PerspectiveCamera) {
@@ -47,10 +55,21 @@ function AdaptiveCamera() {
         camera.fov = 32;
         camera.position.set(13, 18, 15);
       }
-      camera.lookAt(0, 0, 0);
       camera.updateProjectionMatrix();
     }
   }, [size.width, size.height, camera]);
+
+  useFrame((_, delta) => {
+    if (!camera) return;
+    const isMoving = gamePhase === 'MOVING' || gamePhase === 'ROLLING';
+    const pawnTilePos = activePlayer ? getTile3DPosition(activePlayer.position) : [0, 0, 0];
+    const targetX = isMoving ? pawnTilePos[0] * 0.2 : 0;
+    const targetZ = isMoving ? pawnTilePos[2] * 0.2 : 0;
+
+    lookTargetRef.current.x = THREE.MathUtils.damp(lookTargetRef.current.x, targetX, 3.5, delta);
+    lookTargetRef.current.z = THREE.MathUtils.damp(lookTargetRef.current.z, targetZ, 3.5, delta);
+    camera.lookAt(lookTargetRef.current.x, 0, lookTargetRef.current.z);
+  });
 
   return null;
 }

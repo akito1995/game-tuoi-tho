@@ -25,12 +25,12 @@ function BigDiceFace({ value }: DiceFaceProps) {
   const activePips = pipPositions[value] || [4];
 
   return (
-    <div className="relative flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-white via-slate-50 to-slate-200 p-2 shadow-2xl ring-4 ring-slate-300/80 transition-all duration-300">
+    <div className="relative flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-white via-slate-50 to-slate-200 p-2 shadow-xl ring-2 ring-slate-300/80 transition-all duration-300">
       {/* 3D Inner Bevel Highlight */}
       <div className="absolute inset-1 rounded-xl border border-white/80 pointer-events-none" />
 
       {/* 3x3 Pip Grid */}
-      <div className="grid h-full w-full grid-cols-3 grid-rows-3 gap-1 p-1">
+      <div className="grid h-full w-full grid-cols-3 grid-rows-3 gap-0.5 p-0.5">
         {Array.from({ length: 9 }).map((_, idx) => {
           const isPip = activePips.includes(idx);
           const isCenterPip = idx === 4 && (value === 1 || value === 3 || value === 5);
@@ -40,8 +40,8 @@ function BigDiceFace({ value }: DiceFaceProps) {
                 <div
                   className={`rounded-full shadow-inner ${
                     isCenterPip && value === 1
-                      ? 'h-5 w-5 bg-red-600 sm:h-6 sm:w-6'
-                      : 'h-3.5 w-3.5 bg-slate-900 sm:h-4 sm:w-4'
+                      ? 'h-4 w-4 bg-red-600 sm:h-5 sm:w-5'
+                      : 'h-3 w-3 bg-slate-900 sm:h-3.5 sm:w-3.5'
                   }`}
                 />
               )}
@@ -77,27 +77,14 @@ export function DiceRevealOverlay() {
 
       if (isCurrentDouble) {
         soundManager.playDoubleDiceSound();
-        if (typeof window !== 'undefined') {
-          import('canvas-confetti')
-            .then((mod) => {
-              const runConfetti = mod.default || mod;
-              runConfetti({
-                particleCount: 40,
-                spread: 60,
-                origin: { y: 0.5 },
-                colors: ['#fbbf24', '#f59e0b', '#ef4444', '#10b981'],
-              });
-            })
-            .catch(() => {});
-        }
       } else {
         soundManager.playDiceRoll();
       }
 
-      // Auto-hide after 1.8 seconds to allow player to clearly appreciate the roll
+      // Auto-hide after 1.5 seconds (board is never dimmed or obscured)
       const timer = setTimeout(() => {
         setVisible(false);
-      }, 1800);
+      }, 1500);
 
       return () => clearTimeout(timer);
     }
@@ -108,52 +95,41 @@ export function DiceRevealOverlay() {
   const sum = displayedDice[0] + displayedDice[1];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none p-4 animate-fade-in">
-      {/* Soft dark backdrop */}
-      <div className="absolute inset-0 bg-slate-950/30 backdrop-blur-sm transition-opacity duration-300" />
-
-      {/* Central Announcement Card */}
-      <div className="relative flex flex-col items-center justify-center rounded-3xl bg-slate-900/90 p-6 sm:p-8 text-center text-white shadow-2xl ring-2 ring-white/20 backdrop-blur-md animate-scale-up max-w-sm sm:max-w-md w-full">
+    <div className="fixed top-16 inset-x-0 z-40 flex items-center justify-center pointer-events-none p-3 animate-in fade-in slide-in-from-top-4 duration-200">
+      {/* Floating Announcement Card: Clean, transparent, never dims or blurs the 3D board */}
+      <div className="relative flex flex-col items-center justify-center rounded-2xl bg-slate-950/85 px-6 py-4 text-center text-white shadow-2xl ring-2 ring-white/20 backdrop-blur-md max-w-sm w-full">
         {/* Glow halo if double */}
         {showDoubleAura && (
-          <div className="absolute -inset-2 rounded-3xl bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 opacity-60 blur-xl animate-pulse" />
+          <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 opacity-60 blur-md animate-pulse" />
         )}
 
         {/* Player Name and Header */}
-        <p className="text-xs sm:text-sm font-semibold tracking-wider text-amber-300 uppercase">
+        <p className="text-xs font-bold tracking-wider text-amber-300 uppercase">
           {activePlayer?.name || 'Người Chơi'} Đã Đổ
         </p>
 
         {/* 2 Big Rolling Dice Side-by-Side */}
-        <div className="my-5 flex items-center justify-center gap-4 sm:gap-6">
-          <div className="transform -rotate-6 transition-transform hover:rotate-0">
+        <div className="my-2 flex items-center justify-center gap-3 sm:gap-4">
+          <div className="transform -rotate-3">
             <BigDiceFace value={displayedDice[0]} />
           </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-amber-400">+</div>
-          <div className="transform rotate-6 transition-transform hover:rotate-0">
+          <div className="text-xl font-black text-amber-400">+</div>
+          <div className="transform rotate-3">
             <BigDiceFace value={displayedDice[1]} />
+          </div>
+          <div className="ml-2 flex flex-col items-start">
+            <span className="text-[10px] font-bold text-slate-400 uppercase">Tổng số</span>
+            <span className="text-2xl font-black text-yellow-300 drop-shadow">{sum}</span>
           </div>
         </div>
 
-        {/* Total Sum Display */}
-        <div className="flex items-center gap-2">
-          <span className="text-sm sm:text-base font-medium text-slate-300">Tổng Số Nút:</span>
-          <span className="text-2xl sm:text-3xl font-black text-amber-400 tracking-tight">
-            {sum}
-          </span>
-        </div>
-
-        {/* Double Celebration Banner */}
+        {/* Doubles Celebration Banner (No confetti here per user rule) */}
         {showDoubleAura && (
-          <div className="mt-4 flex flex-col items-center rounded-2xl bg-gradient-to-r from-amber-500/20 via-yellow-400/30 to-amber-500/20 px-4 py-2 ring-1 ring-amber-400/50 animate-bounce">
-            <div className="flex items-center gap-1.5 text-base sm:text-lg font-black text-yellow-300">
-              <Sparkles className="h-5 w-5 text-yellow-300 animate-spin" />
-              <span>SỐ ĐÔI {displayedDice[0]} - {displayedDice[1]}!</span>
-              <Sparkles className="h-5 w-5 text-yellow-300 animate-spin" />
-            </div>
-            <p className="text-xs font-semibold text-yellow-200">
-              +50.000đ Thưởng & Được Đổ Thêm Lượt!
-            </p>
+          <div className="mt-1 flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500/30 to-yellow-500/30 px-3 py-0.5 border border-amber-400/50">
+            <Sparkles className="h-3.5 w-3.5 text-yellow-300 animate-spin" />
+            <span className="text-xs font-black text-yellow-200 uppercase tracking-wide">
+              SỐ ĐÔI! ĐƯỢC ĐỔ THÊM LƯỢT
+            </span>
           </div>
         )}
       </div>

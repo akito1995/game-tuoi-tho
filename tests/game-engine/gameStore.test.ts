@@ -95,14 +95,14 @@ describe('Game State Machine (Zustand Store) & Monopoly Rules', () => {
   });
 
   describe('3. Dice Mechanics: Doubles & Speeding to Jail', () => {
-    it('should award +50,000 VND bonus and an extra turn when rolling a double', () => {
+    it('should award an extra turn without cash bonus when rolling a double', () => {
       const initialMoney = useGameStore.getState().players[0].money;
       useGameStore.getState().rollDice([3, 3]);
 
       const state = useGameStore.getState();
       expect(state.isDouble).toBe(true);
       expect(state.doubleStreak).toBe(1);
-      expect(state.players[0].money).toBe(initialMoney + 50000);
+      expect(state.players[0].money).toBe(initialMoney); // No +50k cash bonus per rule
 
       // End turn should grant another roll to the same player
       useGameStore.getState().endTurn();
@@ -211,7 +211,7 @@ describe('Game State Machine (Zustand Store) & Monopoly Rules', () => {
 
       const tile = useGameStore.getState().tiles[1];
       const housePrice = tile.housePrice!;
-      expect(housePrice).toBe(50000);
+      expect(housePrice).toBe(45000);
 
       // Upgrade 1 (House 1)
       let moneyBefore = useGameStore.getState().players[0].money;

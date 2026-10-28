@@ -464,7 +464,7 @@ describe('Bot AI Engine (botAI.ts)', () => {
 
       const result = await executeBotTurn(useGameStore, {
         skipDelay: true,
-        diceOverride: [2, 4], // Non-double
+        diceOverride: [1, 2], // Sum 3 lands on owned tile 3
       });
 
       expect(result.actionSummary.some((s) => s.includes('UPGRADED'))).toBe(true);

@@ -33,6 +33,11 @@ export interface GameStore extends GameState {
   rollDice: (diceOverride?: [number, number]) => [number, number];
   buyProperty: (tileId?: number) => boolean;
   upgradeProperty: (tileId: number) => boolean;
+  buyOrUpgradeProperty: (tileId: number, targetTier: 0 | 1 | 2 | 3) => boolean;
+  mortgageProperty: (tileId: number) => boolean;
+  unmortgageProperty: (tileId: number) => boolean;
+  sellBuilding: (tileId: number) => boolean;
+  declareBankruptcy: () => void;
   payJailBail: () => boolean;
   useJailFreeCard: () => boolean;
   drawCard: (deckType: 'CHANCE' | 'FATE', cardId?: string) => ChanceCard;
@@ -62,10 +67,11 @@ export function checkColorMonopoly(
  * Calculates current rent for a tile, accounting for house tiers and full color group monopoly (x2).
  */
 export function calculateRent(tile: Tile, tiles: Tile[]): number {
-  const houseCount = tile.houseCount || 0;
+  if (tile.isMortgaged) return 0;
+  const tier = tile.hasResort ? 4 : Math.min(3, tile.houseCount || 0);
   let rent = 0;
-  if (tile.rentMultiplier && tile.rentMultiplier.length > houseCount) {
-    rent = tile.rentMultiplier[houseCount];
+  if (tile.rentMultiplier && tile.rentMultiplier.length > tier) {
+    rent = tile.rentMultiplier[tier];
   } else {
     rent = tile.baseRent || 0;
   }
@@ -222,7 +228,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const d1 = diceOverride !== undefined ? diceOverride[0] : Math.floor(Math.random() * 6) + 1;
     const d2 = diceOverride !== undefined ? diceOverride[1] : Math.floor(Math.random() * 6) + 1;
     const sum = d1 + d2;
-    const isDouble = d1 === d2;
+    let isDouble = d1 === d2;
 
     let activePlayer = { ...state.players[state.activePlayerIndex] };
     let newDoubleStreak = isDouble ? state.doubleStreak + 1 : 0;
@@ -304,8 +310,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     // 2. Double bonus & speed check
     if (isDouble && !activePlayer.inJail) {
-      activePlayer.money += 50000;
-      logs.push(`${activePlayer.name} nhận thưởng đổ đôi +50.000đ!`);
+      logs.push(`${activePlayer.name} đổ xúc xắc đôi [${d1}, ${d2}]! Được đổ thêm lượt nữa!`);
 
       if (newDoubleStreak >= 3) {
         logs.push(
@@ -356,10 +361,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
     logs.push(`${activePlayer.name} dừng chân tại ô [${newPos}] ${landedTile.name}.`);
 
     if (landedTile.type === 'GO_TO_JAIL') {
-      logs.push(`${activePlayer.name} bị bắt đi bão! Áp giải thẳng về Trại Giam!`);
+      logs.push(`${activePlayer.name} bị bắt đi bão! Áp giải thẳng về Trại Giam! Huỷ lượt đổ tiếp.`);
       activePlayer.position = 8;
       activePlayer.inJail = true;
       activePlayer.jailTurns = state.settings.maxJailTurns;
+      isDouble = false;
+      newDoubleStreak = 0;
       nextPhase = 'TURN_END';
     } else if (landedTile.type === 'FESTIVAL') {
       logs.push(
@@ -404,7 +411,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           return [d1, d2];
         } else {
           activePlayer.money -= drawn.amount;
-          currentJackpot += drawn.amount; // Route penalty into jackpot
+          currentJackpot = Math.min(300000, currentJackpot + drawn.amount); // Route penalty into jackpot
         }
       } else if (drawn.type === 'TELEPORT' && drawn.targetTileId !== undefined) {
         const oldP = activePlayer.position;
@@ -609,6 +616,215 @@ export const useGameStore = create<GameStore>((set, get) => ({
     });
 
     return true;
+  },
+
+  buyOrUpgradeProperty: (tileId, targetTier) => {
+    const state = get();
+    const activePlayer = state.players[state.activePlayerIndex];
+    if (!activePlayer || activePlayer.bankrupt) return false;
+
+    const tile = state.tiles[tileId];
+    if (!tile || tile.type !== 'PROPERTY') return false;
+
+    // Check round 1 restriction for Landmark
+    if (targetTier === 3 && (state.currentRound || 1) <= 1) {
+      return false;
+    }
+
+    const isOwnedByMe = tile.ownerId === activePlayer.id;
+    const isUnowned = !tile.ownerId;
+
+    if (!isOwnedByMe && !isUnowned) return false;
+
+    const currentTier = isUnowned
+      ? -1
+      : tile.hasResort
+      ? 3
+      : Math.min(3, tile.houseCount || 0);
+
+    if (targetTier <= currentTier) return false;
+
+    const tilePrice = tile.price || 0;
+    const housePrice = tile.housePrice || Math.round(tilePrice * 0.75);
+
+    let cost = 0;
+    if (isUnowned) {
+      cost = tilePrice + targetTier * housePrice;
+    } else {
+      cost = (targetTier - currentTier) * housePrice;
+    }
+
+    if (activePlayer.money < cost) return false;
+
+    const newMoney = activePlayer.money - cost;
+    const newCount = targetTier === 3 ? 3 : targetTier;
+    const hasResort = targetTier === 3;
+
+    const updatedPlayer: Player = {
+      ...activePlayer,
+      money: newMoney,
+      properties: isUnowned
+        ? [...activePlayer.properties, tileId]
+        : activePlayer.properties,
+    };
+
+    const updatedTiles = state.tiles.map((t) =>
+      t.id === tileId
+        ? {
+            ...t,
+            ownerId: activePlayer.id,
+            houseCount: newCount,
+            hasResort,
+            isMortgaged: false,
+          }
+        : t
+    );
+
+    const updatedPlayers = [...state.players];
+    updatedPlayers[state.activePlayerIndex] = updatedPlayer;
+
+    const tierNames = ['Đất nền', 'Nhà phố', 'Chung cư', 'Biểu tượng Landmark'];
+    const chosenName = tierNames[targetTier] || `Cấp ${targetTier}`;
+
+    set({
+      players: updatedPlayers,
+      tiles: updatedTiles,
+      gamePhase: 'TURN_END',
+      eventLogs: [
+        ...state.eventLogs,
+        `${activePlayer.name} đã đầu tư thành công ${tile.name} lên [${chosenName}] (-${cost.toLocaleString('vi-VN')}đ).`,
+      ],
+    });
+
+    return true;
+  },
+
+  mortgageProperty: (tileId) => {
+    const state = get();
+    const activePlayer = state.players[state.activePlayerIndex];
+    if (!activePlayer || activePlayer.bankrupt) return false;
+
+    const tile = state.tiles[tileId];
+    if (!tile || tile.ownerId !== activePlayer.id || tile.isMortgaged) return false;
+    if ((tile.houseCount || 0) > 0 || tile.hasResort) return false;
+
+    const mortgageValue = Math.round((tile.price || 0) * 0.5);
+    const updatedPlayer = {
+      ...activePlayer,
+      money: activePlayer.money + mortgageValue,
+    };
+
+    const updatedTiles = state.tiles.map((t) =>
+      t.id === tileId ? { ...t, isMortgaged: true } : t
+    );
+
+    const updatedPlayers = [...state.players];
+    updatedPlayers[state.activePlayerIndex] = updatedPlayer;
+
+    set({
+      players: updatedPlayers,
+      tiles: updatedTiles,
+      eventLogs: [
+        ...state.eventLogs,
+        `${activePlayer.name} đã thế chấp ${tile.name} nhận +${mortgageValue.toLocaleString('vi-VN')}đ.`,
+      ],
+    });
+    return true;
+  },
+
+  unmortgageProperty: (tileId) => {
+    const state = get();
+    const activePlayer = state.players[state.activePlayerIndex];
+    if (!activePlayer || activePlayer.bankrupt) return false;
+
+    const tile = state.tiles[tileId];
+    if (!tile || tile.ownerId !== activePlayer.id || !tile.isMortgaged) return false;
+
+    const unmortgageCost = Math.round((tile.price || 0) * 0.55);
+    if (activePlayer.money < unmortgageCost) return false;
+
+    const updatedPlayer = {
+      ...activePlayer,
+      money: activePlayer.money - unmortgageCost,
+    };
+
+    const updatedTiles = state.tiles.map((t) =>
+      t.id === tileId ? { ...t, isMortgaged: false } : t
+    );
+
+    const updatedPlayers = [...state.players];
+    updatedPlayers[state.activePlayerIndex] = updatedPlayer;
+
+    set({
+      players: updatedPlayers,
+      tiles: updatedTiles,
+      eventLogs: [
+        ...state.eventLogs,
+        `${activePlayer.name} đã chuộc lại ${tile.name} (-${unmortgageCost.toLocaleString('vi-VN')}đ).`,
+      ],
+    });
+    return true;
+  },
+
+  sellBuilding: (tileId) => {
+    const state = get();
+    const activePlayer = state.players[state.activePlayerIndex];
+    if (!activePlayer || activePlayer.bankrupt) return false;
+
+    const tile = state.tiles[tileId];
+    if (!tile || tile.ownerId !== activePlayer.id) return false;
+    if (!tile.hasResort && (tile.houseCount || 0) <= 0) return false;
+
+    const housePrice = tile.housePrice || Math.round((tile.price || 0) * 0.75);
+    const refund = Math.round(housePrice * 0.5);
+
+    let newCount = tile.houseCount || 0;
+    let hasResort = false;
+
+    if (tile.hasResort) {
+      hasResort = false;
+      newCount = 2;
+    } else if (newCount > 0) {
+      newCount -= 1;
+    }
+
+    const updatedPlayer = {
+      ...activePlayer,
+      money: activePlayer.money + refund,
+    };
+
+    const updatedTiles = state.tiles.map((t) =>
+      t.id === tileId ? { ...t, houseCount: newCount, hasResort } : t
+    );
+
+    const updatedPlayers = [...state.players];
+    updatedPlayers[state.activePlayerIndex] = updatedPlayer;
+
+    set({
+      players: updatedPlayers,
+      tiles: updatedTiles,
+      eventLogs: [
+        ...state.eventLogs,
+        `${activePlayer.name} đã bán bớt công trình tại ${tile.name} thu hồi +${refund.toLocaleString('vi-VN')}đ.`,
+      ],
+    });
+    return true;
+  },
+
+  declareBankruptcy: () => {
+    const state = get();
+    const debtorIndex = state.activePlayerIndex;
+    const bk = processBankruptcy(state.players, state.tiles, debtorIndex, null);
+    set({
+      players: bk.players,
+      tiles: bk.tiles,
+      winner: bk.winner,
+      gamePhase: bk.gameOver ? 'GAME_OVER' : 'TURN_END',
+      eventLogs: [
+        ...state.eventLogs,
+        `${state.players[debtorIndex].name} đã tuyên bố phá sản và chuyển sang chế độ xem!`,
+      ],
+    });
   },
 
   upgradeProperty: (tileId) => {

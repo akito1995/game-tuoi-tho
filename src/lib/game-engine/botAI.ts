@@ -343,26 +343,27 @@ export async function executeBotTurn(
       state = getState();
     }
 
-    // 4. Upgrade evaluation
-    if (state.gamePhase !== 'GAME_OVER') {
-      let upgradeIterations = 0;
-      while (upgradeIterations < 4) {
-        state = getState();
-        const activeP = state.players[state.activePlayerIndex];
-        if (!activeP || activeP.bankrupt) break;
-
-        const ownedTiles = state.tiles.filter((t) => t.ownerId === activeP.id);
-        const tileIdToUpgrade = evaluateUpgradeDecision(activeP, ownedTiles, state.tiles);
-        if (tileIdToUpgrade === null || !upgradeProperty) break;
-
-        const success = upgradeProperty(tileIdToUpgrade);
-        if (!success) break;
-
-        const upgradedTile = state.tiles[tileIdToUpgrade];
-        actionSummary.push(`${activeP.name}: UPGRADED ${upgradedTile?.name || tileIdToUpgrade}`);
-        upgradeIterations++;
-        await delay(150);
+    // 4. Upgrade evaluation: Bot ONLY upgrades if it landed on its OWN property, max 1 level per turn
+    if (state.gamePhase === 'ACTION' || state.gamePhase === 'ACTION_REQUIRED') {
+      const activeP = state.players[state.activePlayerIndex];
+      const landedTile = state.tiles[activeP.position];
+      if (
+        landedTile &&
+        landedTile.ownerId === activeP.id &&
+        landedTile.type === 'PROPERTY' &&
+        (landedTile.houseCount || 0) < 4 &&
+        upgradeProperty
+      ) {
+        const shouldUpgrade = evaluateUpgradeDecision(activeP, [landedTile], state.tiles);
+        if (shouldUpgrade !== null) {
+          const success = upgradeProperty(landedTile.id);
+          if (success) {
+            actionSummary.push(`${activeP.name}: UPGRADED ${landedTile.name}`);
+          }
+        }
       }
+      if (setGamePhase) setGamePhase('TURN_END');
+      state = getState();
     }
 
     // 5. End Turn
