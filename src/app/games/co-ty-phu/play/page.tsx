@@ -9,6 +9,7 @@ import { useRoomStore } from '@/lib/multiplayer/roomStore';
 import { executeBotTurn } from '@/lib/game-engine/botAI';
 import { peerService } from '@/lib/multiplayer/peerService';
 import { soundManager } from '@/lib/audio/soundManager';
+import { MascotType } from '@/lib/game-engine/types';
 import { recordGameStats, getUserProfile } from '@/components/hub/hubHelpers';
 import { calculatePlayerNetWorth } from '@/components/games/co-ty-phu/hud/hudHelpers';
 
@@ -40,12 +41,16 @@ function MonopolyGameContent() {
   useEffect(() => {
     if (players.length === 0) {
       const profile = getUserProfile();
-      // If direct navigation without init, create 1 human + 3 bots
+      const humanMascot: MascotType = (profile.mascot as MascotType) || 'PIG';
+      // Pick unique mascots for the 3 bots distinct from human player
+      const ALL_MASCOTS: MascotType[] = ['PIG', 'FOX', 'CAT', 'BUFFALO'];
+      const availableMascots = ALL_MASCOTS.filter((m) => m !== humanMascot);
+
       initGame([
-        { id: 'player_human', name: profile.nickname, mascot: profile.mascot, isBot: false },
-        { id: 'player_bot_1', name: 'Bot Tí Nị 🤖', mascot: 'FOX', isBot: true },
-        { id: 'player_bot_2', name: 'Bot Thần Tài 💰', mascot: 'CAT', isBot: true },
-        { id: 'player_bot_3', name: 'Bot Thần Tốc ⚡', mascot: 'BUFFALO', isBot: true },
+        { id: 'player_human', name: profile.nickname, mascot: humanMascot, isBot: false },
+        { id: 'player_bot_1', name: 'Bot Tí Nị 🤖', mascot: availableMascots[0], isBot: true },
+        { id: 'player_bot_2', name: 'Bot Thần Tài 💰', mascot: availableMascots[1], isBot: true },
+        { id: 'player_bot_3', name: 'Bot Thần Tốc ⚡', mascot: availableMascots[2], isBot: true },
       ]);
     }
   }, [players.length, initGame]);
@@ -109,11 +114,7 @@ function MonopolyGameContent() {
         const won = winner?.id === humanPlayer.id;
         const netWorth = calculatePlayerNetWorth(humanPlayer, tiles);
         recordGameStats({ won, netWorth });
-        if (won) {
-          soundManager.playWinFanfare();
-        } else {
-          soundManager.playBankruptSound();
-        }
+        // Celebratory fanfare is managed by GameOverModal exclusively to prevent conflicting audio triggers
       }
     } else if (!gameOver) {
       statsRecordedRef.current = false;

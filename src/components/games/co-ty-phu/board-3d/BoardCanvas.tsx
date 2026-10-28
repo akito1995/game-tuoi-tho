@@ -81,7 +81,7 @@ export function BoardCanvas({
     <div className={`relative overflow-hidden select-none bg-gradient-to-b from-sky-200 via-sky-100 to-amber-50 ${className}`}>
       <Canvas
         shadows
-        dpr={[1, 2]}
+        dpr={[1, 1.5]}
         gl={{
           antialias: true,
           alpha: true,

@@ -10,7 +10,6 @@ import { getTile3DPosition } from './tilePositions';
 import {
   getPlayerTileOffset,
   calculatePathTiles,
-  calculateHopPosition,
   MASCOT_PALETTES,
 } from './board3dHelpers';
 
@@ -611,17 +610,22 @@ function SingleMascotPawn({
         }
       }
 
-      // Parabolic jump coordinate
-      const currentHop = calculateHopPosition(fromPos, toPos, s.progress, 0.65);
+      // Parabolic jump coordinate calculated directly without per-frame array allocations
+      const p = Math.max(0, Math.min(1, s.progress));
+      const hopX = fromPos[0] + (toPos[0] - fromPos[0]) * p;
+      const hopZ = fromPos[2] + (toPos[2] - fromPos[2]) * p;
+      const baseY = fromPos[1] + (toPos[1] - fromPos[1]) * p;
+      const arcY = Math.sin(p * Math.PI) * 0.65;
+
       groupRef.current.position.set(
-        currentHop[0] + offset[0],
-        currentHop[1] + offset[1],
-        currentHop[2] + offset[2]
+        hopX + offset[0],
+        baseY + arcY + offset[1],
+        hopZ + offset[2]
       );
       groupRef.current.rotation.y = s.facingAngle;
 
       // Squash and stretch during jump
-      const hopSin = Math.sin(s.progress * Math.PI);
+      const hopSin = Math.sin(p * Math.PI);
       const scaleY = 1 + hopSin * 0.35;
       const scaleXZ = 1 - hopSin * 0.15;
       meshHolderRef.current.scale.set(scaleXZ, scaleY, scaleXZ);
@@ -636,8 +640,11 @@ function SingleMascotPawn({
         basePos[2] + offset[2]
       );
 
-      // Settle scale smoothly back to 1.0
-      meshHolderRef.current.scale.lerp(new THREE.Vector3(1, 1, 1), 0.2);
+      // Settle scale smoothly back to 1.0 via scalar lerping (zero object allocation)
+      const ms = meshHolderRef.current.scale;
+      ms.x = THREE.MathUtils.lerp(ms.x, 1, 0.2);
+      ms.y = THREE.MathUtils.lerp(ms.y, 1, 0.2);
+      ms.z = THREE.MathUtils.lerp(ms.z, 1, 0.2);
 
       // Gently face towards the island center
       const toCenterAngle = Math.atan2(-basePos[0], -basePos[2]);

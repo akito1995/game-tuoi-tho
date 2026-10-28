@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGameStore } from '@/lib/game-engine/gameStore';
@@ -158,7 +158,7 @@ function SingleDie({
 }: SingleDieProps) {
   const meshRef = useRef<THREE.Group>(null);
 
-  // Physics animation state
+  // Physics animation state with vector/quaternion pooling
   const stateRef = useRef({
     wasRolling: false,
     tumbleProgress: 1.0, // 1 = settled
@@ -167,13 +167,17 @@ function SingleDie({
     currentY: basePosition[1],
     rollDuration: 0.9,
     rollTime: 0,
+    deltaEuler: new THREE.Euler(),
+    deltaQuat: new THREE.Quaternion(),
   });
 
-  // Calculate target rotation quaternion from rolled value
-  const targetEuler = getDiceTargetEuler(value, restingYaw);
-  const targetQuat = new THREE.Quaternion().setFromEuler(
-    new THREE.Euler(targetEuler[0], targetEuler[1], targetEuler[2], 'XYZ')
-  );
+  // Calculate target rotation quaternion from rolled value (memoized to avoid per-render allocations)
+  const targetQuat = useMemo(() => {
+    const targetEuler = getDiceTargetEuler(value, restingYaw);
+    return new THREE.Quaternion().setFromEuler(
+      new THREE.Euler(targetEuler[0], targetEuler[1], targetEuler[2], 'XYZ')
+    );
+  }, [value, restingYaw]);
 
   useEffect(() => {
     // When roll starts: kick off high angular velocity & jump
@@ -211,15 +215,15 @@ function SingleDie({
           basePosition[2] + Math.cos(s.rollTime * 10) * 0.08
         );
 
-        // Spin quaternion
-        const deltaQuat = new THREE.Quaternion().setFromEuler(
-          new THREE.Euler(
-            s.angularVelocity.x * dt,
-            s.angularVelocity.y * dt,
-            s.angularVelocity.z * dt
-          )
+        // Spin quaternion using pooled deltaEuler & deltaQuat (zero allocations per frame)
+        s.deltaEuler.set(
+          s.angularVelocity.x * dt,
+          s.angularVelocity.y * dt,
+          s.angularVelocity.z * dt,
+          'XYZ'
         );
-        meshRef.current.quaternion.multiply(deltaQuat);
+        s.deltaQuat.setFromEuler(s.deltaEuler);
+        meshRef.current.quaternion.multiply(s.deltaQuat);
         s.rotationQuat.copy(meshRef.current.quaternion);
       } else {
         // Settling phase (0.65 -> 1.0): descend & slerp to target orientation
