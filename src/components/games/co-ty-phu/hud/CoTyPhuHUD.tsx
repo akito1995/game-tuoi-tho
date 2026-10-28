@@ -15,6 +15,7 @@ import { EmoteWheel } from './EmoteWheel';
 export interface CoTyPhuHUDProps {
   className?: string;
   onRestart?: () => void;
+  onQuit?: () => void;
 }
 
 /**
@@ -22,7 +23,7 @@ export interface CoTyPhuHUDProps {
  * Assembles header, player cards bar, tactile dice controls, event log ticker,
  * live chat box, interactive emote reactions, and game state action modals into a cohesive layer.
  */
-export function CoTyPhuHUD({ className = '', onRestart }: CoTyPhuHUDProps) {
+export function CoTyPhuHUD({ className = '', onRestart, onQuit }: CoTyPhuHUDProps) {
   const [isRulesOpen, setIsRulesOpen] = useState(false);
 
   return (
@@ -31,7 +32,7 @@ export function CoTyPhuHUD({ className = '', onRestart }: CoTyPhuHUDProps) {
     >
       {/* Top: Header & Player List */}
       <div className="pointer-events-auto flex flex-col w-full">
-        <GameHeader onOpenRules={() => setIsRulesOpen(true)} />
+        <GameHeader onOpenRules={() => setIsRulesOpen(true)} onQuit={onQuit} />
         <PlayerListBar className="mt-1" />
       </div>
 

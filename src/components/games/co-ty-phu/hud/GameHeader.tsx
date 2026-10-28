@@ -8,6 +8,7 @@ import {
   PiggyBank,
   BookOpen,
   Sparkles,
+  Home,
 } from 'lucide-react';
 import { useGameStore } from '@/lib/game-engine/gameStore';
 import { soundManager } from '@/lib/audio/soundManager';
@@ -15,10 +16,11 @@ import { formatMoney } from './hudHelpers';
 
 export interface GameHeaderProps {
   onOpenRules?: () => void;
+  onQuit?: () => void;
   className?: string;
 }
 
-export function GameHeader({ onOpenRules, className = '' }: GameHeaderProps) {
+export function GameHeader({ onOpenRules, onQuit, className = '' }: GameHeaderProps) {
   const currentRound = useGameStore((state) => state.currentRound || 1);
   const jackpotFund = useGameStore((state) => state.jackpotFund || 0);
 
@@ -106,6 +108,22 @@ export function GameHeader({ onOpenRules, className = '' }: GameHeaderProps) {
           <span className="hidden sm:inline">📖 Luật Chơi</span>
           <span className="sm:hidden">Luật</span>
         </button>
+
+        {/* Quit Button */}
+        {onQuit && (
+          <button
+            onClick={() => {
+              if (sfxEnabled) soundManager.playClickSound();
+              onQuit();
+            }}
+            aria-label="Về Cổng Game"
+            title="Về Cổng Game"
+            className="flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-2.5 py-1.5 text-xs font-semibold text-rose-300 transition-all hover:bg-rose-500/20 active:scale-95 shadow-sm"
+          >
+            <Home className="h-3.5 w-3.5 text-rose-400" />
+            <span className="hidden sm:inline">Rời Bàn</span>
+          </button>
+        )}
 
         {/* Sound toggles */}
         <div className="flex items-center rounded-lg border border-slate-700/60 bg-slate-800/60 p-0.5">

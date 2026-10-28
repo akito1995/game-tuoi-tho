@@ -1,0 +1,233 @@
+'use client';
+
+import React, { useEffect, useRef, useState, useCallback, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { BoardCanvas } from '@/components/games/co-ty-phu/board-3d';
+import { CoTyPhuHUD } from '@/components/games/co-ty-phu/hud';
+import { useGameStore } from '@/lib/game-engine/gameStore';
+import { useRoomStore } from '@/lib/multiplayer/roomStore';
+import { executeBotTurn } from '@/lib/game-engine/botAI';
+import { peerService } from '@/lib/multiplayer/peerService';
+import { soundManager } from '@/lib/audio/soundManager';
+import { recordGameStats, getUserProfile } from '@/components/hub/hubHelpers';
+import { calculatePlayerNetWorth } from '@/components/games/co-ty-phu/hud/hudHelpers';
+
+function MonopolyGameContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const roomIdQuery = searchParams.get('roomId');
+  const modeQuery = searchParams.get('mode');
+
+  // GameStore hooks
+  const players = useGameStore((state) => state.players);
+  const activePlayerIndex = useGameStore((state) => state.activePlayerIndex);
+  const gamePhase = useGameStore((state) => state.gamePhase);
+  const winner = useGameStore((state) => state.winner);
+  const tiles = useGameStore((state) => state.tiles);
+  const initGame = useGameStore((state) => state.initGame);
+
+  const gameOver = gamePhase === 'GAME_OVER';
+
+  // RoomStore hooks
+  const room = useRoomStore();
+
+  // Local state
+  const [showQuitModal, setShowQuitModal] = useState(false);
+  const botRunningRef = useRef(false);
+  const statsRecordedRef = useRef(false);
+
+  // Initialize fallback game if players empty (e.g. direct URL visit)
+  useEffect(() => {
+    if (players.length === 0) {
+      const profile = getUserProfile();
+      // If direct navigation without init, create 1 human + 3 bots
+      initGame([
+        { id: 'player_human', name: profile.nickname, mascot: profile.mascot, isBot: false },
+        { id: 'player_bot_1', name: 'Bot Tí Nị 🤖', mascot: 'FOX', isBot: true },
+        { id: 'player_bot_2', name: 'Bot Thần Tài 💰', mascot: 'CAT', isBot: true },
+        { id: 'player_bot_3', name: 'Bot Thần Tốc ⚡', mascot: 'BUFFALO', isBot: true },
+      ]);
+    }
+  }, [players.length, initGame]);
+
+  // Online P2P Host State Synchronization
+  useEffect(() => {
+    if (room.mode === 'ONLINE_P2P' && room.isHost && (roomIdQuery || room.roomId)) {
+      const unsubscribe = useGameStore.subscribe((state) => {
+        peerService.broadcastStateSync(state);
+      });
+      return () => unsubscribe();
+    }
+  }, [room.mode, room.isHost, room.roomId, roomIdQuery]);
+
+  // Bot Automation Loop: When active player is bot and game is waiting or needs action
+  useEffect(() => {
+    if (gameOver) return;
+    const activePlayer = players[activePlayerIndex];
+    if (!activePlayer || !activePlayer.isBot) return;
+
+    // Guard against multiple concurrent bot turn executions
+    if (botRunningRef.current) return;
+
+    if (
+      gamePhase === 'WAITING' ||
+      gamePhase === 'ACTION_REQUIRED' ||
+      gamePhase === 'CARD_DRAWN'
+    ) {
+      botRunningRef.current = true;
+
+      // Realistic human-like delay (~1.2s) before bot executes turn
+      const timer = setTimeout(async () => {
+        try {
+          await executeBotTurn(useGameStore, { skipDelay: false });
+        } catch (err) {
+          console.error('Error during bot turn execution:', err);
+        } finally {
+          botRunningRef.current = false;
+        }
+      }, 1200);
+
+      return () => {
+        clearTimeout(timer);
+        botRunningRef.current = false;
+      };
+    }
+  }, [activePlayerIndex, gamePhase, gameOver, players]);
+
+  // Record Game Stats on GameOver
+  useEffect(() => {
+    if (gameOver && !statsRecordedRef.current) {
+      statsRecordedRef.current = true;
+
+      // Find local human player
+      const humanPlayer =
+        players.find((p) => p.id === room.myPlayerId) ||
+        players.find((p) => !p.isBot) ||
+        players[0];
+
+      if (humanPlayer) {
+        const won = winner?.id === humanPlayer.id;
+        const netWorth = calculatePlayerNetWorth(humanPlayer, tiles);
+        recordGameStats({ won, netWorth });
+        if (won) {
+          soundManager.playWinFanfare();
+        } else {
+          soundManager.playBankruptSound();
+        }
+      }
+    } else if (!gameOver) {
+      statsRecordedRef.current = false;
+    }
+  }, [gameOver, winner, players, tiles, room.myPlayerId]);
+
+  // Handle Quit
+  const handleQuitRequest = useCallback(() => {
+    if (gameOver) {
+      router.push('/');
+    } else {
+      setShowQuitModal(true);
+    }
+  }, [gameOver, router]);
+
+  const confirmQuit = () => {
+    soundManager.playClickSound();
+    if (room.roomId) {
+      peerService.disconnect();
+      useRoomStore.getState().resetRoom();
+    }
+    useGameStore.getState().resetGame();
+    router.push('/');
+  };
+
+  const cancelQuit = () => {
+    soundManager.playClickSound();
+    setShowQuitModal(false);
+  };
+
+  // Handle Restart
+  const handleRestart = useCallback(() => {
+    soundManager.playBuildSound();
+    statsRecordedRef.current = false;
+    const currentConfigs = players.map((p) => ({
+      id: p.id,
+      name: p.name,
+      mascot: p.mascot,
+      isBot: p.isBot,
+    }));
+    initGame(currentConfigs);
+  }, [players, initGame]);
+
+  return (
+    <main className="relative h-screen w-screen overflow-hidden bg-slate-950 select-none">
+      {/* 3D WebGL Viewport */}
+      <div className="absolute inset-0 z-0 h-full w-full">
+        <BoardCanvas
+          enableOrbit={true}
+          showMascots={true}
+          showBuildings={true}
+          showDice={true}
+          className="h-full w-full"
+        />
+      </div>
+
+      {/* 2D Responsive Game HUD Overlay */}
+      <CoTyPhuHUD onQuit={handleQuitRequest} onRestart={handleRestart} />
+
+      {/* Quit Confirmation Modal */}
+      {showQuitModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
+          <div
+            className="w-full max-w-sm rounded-2xl border border-rose-500/30 bg-slate-900/95 p-6 shadow-2xl text-white text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-rose-500/20 text-2xl">
+              🚪
+            </div>
+            <h3 className="mt-3 text-lg font-bold text-white">
+              Rời Ván Chơi Hiện Tại?
+            </h3>
+            <p className="mt-2 text-xs text-slate-300 leading-relaxed">
+              Bạn có chắc chắn muốn rời bàn đấu và quay về Cổng Game Tuổi Thơ?
+              Tiến trình ván chơi sẽ không được lưu.
+            </p>
+            <div className="mt-6 flex items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={cancelQuit}
+                className="flex-1 rounded-xl border border-slate-700 bg-slate-800 py-2.5 text-xs font-semibold text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
+              >
+                Tiếp Tục Chơi
+              </button>
+              <button
+                type="button"
+                onClick={confirmQuit}
+                className="flex-1 rounded-xl bg-gradient-to-r from-rose-500 to-red-600 py-2.5 text-xs font-bold text-white shadow-md shadow-rose-500/20 hover:brightness-110 active:scale-95 transition-all"
+              >
+                Xác Nhận Rời
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </main>
+  );
+}
+
+export default function MonopolyPlayPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-screen w-screen items-center justify-center bg-slate-950 text-white">
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-400 border-t-transparent" />
+            <p className="text-sm font-semibold text-amber-300">
+              Đang tải Đảo Ngọc Cờ Tỷ Phú 3D...
+            </p>
+          </div>
+        </div>
+      }
+    >
+      <MonopolyGameContent />
+    </Suspense>
+  );
+}
