@@ -237,11 +237,12 @@ export async function executeBotTurn(
   const actionSummary: string[] = [];
   const getState = () => store.getState();
 
-  const getAction = <T extends (...args: unknown[]) => unknown>(
+  const getAction = <T extends (...args: any[]) => any>(
     name: keyof BotTurnStore
   ): T | undefined => {
-    if (typeof (store as Record<string, unknown>)[name] === 'function') {
-      return (store as Record<string, unknown>)[name] as T;
+    const storeObj = store as unknown as Record<string, unknown>;
+    if (typeof storeObj[name] === 'function') {
+      return storeObj[name] as T;
     }
     const s = getState() as unknown as Record<string, unknown>;
     if (typeof s[name] === 'function') {
