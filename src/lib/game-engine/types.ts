@@ -79,6 +79,7 @@ export type GamePhase =
   | 'ROLLING'
   | 'MOVING'
   | 'ACTION'
+  | 'ACTION_REQUIRED'
   | 'CARD_DRAWN'
   | 'TURN_END'
   | 'GAME_OVER';
@@ -96,10 +97,12 @@ export interface GameState {
   dice: [number, number];
   isDouble: boolean;
   doubleStreak: number;
+  consecutiveDoubles?: number;
   gamePhase: GamePhase;
   jackpotFund: number;
   tiles: Tile[];
   currentCard: ChanceCard | null;
   winner: Player | null;
   eventLogs: string[];
+  currentRound?: number;
 }
