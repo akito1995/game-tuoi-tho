@@ -25,7 +25,7 @@ export const COLOR_GROUP_PALETTE: Record<ColorGroupType, string> = {
 };
 
 export const SPECIAL_TILE_COLORS: Record<string, string> = {
-  START: '#15803d',
+  START: '#b91c1c',
   JAIL: '#ea580c',
   FESTIVAL: '#e11d48',
   GO_TO_JAIL: '#dc2626',
@@ -68,108 +68,202 @@ function formatTileName(name: string, isCorner: boolean): string {
   return name.replace(/\s*\([^)]*\)/g, '');
 }
 
+/* =========================================================================
+   MINIATURE DIORAMA PROPS FOR SPECIAL TILES & REGULAR PROPERTIES
+   ========================================================================= */
+
+/**
+ * Traditional Red Torii / Asian Temple Gate at Corner 0 (Vũ Trụ NNL / Xuất Phát)
+ * Matches the reference image with tiered roofs, lanterns, and welcoming mini mascots.
+ */
+function StartToriiGate() {
+  return (
+    <group position={[0, 0.05, 0]}>
+      {/* Cobblestone Stone Plaza Threshold */}
+      <mesh position={[0, 0.015, 0]} receiveShadow>
+        <boxGeometry args={[1.9, 0.03, 1.9]} />
+        <meshStandardMaterial color="#64748b" roughness={0.9} />
+      </mesh>
+
+      {/* Red Lacquered Columns */}
+      <mesh position={[-0.72, 0.55, 0]} castShadow>
+        <cylinderGeometry args={[0.08, 0.1, 1.1, 8]} />
+        <meshStandardMaterial color="#b91c1c" roughness={0.35} />
+      </mesh>
+      <mesh position={[0.72, 0.55, 0]} castShadow>
+        <cylinderGeometry args={[0.08, 0.1, 1.1, 8]} />
+        <meshStandardMaterial color="#b91c1c" roughness={0.35} />
+      </mesh>
+
+      {/* Stone Pedestal Column Footings */}
+      <mesh position={[-0.72, 0.08, 0]} castShadow>
+        <cylinderGeometry args={[0.13, 0.15, 0.16, 8]} />
+        <meshStandardMaterial color="#475569" roughness={0.8} />
+      </mesh>
+      <mesh position={[0.72, 0.08, 0]} castShadow>
+        <cylinderGeometry args={[0.13, 0.15, 0.16, 8]} />
+        <meshStandardMaterial color="#475569" roughness={0.8} />
+      </mesh>
+
+      {/* Main Curved Horizontal Eave Beam */}
+      <mesh position={[0, 1.1, 0]} castShadow>
+        <boxGeometry args={[1.95, 0.16, 0.28]} />
+        <meshStandardMaterial color="#991b1b" roughness={0.3} />
+      </mesh>
+
+      {/* Upper Golden Accent Roof with Curved Eaves */}
+      <mesh position={[0, 1.25, 0]} castShadow>
+        <boxGeometry args={[1.7, 0.1, 0.36]} />
+        <meshStandardMaterial color="#f59e0b" roughness={0.25} metalness={0.7} />
+      </mesh>
+
+      {/* "VŨ TRỤ NNL" Golden Plaque Banner */}
+      <group position={[0, 0.96, 0.15]}>
+        <mesh>
+          <boxGeometry args={[0.85, 0.22, 0.04]} />
+          <meshStandardMaterial color="#78350f" roughness={0.4} />
+        </mesh>
+        <mesh position={[0, 0, 0.025]}>
+          <boxGeometry args={[0.78, 0.16, 0.01]} />
+          <meshStandardMaterial color="#facc15" metalness={0.8} roughness={0.2} />
+        </mesh>
+      </group>
+
+      {/* Hanging Red Lanterns */}
+      {[-0.6, 0.6].map((lx, i) => (
+        <group key={i} position={[lx, 0.88, 0.16]}>
+          <mesh castShadow>
+            <sphereGeometry args={[0.075, 8, 8]} />
+            <meshStandardMaterial color="#dc2626" roughness={0.4} />
+          </mesh>
+          <mesh position={[0, -0.09, 0]}>
+            <cylinderGeometry args={[0.015, 0.015, 0.04, 6]} />
+            <meshStandardMaterial color="#f59e0b" />
+          </mesh>
+        </group>
+      ))}
+
+      {/* Welcoming Squad: Miniature Mascot Figurines */}
+      {[
+        { x: -0.5, z: 0.55, c: '#ec4899' }, // Pig
+        { x: -0.2, z: 0.6, c: '#f97316' }, // Fox
+        { x: 0.2, z: 0.6, c: '#eab308' }, // Cat
+        { x: 0.5, z: 0.55, c: '#3b82f6' }, // Buffalo
+      ].map((m, i) => (
+        <group key={i} position={[m.x, 0.12, m.z]} scale={[0.65, 0.65, 0.65]}>
+          <mesh castShadow>
+            <sphereGeometry args={[0.09, 8, 8]} />
+            <meshStandardMaterial color={m.c} roughness={0.5} />
+          </mesh>
+          <mesh position={[0, -0.09, 0]} castShadow>
+            <cylinderGeometry args={[0.06, 0.08, 0.1, 6]} />
+            <meshStandardMaterial color="#1e293b" />
+          </mesh>
+        </group>
+      ))}
+    </group>
+  );
+}
+
+/**
+ * Carved Stone Mountain Cavern Tunnel Archway at Corner 8 (Côn Đảo / Vào Tù)
+ * Matches the reference image natural rock cave portal.
+ */
+function StoneCavernArch() {
+  return (
+    <group position={[0, 0.05, 0]}>
+      {/* Massive Carved Stone Cavern Arch */}
+      <mesh position={[0, 0.65, 0]} castShadow receiveShadow>
+        <torusGeometry args={[0.65, 0.32, 7, 12, Math.PI]} />
+        <meshStandardMaterial color="#475569" roughness={0.92} flatShading />
+      </mesh>
+
+      {/* Left Rocky Base Pillar */}
+      <mesh position={[-0.65, 0.38, 0]} castShadow receiveShadow>
+        <dodecahedronGeometry args={[0.42, 0]} />
+        <meshStandardMaterial color="#334155" roughness={0.95} flatShading />
+      </mesh>
+
+      {/* Right Rocky Base Pillar */}
+      <mesh position={[0.65, 0.38, 0]} castShadow receiveShadow>
+        <dodecahedronGeometry args={[0.42, 0]} />
+        <meshStandardMaterial color="#334155" roughness={0.95} flatShading />
+      </mesh>
+
+      {/* Deep Dark Cavern Void Portal */}
+      <mesh position={[0, 0.42, -0.08]}>
+        <circleGeometry args={[0.55, 16, 0, Math.PI]} />
+        <meshBasicMaterial color="#020617" />
+      </mesh>
+
+      {/* Stone Steps descending into darkness */}
+      <mesh position={[0, 0.1, 0.25]} receiveShadow>
+        <boxGeometry args={[0.7, 0.08, 0.35]} />
+        <meshStandardMaterial color="#64748b" roughness={0.85} />
+      </mesh>
+      <mesh position={[0, 0.05, 0.45]} receiveShadow>
+        <boxGeometry args={[0.85, 0.08, 0.3]} />
+        <meshStandardMaterial color="#475569" roughness={0.85} />
+      </mesh>
+
+      {/* Hanging Iron Mine Lantern */}
+      <mesh position={[0, 0.95, 0.22]} castShadow>
+        <boxGeometry args={[0.1, 0.14, 0.1]} />
+        <meshStandardMaterial
+          color="#f59e0b"
+          emissive="#f59e0b"
+          emissiveIntensity={1.2}
+        />
+      </mesh>
+    </group>
+  );
+}
+
 /**
  * 3D Prop on Corner & Special Tiles
  */
 function SpecialTileProp({ tileId }: { tileId: number }) {
-  // Tile 0: Xuất Phát (Cổng Làng Việt Nam)
-  if (tileId === 0) {
-    return (
-      <group position={[0, 0.05, 0]}>
-        {/* Golden Arch Pillar Left */}
-        <mesh position={[-0.7, 0.45, 0]} castShadow>
-          <cylinderGeometry args={[0.08, 0.1, 0.9, 8]} />
-          <meshStandardMaterial color="#dc2626" roughness={0.3} metalness={0.2} />
-        </mesh>
-        {/* Golden Arch Pillar Right */}
-        <mesh position={[0.7, 0.45, 0]} castShadow>
-          <cylinderGeometry args={[0.08, 0.1, 0.9, 8]} />
-          <meshStandardMaterial color="#dc2626" roughness={0.3} metalness={0.2} />
-        </mesh>
-        {/* Top Curved Beam */}
-        <mesh position={[0, 0.95, 0]} castShadow>
-          <boxGeometry args={[1.7, 0.16, 0.25]} />
-          <meshStandardMaterial color="#b91c1c" roughness={0.3} />
-        </mesh>
-        {/* Golden Dragon Roof Top */}
-        <mesh position={[0, 1.08, 0]} castShadow>
-          <boxGeometry args={[1.3, 0.08, 0.32]} />
-          <meshStandardMaterial color="#f59e0b" roughness={0.2} metalness={0.6} />
-        </mesh>
-      </group>
-    );
-  }
+  if (tileId === 0) return <StartToriiGate />;
+  if (tileId === 8) return <StoneCavernArch />;
 
-  // Tile 8: Trại Giam (Hàng rào gỗ & Tháp canh nhỏ)
-  if (tileId === 8) {
-    return (
-      <group position={[0, 0.05, 0]}>
-        {/* Stockade wooden fence */}
-        <mesh position={[0, 0.3, -0.6]} castShadow>
-          <boxGeometry args={[1.5, 0.55, 0.08]} />
-          <meshStandardMaterial color="#78350f" roughness={0.8} />
-        </mesh>
-        <mesh position={[-0.6, 0.3, 0]} rotation={[0, Math.PI / 2, 0]} castShadow>
-          <boxGeometry args={[1.2, 0.55, 0.08]} />
-          <meshStandardMaterial color="#78350f" roughness={0.8} />
-        </mesh>
-        {/* Mini Watchtower Roof */}
-        <mesh position={[0.4, 0.7, 0.4]} castShadow>
-          <coneGeometry args={[0.35, 0.4, 4]} />
-          <meshStandardMaterial color="#b45309" roughness={0.6} />
-        </mesh>
-      </group>
-    );
-  }
-
-  // Tile 16: Lễ Hội Dân Gian (Hộp quà may mắn & Cờ đuôi nheo)
+  // Tile 16: Lễ Hội Dân Gian (Hộp quà & Bông hoa may mắn)
   if (tileId === 16) {
     return (
       <group position={[0, 0.05, 0]}>
-        {/* Gift Box Base */}
-        <mesh position={[0, 0.22, 0]} castShadow>
-          <boxGeometry args={[0.55, 0.44, 0.55]} />
-          <meshStandardMaterial color="#e11d48" roughness={0.25} metalness={0.2} />
+        <mesh position={[0, 0.25, 0]} castShadow>
+          <boxGeometry args={[0.6, 0.48, 0.6]} />
+          <meshStandardMaterial color="#e11d48" roughness={0.3} />
         </mesh>
-        {/* Golden Ribbon Cross */}
-        <mesh position={[0, 0.22, 0]}>
-          <boxGeometry args={[0.57, 0.46, 0.14]} />
-          <meshStandardMaterial color="#fbbf24" roughness={0.15} metalness={0.7} />
+        <mesh position={[0, 0.25, 0]}>
+          <boxGeometry args={[0.62, 0.5, 0.16]} />
+          <meshStandardMaterial color="#fbbf24" metalness={0.7} roughness={0.2} />
         </mesh>
-        <mesh position={[0, 0.22, 0]}>
-          <boxGeometry args={[0.14, 0.46, 0.57]} />
-          <meshStandardMaterial color="#fbbf24" roughness={0.15} metalness={0.7} />
-        </mesh>
-        {/* Golden Bow on top */}
-        <mesh position={[0, 0.52, 0]} castShadow>
-          <sphereGeometry args={[0.12, 8, 8]} />
-          <meshStandardMaterial color="#f59e0b" roughness={0.1} metalness={0.8} />
+        <mesh position={[0, 0.25, 0]}>
+          <boxGeometry args={[0.16, 0.5, 0.62]} />
+          <meshStandardMaterial color="#fbbf24" metalness={0.7} roughness={0.2} />
         </mesh>
       </group>
     );
   }
 
-  // Tile 24: Vào Tù (Xe cảnh sát vui nhộn)
+  // Tile 24: Đi Vào Tù (Xe cảnh sát tuần tra)
   if (tileId === 24) {
     return (
       <group position={[0, 0.05, 0]} rotation={[0, -0.6, 0]}>
-        {/* Police Car Body */}
-        <mesh position={[0, 0.16, 0]} castShadow>
-          <boxGeometry args={[0.8, 0.22, 0.48]} />
-          <meshStandardMaterial color="#1e293b" roughness={0.3} />
+        <mesh position={[0, 0.18, 0]} castShadow>
+          <boxGeometry args={[0.85, 0.24, 0.5]} />
+          <meshStandardMaterial color="#0f172a" roughness={0.4} />
         </mesh>
-        {/* White Cabin Top */}
-        <mesh position={[0.05, 0.32, 0]} castShadow>
-          <boxGeometry args={[0.42, 0.18, 0.42]} />
+        <mesh position={[0.06, 0.34, 0]} castShadow>
+          <boxGeometry args={[0.44, 0.2, 0.44]} />
           <meshStandardMaterial color="#f8fafc" roughness={0.3} />
         </mesh>
-        {/* Red & Blue Siren */}
-        <mesh position={[0.05, 0.44, 0]}>
-          <boxGeometry args={[0.12, 0.08, 0.24]} />
+        <mesh position={[0.06, 0.48, 0]}>
+          <boxGeometry args={[0.12, 0.08, 0.26]} />
           <meshStandardMaterial
             color="#ef4444"
             emissive="#ef4444"
-            emissiveIntensity={1.5}
+            emissiveIntensity={1.8}
           />
         </mesh>
       </group>
@@ -177,6 +271,65 @@ function SpecialTileProp({ tileId }: { tileId: number }) {
   }
 
   return null;
+}
+
+/**
+ * Miniature Diorama House & Streetscape on Regular Property Tiles
+ * Gives each city tile the rich tactile model-town feel seen in the reference photo!
+ */
+function PropertyMiniatureHouse({
+  tileIndex,
+  colorGroup,
+}: {
+  tileIndex: number;
+  colorGroup?: ColorGroupType;
+}) {
+  const roofColors = ['#b45309', '#991b1b', '#0f766e', '#1e293b', '#4338ca'];
+  const roofColor = roofColors[tileIndex % roofColors.length];
+
+  return (
+    <group position={[0, 0.02, 0.25]} scale={[0.85, 0.85, 0.85]}>
+      {/* Miniature House Body */}
+      <mesh position={[-0.22, 0.16, 0]} castShadow receiveShadow>
+        <boxGeometry args={[0.38, 0.32, 0.32]} />
+        <meshStandardMaterial color="#fef3c7" roughness={0.7} />
+      </mesh>
+
+      {/* Terracotta/Slate Slanted Gable Roof */}
+      <mesh position={[-0.22, 0.38, 0]} rotation={[0, 0, 0]} castShadow>
+        <coneGeometry args={[0.3, 0.22, 4]} />
+        <meshStandardMaterial color={roofColor} roughness={0.5} />
+      </mesh>
+
+      {/* Tiny Stone Chimney */}
+      <mesh position={[-0.14, 0.45, 0.06]} castShadow>
+        <boxGeometry args={[0.06, 0.16, 0.06]} />
+        <meshStandardMaterial color="#64748b" roughness={0.9} />
+      </mesh>
+
+      {/* Miniature Street Lamp */}
+      <group position={[0.26, 0, -0.1]}>
+        <mesh position={[0, 0.2, 0]} castShadow>
+          <cylinderGeometry args={[0.015, 0.02, 0.4, 6]} />
+          <meshStandardMaterial color="#1e293b" roughness={0.6} />
+        </mesh>
+        <mesh position={[0, 0.42, 0]}>
+          <sphereGeometry args={[0.04, 8, 8]} />
+          <meshStandardMaterial
+            color="#fef08a"
+            emissive="#fef08a"
+            emissiveIntensity={1.2}
+          />
+        </mesh>
+      </group>
+
+      {/* Tiny Garden Picket Fence */}
+      <mesh position={[0.18, 0.06, 0.12]} castShadow>
+        <boxGeometry args={[0.28, 0.12, 0.03]} />
+        <meshStandardMaterial color="#d4b996" roughness={0.8} />
+      </mesh>
+    </group>
+  );
 }
 
 /**
@@ -194,11 +347,7 @@ function FloatingCardCube({ type }: { type: 'CHANCE' | 'FATE' }) {
   });
 
   return (
-    <mesh
-      ref={meshRef}
-      position={[0, 0.38, 0.4]}
-      castShadow
-    >
+    <mesh ref={meshRef} position={[0, 0.38, 0.35]} castShadow>
       <boxGeometry args={[0.26, 0.26, 0.26]} />
       <meshStandardMaterial
         color={isChance ? '#f59e0b' : '#6366f1'}
@@ -268,6 +417,12 @@ function SingleTile3D({
   const slabColor = isSelected ? '#fef08a' : activeHover ? '#ffffff' : '#f8fafc';
   const rimColor = isSelected ? '#eab308' : activeHover ? '#94a3b8' : '#cbd5e1';
 
+  const isRegularProperty =
+    !layout.isCorner &&
+    tile.type !== 'CHANCE' &&
+    tile.type !== 'FATE' &&
+    tile.type !== 'SPECIAL';
+
   return (
     <group
       ref={groupRef}
@@ -294,11 +449,7 @@ function SingleTile3D({
       }}
     >
       {/* 3D Base Slab with bevel shadow */}
-      <mesh
-        castShadow
-        receiveShadow
-        position={[0, -TILE_THICKNESS / 2, 0]}
-      >
+      <mesh castShadow receiveShadow position={[0, -TILE_THICKNESS / 2, 0]}>
         <boxGeometry args={[localWidth - 0.04, TILE_THICKNESS, localDepth - 0.04]} />
         <meshStandardMaterial
           color={slabColor}
@@ -333,11 +484,7 @@ function SingleTile3D({
 
       {/* Corner tile accent banner */}
       {layout.isCorner && (
-        <mesh
-          position={[0, 0.003, 0]}
-          castShadow={false}
-          receiveShadow
-        >
+        <mesh position={[0, 0.003, 0]} castShadow={false} receiveShadow>
           <boxGeometry args={[localWidth - 0.16, 0.012, localDepth - 0.16]} />
           <meshStandardMaterial
             color={bannerColor}
@@ -349,7 +496,7 @@ function SingleTile3D({
         </mesh>
       )}
 
-      {/* Special 3D Prop (Arch on Go, Jail stockade, Gift on Festival, Police car) */}
+      {/* Special 3D Prop (Torii Gate on Go, Stone Cavern on Jail, etc.) */}
       {layout.isCorner && <SpecialTileProp tileId={tile.id} />}
 
       {/* Floating 3D Cube for Chance & Fate */}
@@ -357,15 +504,19 @@ function SingleTile3D({
         <FloatingCardCube type={tile.type} />
       )}
 
-      {/* Tile Landmark Name */}
+      {/* Miniature House & Streetscape on Regular Properties */}
+      {isRegularProperty && (
+        <PropertyMiniatureHouse
+          tileIndex={tile.id}
+          colorGroup={tile.colorGroup}
+        />
+      )}
+
+      {/* Tile Landmark Name in Clear Typography */}
       <Text
-        position={[
-          0,
-          0.015,
-          layout.isCorner ? -0.45 : -0.1,
-        ]}
+        position={[0, 0.016, layout.isCorner ? -0.55 : -0.1]}
         rotation={[-Math.PI / 2, 0, 0]}
-        fontSize={layout.isCorner ? 0.24 : 0.18}
+        fontSize={layout.isCorner ? 0.22 : 0.17}
         color={layout.isCorner ? '#ffffff' : '#0f172a'}
         anchorX="center"
         anchorY="middle"
@@ -374,27 +525,6 @@ function SingleTile3D({
       >
         {displayName}
       </Text>
-
-      {/* Corner sub-label */}
-      {layout.isCorner && (
-        <Text
-          position={[0, 0.015, 0.5]}
-          rotation={[-Math.PI / 2, 0, 0]}
-          fontSize={0.18}
-          color="#fef08a"
-          anchorX="center"
-          anchorY="middle"
-          textAlign="center"
-        >
-          {tile.id === 0
-            ? '+200k'
-            : tile.id === 8
-              ? 'TÙ'
-              : tile.id === 16
-                ? 'LỘC'
-                : 'CẢNH SÁT'}
-        </Text>
-      )}
 
       {/* Price tag badge for regular properties */}
       {!layout.isCorner && priceDisplay && (

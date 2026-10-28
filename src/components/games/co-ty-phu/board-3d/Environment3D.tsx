@@ -11,13 +11,11 @@ interface CloudProps {
 }
 
 /**
- * High-Altitude Distant Fluffy Cloud (Never covers the board)
+ * High-Altitude Distant Fluffy Cloud (High in sky, never covers the board)
  */
-function HighSkyCloud({ initialPosition, scale = 1, speed = 0.03 }: CloudProps) {
+function HighSkyCloud({ initialPosition, scale = 1, speed = 0.025 }: CloudProps) {
   const groupRef = useRef<THREE.Group>(null);
-  const angleRef = useRef(
-    Math.atan2(initialPosition[2], initialPosition[0])
-  );
+  const angleRef = useRef(Math.atan2(initialPosition[2], initialPosition[0]));
   const radius = useMemo(
     () => Math.sqrt(initialPosition[0] ** 2 + initialPosition[2] ** 2),
     [initialPosition]
@@ -26,7 +24,7 @@ function HighSkyCloud({ initialPosition, scale = 1, speed = 0.03 }: CloudProps) 
 
   useFrame((_, delta) => {
     if (!groupRef.current) return;
-    angleRef.current += speed * delta * 0.1;
+    angleRef.current += speed * delta * 0.08;
     const x = Math.cos(angleRef.current) * radius;
     const z = Math.sin(angleRef.current) * radius;
     groupRef.current.position.set(x, baseHeight, z);
@@ -35,88 +33,79 @@ function HighSkyCloud({ initialPosition, scale = 1, speed = 0.03 }: CloudProps) 
 
   return (
     <group ref={groupRef} position={initialPosition} scale={[scale, scale, scale]}>
-      {/* Central puff */}
       <mesh castShadow={false}>
-        <sphereGeometry args={[1.6, 7, 7]} />
+        <sphereGeometry args={[1.8, 7, 7]} />
         <meshStandardMaterial
           color="#ffffff"
           roughness={0.9}
-          opacity={0.88}
+          opacity={0.85}
           transparent
         />
       </mesh>
-      {/* Left lobe */}
-      <mesh position={[-1.2, -0.2, 0.2]} castShadow={false}>
-        <sphereGeometry args={[1.2, 6, 6]} />
-        <meshStandardMaterial color="#f8fafc" roughness={0.9} opacity={0.88} transparent />
-      </mesh>
-      {/* Right lobe */}
-      <mesh position={[1.3, -0.15, -0.2]} castShadow={false}>
+      <mesh position={[-1.3, -0.2, 0.2]} castShadow={false}>
         <sphereGeometry args={[1.3, 6, 6]} />
-        <meshStandardMaterial color="#f8fafc" roughness={0.9} opacity={0.88} transparent />
+        <meshStandardMaterial color="#f8fafc" roughness={0.9} opacity={0.85} transparent />
       </mesh>
-      {/* Top puff */}
-      <mesh position={[-0.2, 0.8, -0.1]} castShadow={false}>
-        <sphereGeometry args={[1.0, 6, 6]} />
-        <meshStandardMaterial color="#ffffff" roughness={0.9} opacity={0.88} transparent />
+      <mesh position={[1.4, -0.15, -0.2]} castShadow={false}>
+        <sphereGeometry args={[1.4, 6, 6]} />
+        <meshStandardMaterial color="#f8fafc" roughness={0.9} opacity={0.85} transparent />
       </mesh>
     </group>
   );
 }
 
 /**
- * 3D Environment with cinematic lighting, warm directional sunlight, soft shadows,
- * and high-altitude background clouds.
+ * 3D Studio Environment with cinematic key sunlight, soft contact shadows,
+ * neutral studio fill, and atmospheric tabletop warmth matching the reference photo.
  */
 export function Environment3D() {
   const dirLightRef = useRef<THREE.DirectionalLight>(null);
 
   return (
     <group name="environment-3d">
-      {/* Atmospheric Soft Horizon Fog */}
-      <fog attach="fog" args={['#dbeafe', 32, 85]} />
+      {/* Studio Atmosphere Soft Ambient Fog */}
+      <fog attach="fog" args={['#e7e5e4', 36, 92]} />
 
-      {/* Ambient Warm Baseline Fill */}
-      <ambientLight color="#fffbeb" intensity={0.65} />
+      {/* Warm Studio Tabletop Baseline Ambient Light */}
+      <ambientLight color="#fdf4ff" intensity={0.72} />
 
-      {/* Hemisphere Sky / Ground Bounce Light */}
+      {/* Hemisphere Light: Cool Sky Ambient Bounce & Warm Wood Reflectance */}
       <hemisphereLight
         color="#bae6fd"
-        groundColor="#fef3c7"
-        intensity={0.8}
+        groundColor="#d97706"
+        intensity={0.65}
       />
 
-      {/* Cinematic Golden Sun (Main Key Light casting sharp & soft shadows) */}
+      {/* Main Studio Key Sun (Matches the shadow angle in reference photo: upper-left to bottom-right) */}
       <directionalLight
         ref={dirLightRef}
-        position={[14, 22, 12]}
+        position={[-15, 25, -12]}
         color="#fffbeb"
-        intensity={1.85}
+        intensity={2.15}
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
         shadow-camera-near={1.0}
-        shadow-camera-far={60}
-        shadow-camera-left={-14}
-        shadow-camera-right={14}
-        shadow-camera-top={14}
-        shadow-camera-bottom={-14}
+        shadow-camera-far={65}
+        shadow-camera-left={-16}
+        shadow-camera-right={16}
+        shadow-camera-top={16}
+        shadow-camera-bottom={-16}
         shadow-bias={-0.0003}
-        shadow-normalBias={0.02}
       />
 
-      {/* Secondary Soft Fill Light for rich rim contrast */}
+      {/* Studio Opposite Fill Light (Softens contrast on dark sides without casting harsh extra shadows) */}
       <directionalLight
-        position={[-14, 12, -12]}
-        color="#bfdbfe"
-        intensity={0.45}
+        position={[14, 16, 14]}
+        color="#fed7aa"
+        intensity={0.55}
+        castShadow={false}
       />
 
-      {/* High-Altitude Clouds in the distant sky (Never obscuring the board) */}
-      <HighSkyCloud initialPosition={[26, 18, -24]} scale={2.2} speed={0.04} />
-      <HighSkyCloud initialPosition={[-28, 20, 20]} scale={2.5} speed={0.035} />
-      <HighSkyCloud initialPosition={[30, 22, 18]} scale={2.0} speed={0.045} />
-      <HighSkyCloud initialPosition={[-24, 19, -28]} scale={2.4} speed={0.038} />
+      {/* Distant High Clouds around Horizon Rim */}
+      <HighSkyCloud initialPosition={[-24, 22, -22]} scale={2.4} speed={0.03} />
+      <HighSkyCloud initialPosition={[26, 24, -20]} scale={2.6} speed={0.02} />
+      <HighSkyCloud initialPosition={[-22, 23, 26]} scale={2.2} speed={0.025} />
     </group>
   );
 }
