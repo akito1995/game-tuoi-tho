@@ -50,6 +50,7 @@ export class MusicManager {
   private currentTrack: BgmTrackId = 'bgm.gameplay';
   private isPlaying = false;
   private isDucked = false;
+  private bgmMasterGain: GainNode | null = null;
   private stepIndex = 0;
   private loopTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -89,6 +90,15 @@ export class MusicManager {
     return ctx;
   }
 
+  private getMasterGain(ctx: AudioContext): GainNode {
+    if (!this.bgmMasterGain) {
+      this.bgmMasterGain = ctx.createGain();
+      this.bgmMasterGain.gain.setValueAtTime(this.isDucked ? 0.35 : 1.0, ctx.currentTime);
+      this.bgmMasterGain.connect(ctx.destination);
+    }
+    return this.bgmMasterGain;
+  }
+
   public playTrack(trackId: BgmTrackId): void {
     this.currentTrack = trackId;
     this.start();
@@ -114,6 +124,18 @@ export class MusicManager {
    */
   public setDucking(ducked: boolean): void {
     this.isDucked = ducked;
+    const ctx = this.ctx;
+    if (ctx && this.bgmMasterGain) {
+      try {
+        const t = ctx.currentTime;
+        const target = ducked ? 0.35 : 1.0;
+        const rampTime = ducked ? 0.08 : 0.16;
+        this.bgmMasterGain.gain.cancelScheduledValues(t);
+        this.bgmMasterGain.gain.setTargetAtTime(target, t, rampTime);
+      } catch {
+        // Safe fallback
+      }
+    }
   }
 
   private handleSettingsChange(): void {
@@ -156,7 +178,7 @@ export class MusicManager {
         gain.gain.exponentialRampToValueAtTime(0.001, t + duration * 0.95);
 
         osc.connect(gain);
-        gain.connect(ctx.destination);
+        gain.connect(this.getMasterGain(ctx));
         osc.start(t);
         osc.stop(t + duration * 0.95);
 
@@ -172,7 +194,7 @@ export class MusicManager {
           bassGain.gain.exponentialRampToValueAtTime(0.001, t + duration * 1.5);
 
           bassOsc.connect(bassGain);
-          bassGain.connect(ctx.destination);
+          bassGain.connect(this.getMasterGain(ctx));
           bassOsc.start(t);
           bassOsc.stop(t + duration * 1.5);
         }

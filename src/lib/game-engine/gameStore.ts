@@ -134,17 +134,25 @@ function processBankruptcy(
       };
     }
     if (creditorId && p.id === creditorId) {
+      const debtorPropertyIds = debtor.properties || [];
       return {
         ...p,
         money: p.money + cashRemaining,
+        properties: [...p.properties, ...debtorPropertyIds],
       };
     }
     return p;
   });
 
-  // Reclaim all properties owned by debtor
+  // Transfer properties to creditor if bankrupt due to rent, otherwise foreclose
   const updatedTiles = tiles.map((t) => {
     if (t.ownerId === debtor.id) {
+      if (creditorId) {
+        return {
+          ...t,
+          ownerId: creditorId,
+        };
+      }
       return {
         ...t,
         ownerId: null,
@@ -260,12 +268,23 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const state = get();
     if (state.gamePhase === 'GAME_OVER') return [1, 1];
 
-    const d1 = diceOverride !== undefined ? diceOverride[0] : Math.floor(Math.random() * 6) + 1;
-    const d2 = diceOverride !== undefined ? diceOverride[1] : Math.floor(Math.random() * 6) + 1;
+    let d1 = diceOverride !== undefined ? diceOverride[0] : Math.floor(Math.random() * 6) + 1;
+    let d2 = diceOverride !== undefined ? diceOverride[1] : Math.floor(Math.random() * 6) + 1;
+    
+    // Apply even/odd dice modifier if active and not manual override
+    let activePlayer = { ...state.players[state.activePlayerIndex] };
+    if (diceOverride === undefined && activePlayer.activeDiceModifier) {
+      const mod = activePlayer.activeDiceModifier;
+      if (mod === 'EVEN' && (d1 + d2) % 2 !== 0) {
+        d2 = (d2 % 6) + 1;
+      } else if (mod === 'ODD' && (d1 + d2) % 2 === 0) {
+        d2 = (d2 % 6) + 1;
+      }
+      activePlayer.activeDiceModifier = undefined;
+    }
+    
     const sum = d1 + d2;
     let isDouble = d1 === d2;
-
-    let activePlayer = { ...state.players[state.activePlayerIndex] };
     let newDoubleStreak = isDouble ? state.doubleStreak + 1 : 0;
     let currentJackpot = state.jackpotFund;
     const logs = [...state.eventLogs];
@@ -406,13 +425,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
       nextPhase = 'TURN_END';
     } else if (landedTile.type === 'FESTIVAL') {
       logs.push(
-        `${activePlayer.name} tham gia Lễ Hội Dân Gian và ẵm trọn Quỹ Heo Đất ${currentJackpot.toLocaleString(
-          'vi-VN'
-        )}đ!`
+        `🏮 ${activePlayer.name} tham gia Lễ Hội Dân Gian tại Sới Bầu Cua Đảo Ngọc!`
       );
-      activePlayer.money += currentJackpot;
-      currentJackpot = 20000;
-      nextPhase = 'TURN_END';
+      nextPhase = 'FESTIVAL_GAME';
     } else if (landedTile.type === 'CHANCE' || landedTile.type === 'FATE') {
       const deck = landedTile.type === 'CHANCE' ? CHANCE_CARDS : FATE_CARDS;
       const drawn = deck[Math.floor(Math.random() * deck.length)];
@@ -474,8 +489,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
             logs.push(`${activePlayer.name} bay thẳng tới ô [${target}] ${destTile.name}.`);
             if (destTile.ownerId && destTile.ownerId !== activePlayer.id) {
               const rent = calculateRent(destTile, tiles);
-              logs.push(`${activePlayer.name} phải trả tiền thuê ${rent.toLocaleString('vi-VN')}đ cho chủ sở hữu.`);
-              if (activePlayer.money >= rent) {
+              if (activePlayer.hasActiveShield) {
+                activePlayer.hasActiveShield = false;
+                logs.push(`🛡️ ${activePlayer.name} kích hoạt Khiên Bảo Hộ! Miễn phí tiền thuê ${rent.toLocaleString('vi-VN')}đ.`);
+              } else {
+                logs.push(`${activePlayer.name} phải trả tiền thuê ${rent.toLocaleString('vi-VN')}đ cho chủ sở hữu.`);
+                if (activePlayer.money >= rent) {
                 activePlayer.money -= rent;
                 const ownerIdx = state.players.findIndex((p) => p.id === destTile.ownerId);
                 if (ownerIdx !== -1) {
@@ -497,6 +516,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
                   eventLogs: logs,
                 });
                 return [d1, d2];
+              }
               }
             }
           }
@@ -562,6 +582,32 @@ export const useGameStore = create<GameStore>((set, get) => ({
         nextPhase = 'ACTION';
       } else {
         const rent = calculateRent(landedTile, tiles);
+        if (activePlayer.hasActiveShield) {
+          activePlayer.hasActiveShield = false;
+          logs.push(
+            `🛡️ ${activePlayer.name} kích hoạt Khiên Bảo Hộ! Miễn phí hoàn toàn tiền thuê ${rent.toLocaleString(
+              'vi-VN'
+            )}đ.`
+          );
+          nextPhase = isDouble && newDoubleStreak < 3 ? 'WAITING' : 'TURN_END';
+          const updatedPlayers = state.players.map((p, idx) =>
+            idx === state.activePlayerIndex ? activePlayer : p
+          );
+          set({
+            players: updatedPlayers,
+            tiles,
+            dice: [d1, d2],
+            isDouble,
+            doubleStreak: newDoubleStreak,
+            consecutiveDoubles: newDoubleStreak,
+            jackpotFund: currentJackpot,
+            currentCard,
+            gamePhase: nextPhase,
+            eventLogs: logs,
+          });
+          return [d1, d2];
+        }
+
         logs.push(
           `${activePlayer.name} phải trả tiền thuê ${rent.toLocaleString(
             'vi-VN'
@@ -1291,6 +1337,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const activePlayer = { ...state.players[state.activePlayerIndex] };
     const logs = [...state.eventLogs];
 
+    // Deduct bet amount from active player balance
+    activePlayer.money -= betAmount;
+
     // Roll 3 dice (0 to 5 for the 6 mascots)
     const d1 = Math.floor(Math.random() * 6);
     const d2 = Math.floor(Math.random() * 6);
@@ -1308,21 +1357,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
       isJackpot = true;
       winnings = betAmount * 3 + state.jackpotFund;
       newJackpot = 20000;
-      activePlayer.money += winnings;
+      activePlayer.money += (betAmount + winnings);
       logs.push(
-        🎉 TAM HOA BÃO LỚN!  đổ trúng 3 con , ẴM TRỌN QUỸ HEO ĐẤT và nhận +đ!
+        `🎉 TAM HOA BÃO LỚN! ${activePlayer.name} đổ trúng 3 con ${mascotNames[betMascot]}, ẴM TRỌN QUỸ HEO ĐẤT và nhận +${(betAmount + winnings).toLocaleString('vi-VN')}đ!`
       );
     } else if (matches > 0) {
       winnings = betAmount * matches;
-      activePlayer.money += winnings;
+      activePlayer.money += (betAmount + winnings);
       logs.push(
-        🎲  trúng  con  tại Hội Chợ Bầu Cua, nhận +đ!
+        `🎲 ${activePlayer.name} trúng ${matches} con ${mascotNames[betMascot]} tại Hội Chợ Bầu Cua, nhận +${(betAmount + winnings).toLocaleString('vi-VN')}đ!`
       );
     } else {
       winnings = 20000; // Festival consolation
       activePlayer.money += winnings;
       logs.push(
-        🎁  nhận quà lưu niệm Lễ Hội Dân Gian +20.000đ!
+        `🎁 ${activePlayer.name} nhận quà lưu niệm Lễ Hội Dân Gian +20.000đ!`
       );
     }
 

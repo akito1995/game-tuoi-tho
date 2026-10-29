@@ -10,6 +10,8 @@ import {
   Sparkles,
   Home,
   Flame,
+  Mic,
+  MicOff,
 } from 'lucide-react';
 import { useGameStore } from '@/lib/game-engine/gameStore';
 import { soundManager } from '@/lib/audio/soundManager';

@@ -13,6 +13,29 @@ export class VoiceManager {
   private lastVoiceTime = 0;
   private minCooldownMs = 2800; // 2.8s minimum cooldown between voice lines
   private isSpeaking = false;
+  private currentUtterance: SpeechSynthesisUtterance | null = null;
+  private duckingSafetyTimer: ReturnType<typeof setTimeout> | null = null;
+  private duckingListeners: Set<(ducked: boolean) => void> = new Set();
+
+  public getIsSpeaking(): boolean {
+    return this.isSpeaking;
+  }
+
+  public onDucking(listener: (ducked: boolean) => void): () => void {
+    this.duckingListeners.add(listener);
+    return () => this.duckingListeners.delete(listener);
+  }
+
+  private notifyDucking(ducked: boolean): void {
+    musicManager.setDucking(ducked);
+    this.duckingListeners.forEach((fn) => {
+      try {
+        fn(ducked);
+      } catch {
+        // Safe callback isolation
+      }
+    });
+  }
 
   public playVoice(characterId: CharacterId, trigger: VoiceTriggerId): boolean {
     const effectiveVol = audioSettings.getEffectiveVolume('voice');
@@ -34,9 +57,25 @@ export class VoiceManager {
     this.lastVoiceTime = now;
     const profile = CHARACTER_PROFILES[characterId];
 
+    // Clear any pending ducking safety recovery timer
+    if (this.duckingSafetyTimer) {
+      clearTimeout(this.duckingSafetyTimer);
+      this.duckingSafetyTimer = null;
+    }
+
     // Trigger BGM ducking
     this.isSpeaking = true;
-    musicManager.setDucking(true);
+    this.notifyDucking(true);
+
+    const onComplete = () => {
+      if (this.duckingSafetyTimer) {
+        clearTimeout(this.duckingSafetyTimer);
+        this.duckingSafetyTimer = null;
+      }
+      this.isSpeaking = false;
+      this.currentUtterance = null;
+      this.notifyDucking(false);
+    };
 
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       try {
@@ -48,29 +87,24 @@ export class VoiceManager {
         utterance.pitch = profile?.pitch || 1.0;
         utterance.rate = profile?.rate || 1.0;
 
-        utterance.onend = () => {
-          this.isSpeaking = false;
-          musicManager.setDucking(false);
-        };
+        utterance.onend = onComplete;
+        utterance.onerror = onComplete;
 
-        utterance.onerror = () => {
-          this.isSpeaking = false;
-          musicManager.setDucking(false);
-        };
+        // Keep persistent reference to prevent Chromium GC premature termination
+        this.currentUtterance = utterance;
+
+        // Fallback safety timeout (6.5s) to guarantee ducking restoration
+        this.duckingSafetyTimer = setTimeout(onComplete, 6500);
 
         window.speechSynthesis.speak(utterance);
         return true;
       } catch {
-        this.isSpeaking = false;
-        musicManager.setDucking(false);
+        onComplete();
       }
     } else {
       // Auto-restore ducking after estimated reading duration
       const estimatedDurationMs = Math.max(1500, match.textVi.length * 75);
-      setTimeout(() => {
-        this.isSpeaking = false;
-        musicManager.setDucking(false);
-      }, estimatedDurationMs);
+      this.duckingSafetyTimer = setTimeout(onComplete, estimatedDurationMs);
     }
 
     return true;
@@ -84,8 +118,13 @@ export class VoiceManager {
         // Safe fallback
       }
     }
+    if (this.duckingSafetyTimer) {
+      clearTimeout(this.duckingSafetyTimer);
+      this.duckingSafetyTimer = null;
+    }
     this.isSpeaking = false;
-    musicManager.setDucking(false);
+    this.currentUtterance = null;
+    this.notifyDucking(false);
   }
 }
 

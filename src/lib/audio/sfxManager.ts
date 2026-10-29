@@ -11,6 +11,8 @@ import { audioSettings } from './audioSettings';
 export class SfxManager {
   private ctx: AudioContext | null = null;
   private lastPlayTime: Map<SfxId, number> = new Map();
+  private lastP0PlayTime = 0;
+  private compressor: DynamicsCompressorNode | null = null;
   private cooldownMs: Record<SfxId, number> = {
     'ui.hover': 80,
     'ui.click': 60,
@@ -73,12 +75,41 @@ export class SfxManager {
     return ctx;
   }
 
+  private getDestination(ctx: AudioContext): AudioNode {
+    if (!this.compressor) {
+      try {
+        const comp = ctx.createDynamicsCompressor();
+        comp.threshold.setValueAtTime(-12, ctx.currentTime);
+        comp.knee.setValueAtTime(30, ctx.currentTime);
+        comp.ratio.setValueAtTime(12, ctx.currentTime);
+        comp.attack.setValueAtTime(0.003, ctx.currentTime);
+        comp.release.setValueAtTime(0.25, ctx.currentTime);
+        comp.connect(ctx.destination);
+        this.compressor = comp;
+      } catch {
+        return ctx.destination;
+      }
+    }
+    return this.compressor || ctx.destination;
+  }
+
+
   public play(id: SfxId, customVolume = 1.0): void {
     const effectiveVol = audioSettings.getEffectiveVolume('sfx') * customVolume;
     if (effectiveVol <= 0) return;
 
-    // Cooldown check
+    const priority = SFX_PRIORITY_MAP[id] || 'P2';
     const now = Date.now();
+
+    // Priority filter: Drop subtle P3 sounds (ui.hover, token.step) during climactic P0 events
+    if (priority === 'P3' && now - this.lastP0PlayTime < 1200) {
+      return;
+    }
+    if (priority === 'P0') {
+      this.lastP0PlayTime = now;
+    }
+
+    // Cooldown check
     const last = this.lastPlayTime.get(id) || 0;
     const minInterval = this.cooldownMs[id] || 80;
     if (now - last < minInterval) return;
@@ -96,6 +127,7 @@ export class SfxManager {
 
   private synthesizeSfx(id: SfxId, ctx: AudioContext, vol: number): void {
     const t = ctx.currentTime;
+    const dest = this.getDestination(ctx);
 
     switch (id) {
       case 'ui.click':
@@ -108,7 +140,7 @@ export class SfxManager {
         gain.gain.setValueAtTime(vol * 0.25, t);
         gain.gain.exponentialRampToValueAtTime(0.001, t + 0.035);
         osc.connect(gain);
-        gain.connect(ctx.destination);
+        gain.connect(dest);
         osc.start(t);
         osc.stop(t + 0.035);
         break;
@@ -124,7 +156,7 @@ export class SfxManager {
           gain.gain.setValueAtTime(vol * 0.35, st);
           gain.gain.exponentialRampToValueAtTime(0.001, st + 0.14);
           osc.connect(gain);
-          gain.connect(ctx.destination);
+          gain.connect(dest);
           osc.start(st);
           osc.stop(st + 0.14);
         });
@@ -150,7 +182,7 @@ export class SfxManager {
         g.gain.exponentialRampToValueAtTime(0.001, t + dur);
         src.connect(flt);
         flt.connect(g);
-        g.connect(ctx.destination);
+        g.connect(dest);
         src.start(t);
         break;
       }
@@ -164,7 +196,7 @@ export class SfxManager {
         g.gain.setValueAtTime(vol * 0.5, t);
         g.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
         osc.connect(g);
-        g.connect(ctx.destination);
+        g.connect(dest);
         osc.start(t);
         osc.stop(t + 0.08);
         break;
@@ -180,7 +212,7 @@ export class SfxManager {
           g.gain.setValueAtTime(vol * 0.4, st);
           g.gain.exponentialRampToValueAtTime(0.001, st + 0.2);
           osc.connect(g);
-          g.connect(ctx.destination);
+          g.connect(dest);
           osc.start(st);
           osc.stop(st + 0.2);
         });
@@ -196,7 +228,7 @@ export class SfxManager {
         g.gain.setValueAtTime(vol * 0.22, t);
         g.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
         osc.connect(g);
-        g.connect(ctx.destination);
+        g.connect(dest);
         osc.start(t);
         osc.stop(t + 0.06);
         break;
@@ -212,7 +244,7 @@ export class SfxManager {
           g.gain.setValueAtTime(vol * 0.35, st);
           g.gain.exponentialRampToValueAtTime(0.001, st + 0.2);
           osc.connect(g);
-          g.connect(ctx.destination);
+          g.connect(dest);
           osc.start(st);
           osc.stop(st + 0.2);
         });
@@ -229,7 +261,7 @@ export class SfxManager {
           g.gain.setValueAtTime(vol * 0.3, st);
           g.gain.exponentialRampToValueAtTime(0.001, st + 0.22);
           osc.connect(g);
-          g.connect(ctx.destination);
+          g.connect(dest);
           osc.start(st);
           osc.stop(st + 0.22);
         });
@@ -247,7 +279,7 @@ export class SfxManager {
           g.gain.setValueAtTime(vol * 0.35, st);
           g.gain.exponentialRampToValueAtTime(0.001, st + 0.28);
           osc.connect(g);
-          g.connect(ctx.destination);
+          g.connect(dest);
           osc.start(st);
           osc.stop(st + 0.28);
         });
@@ -263,7 +295,7 @@ export class SfxManager {
         g.gain.setValueAtTime(vol * 0.28, t);
         g.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
         osc.connect(g);
-        g.connect(ctx.destination);
+        g.connect(dest);
         osc.start(t);
         osc.stop(t + 0.16);
         break;
@@ -278,7 +310,7 @@ export class SfxManager {
         g.gain.setValueAtTime(vol * 0.5, t);
         g.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
         osc.connect(g);
-        g.connect(ctx.destination);
+        g.connect(dest);
         osc.start(t);
         osc.stop(t + 0.4);
         break;
@@ -294,7 +326,7 @@ export class SfxManager {
           g.gain.setValueAtTime(vol * 0.35, st);
           g.gain.exponentialRampToValueAtTime(0.001, st + 0.25);
           osc.connect(g);
-          g.connect(ctx.destination);
+          g.connect(dest);
           osc.start(st);
           osc.stop(st + 0.25);
         });
@@ -311,7 +343,7 @@ export class SfxManager {
           g.gain.setValueAtTime(vol * 0.45, st);
           g.gain.exponentialRampToValueAtTime(0.001, st + 0.45);
           osc.connect(g);
-          g.connect(ctx.destination);
+          g.connect(dest);
           osc.start(st);
           osc.stop(st + 0.45);
         });
@@ -329,7 +361,7 @@ export class SfxManager {
           g.gain.setValueAtTime(vol * 0.35, st);
           g.gain.exponentialRampToValueAtTime(0.001, st + 0.35);
           osc.connect(g);
-          g.connect(ctx.destination);
+          g.connect(dest);
           osc.start(st);
           osc.stop(st + 0.35);
         });
@@ -346,7 +378,7 @@ export class SfxManager {
           g.gain.setValueAtTime(vol * 0.5, st);
           g.gain.exponentialRampToValueAtTime(0.001, st + 0.4);
           osc.connect(g);
-          g.connect(ctx.destination);
+          g.connect(dest);
           osc.start(st);
           osc.stop(st + 0.4);
         });
@@ -362,7 +394,7 @@ export class SfxManager {
         g.gain.setValueAtTime(vol * 0.25, t);
         g.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
         osc.connect(g);
-        g.connect(ctx.destination);
+        g.connect(dest);
         osc.start(t);
         osc.stop(t + 0.1);
         break;

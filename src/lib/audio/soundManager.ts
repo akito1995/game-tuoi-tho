@@ -63,6 +63,7 @@ export class SoundManager {
   };
 
   private isBgmPlaying = false;
+  private isDucked = false;
   private bgmStep = 0;
   private bgmTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -72,6 +73,9 @@ export class SoundManager {
       this.customCtxProvided = true;
     }
     this.loadSettings();
+    voiceManager.onDucking((ducked) => {
+      this.isDucked = ducked;
+    });
   }
 
   // ==========================================
@@ -117,6 +121,10 @@ export class SoundManager {
     this.playCoinSound();
   }
 
+  public setDucking(ducked: boolean): void {
+    this.isDucked = ducked;
+  }
+
   public playVoice(characterId: CharacterId, trigger: VoiceTriggerId): boolean {
     return voiceManager.playVoice(characterId, trigger);
   }
@@ -152,6 +160,11 @@ export class SoundManager {
   public toggleSfx(enable?: boolean): boolean {
     this.settings.sfxEnabled = enable !== undefined ? enable : !this.settings.sfxEnabled;
     this.saveSettings();
+    if (this.settings.sfxEnabled) {
+      if (audioSettings.getSettings().sfxMuted) audioSettings.toggleSfxMute();
+    } else {
+      if (!audioSettings.getSettings().sfxMuted) audioSettings.toggleSfxMute();
+    }
     return this.settings.sfxEnabled;
   }
 
@@ -159,8 +172,10 @@ export class SoundManager {
     this.settings.bgmEnabled = enable !== undefined ? enable : !this.settings.bgmEnabled;
     this.saveSettings();
     if (this.settings.bgmEnabled) {
+      if (audioSettings.getSettings().bgmMuted) audioSettings.toggleBgmMute();
       this.startBgm();
     } else {
+      if (!audioSettings.getSettings().bgmMuted) audioSettings.toggleBgmMute();
       this.stopBgm();
     }
     return this.settings.bgmEnabled;
@@ -686,7 +701,8 @@ export class SoundManager {
       filter.frequency.setValueAtTime(1400, now);
       filter.Q.setValueAtTime(1, now);
 
-      const noteVolume = 0.16 * this.settings.volume;
+      const duckFactor = this.isDucked ? 0.35 : 1.0;
+      const noteVolume = 0.16 * this.settings.volume * duckFactor;
       gain.gain.setValueAtTime(0.001, now);
       gain.gain.linearRampToValueAtTime(noteVolume, now + 0.04);
       gain.gain.exponentialRampToValueAtTime(0.001, now + note.duration);
@@ -706,7 +722,7 @@ export class SoundManager {
         bassOsc.type = 'sine';
         bassOsc.frequency.setValueAtTime(note.bassFreq, now);
 
-        const bassVol = 0.12 * this.settings.volume;
+        const bassVol = 0.12 * this.settings.volume * duckFactor;
         bassGain.gain.setValueAtTime(bassVol, now);
         bassGain.gain.exponentialRampToValueAtTime(0.001, now + note.duration * 1.2);
 

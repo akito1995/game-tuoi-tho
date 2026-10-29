@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useMemo } from 'react';
+import React, { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
@@ -180,6 +180,15 @@ export function BoardTableFrame({
       }),
     []
   );
+
+  useEffect(() => {
+    return () => {
+      goldMetalMaterial.dispose();
+      whiteMarbleMaterial.dispose();
+      sandMaterial.dispose();
+      islandCliffMaterial.dispose();
+    };
+  }, [goldMetalMaterial, whiteMarbleMaterial, sandMaterial, islandCliffMaterial]);
 
   const rimWidth = (outerSize - innerSize) / 2;
   const halfOuter = outerSize / 2;
