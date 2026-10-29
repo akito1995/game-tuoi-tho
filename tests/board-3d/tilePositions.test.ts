@@ -5,9 +5,11 @@ import {
   CORNER_SIZE,
   TILE_WIDTH,
   TILE_DEPTH,
+  TILE_THICKNESS,
   TILE_SURFACE_Y,
   TILE_CENTER_OFFSET,
 } from '@/components/games/co-ty-phu/board-3d/tilePositions';
+import { BOARD_TILES } from '@/lib/game-engine/boardData';
 
 describe('3D Tile Positions & Perimeter Mapping', () => {
   it('should map all 32 tiles with valid numeric positions at TILE_SURFACE_Y', () => {
@@ -107,6 +109,33 @@ describe('3D Tile Positions & Perimeter Mapping', () => {
     expect(reg9.width).toBe(TILE_DEPTH);
     expect(reg9.depth).toBe(TILE_WIDTH);
     expect(reg9.side).toBe('WEST');
+  });
+
+  it('should verify Metropolis group tile IDs (28, 30, 31) and East side layout info', () => {
+    const metropolisTileIds = [28, 30, 31];
+
+    metropolisTileIds.forEach((id) => {
+      const tile = BOARD_TILES[id];
+      expect(tile).toBeDefined();
+      expect(tile.colorGroup).toBe('METROPOLIS');
+
+      const layout = getTileLayoutInfo(id);
+      expect(layout.side).toBe('EAST');
+      expect(layout.isCorner).toBe(false);
+      expect(layout.rotationY).toBeCloseTo(Math.PI / 2);
+      expect(layout.width).toBe(TILE_DEPTH);
+      expect(layout.depth).toBe(TILE_WIDTH);
+      expect(layout.height).toBe(TILE_THICKNESS);
+
+      const [x, y, z] = layout.position;
+      expect(x).toBeCloseTo(TILE_CENTER_OFFSET, 3);
+      expect(y).toBe(TILE_SURFACE_Y);
+      expect(Number.isFinite(z)).toBe(true);
+    });
+
+    expect(BOARD_TILES[28].name).toContain('Cảng Hải Phòng');
+    expect(BOARD_TILES[30].name).toContain('Thủ Đô Hà Nội');
+    expect(BOARD_TILES[31].name).toContain('TP. Hồ Chí Minh');
   });
 
   it('should handle modular arithmetic wrap-around gracefully', () => {

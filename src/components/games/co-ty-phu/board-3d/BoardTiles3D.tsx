@@ -64,6 +64,18 @@ function formatPrice(price?: number): string {
   return `${price.toLocaleString('vi-VN')}đ`;
 }
 
+function formatShortPrice(price?: number): string {
+  if (!price) return '';
+  if (price >= 1_000_000) {
+    const m = price / 1_000_000;
+    return `${m % 1 === 0 ? m : m.toFixed(1)}M`;
+  }
+  if (price >= 1_000) {
+    return `${Math.round(price / 1_000)}K`;
+  }
+  return `${price}`;
+}
+
 function formatTileName(name: string, isCorner: boolean): string {
   if (isCorner) {
     if (name.includes('Xuất Phát')) return 'XUẤT PHÁT';
@@ -402,7 +414,66 @@ function MiniTileLandmark({ tileId }: { tileId: number }) {
 }
 
 /* =========================================================================
-   SINGLE 3D TILE SLAB COMPONENT (Meta World High-End Ceramic Acrylic Finish)
+   OWNER CLAIM SPOTLIGHT / BEACON RING (Subtle Pulsing Neon Ground Ring)
+   ========================================================================= */
+function OwnerSpotlightRing({
+  color,
+  radius = 0.52,
+}: {
+  color: string;
+  radius?: number;
+}) {
+  const ringRef = useRef<THREE.Mesh>(null);
+
+  useFrame(({ clock }) => {
+    if (!ringRef.current) return;
+    const t = clock.getElapsedTime();
+    // Subtle breathing pulse: 0.95 -> 1.05 scale, dynamic opacity
+    const s = 1.0 + Math.sin(t * 3.0) * 0.06;
+    ringRef.current.scale.set(s, s, 1);
+    const mat = ringRef.current.material as THREE.MeshStandardMaterial;
+    if (mat) {
+      mat.opacity = 0.65 + Math.sin(t * 3.0) * 0.25;
+    }
+  });
+
+  return (
+    <group position={[0, 0.014, 0]}>
+      {/* Outer pulsing neon ring */}
+      <mesh
+        ref={ringRef}
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, 0.002, 0]}
+      >
+        <ringGeometry args={[radius * 0.74, radius, 32]} />
+        <meshStandardMaterial
+          color={color}
+          emissive={color}
+          emissiveIntensity={1.8}
+          transparent
+          opacity={0.8}
+          side={THREE.DoubleSide}
+          roughness={0.2}
+        />
+      </mesh>
+      {/* Subtle translucent floor beacon fill */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.001, 0]}>
+        <circleGeometry args={[radius * 0.72, 24]} />
+        <meshStandardMaterial
+          color={color}
+          emissive={color}
+          emissiveIntensity={0.5}
+          transparent
+          opacity={0.18}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+    </group>
+  );
+}
+
+/* =========================================================================
+   SINGLE 3D TILE SLAB COMPONENT (Tactile Porcelain Ceramic & Acrylic Finish)
    ========================================================================= */
 function SingleTile3D({
   tile,
@@ -416,9 +487,17 @@ function SingleTile3D({
   const [internalHover, setInternalHover] = useState(false);
   const activeHover = isHovered || internalHover;
 
+  const isMetropolis =
+    tile.colorGroup === 'METROPOLIS' ||
+    tile.id === 28 ||
+    tile.id === 30 ||
+    tile.id === 31;
+
   const players = useGameStore((state) => state.players || []);
   const owner = players.find((p) => p.id === tile.ownerId);
-  const ownerColor = owner ? OWNER_MASCOT_COLORS[owner.mascot] || '#10b981' : null;
+  const ownerColor = tile.ownerId
+    ? (owner ? OWNER_MASCOT_COLORS[owner.mascot] || '#10b981' : '#10b981')
+    : null;
 
   const currentYOffset = useRef(0);
 
@@ -459,8 +538,21 @@ function SingleTile3D({
       ? layout.depth
       : layout.width;
 
-  const slabColor = isSelected ? '#fef08a' : activeHover ? '#ffffff' : '#f8fafc';
-  const rimColor = isSelected ? '#f59e0b' : activeHover ? '#38bdf8' : '#cbd5e1';
+  const slabColor = isSelected
+    ? '#fef08a'
+    : activeHover
+      ? '#ffffff'
+      : isMetropolis
+        ? '#ffffff'
+        : '#f8fafc';
+
+  const rimColor = isSelected
+    ? '#f59e0b'
+    : activeHover
+      ? '#38bdf8'
+      : isMetropolis
+        ? '#f59e0b'
+        : '#cbd5e1';
 
   return (
     <group
@@ -487,7 +579,7 @@ function SingleTile3D({
         }
       }}
     >
-      {/* 3D Base Slab with High-Gloss Tactile Ceramic Acrylic Finish */}
+      {/* 3D Base Slab with High-Gloss Tactile Porcelain Finish */}
       <RoundedBox
         args={[localWidth - 0.06, TILE_THICKNESS, localDepth - 0.06]}
         radius={0.045}
@@ -496,12 +588,14 @@ function SingleTile3D({
         receiveShadow
         position={[0, -TILE_THICKNESS / 2, 0]}
       >
-        <meshStandardMaterial
+        <meshPhysicalMaterial
           color={slabColor}
-          roughness={0.14}
-          metalness={0.08}
-          emissive={isSelected ? '#ca8a04' : activeHover ? '#0284c7' : '#000000'}
-          emissiveIntensity={isSelected ? 0.35 : activeHover ? 0.2 : 0}
+          clearcoat={1.0}
+          clearcoatRoughness={0.08}
+          roughness={0.12}
+          metalness={0.05}
+          emissive={isSelected ? '#ca8a04' : activeHover ? '#0284c7' : isMetropolis ? '#1e3a8a' : '#000000'}
+          emissiveIntensity={isSelected ? 0.35 : activeHover ? 0.2 : isMetropolis ? 0.05 : 0}
         />
       </RoundedBox>
 
@@ -512,22 +606,49 @@ function SingleTile3D({
         smoothness={3}
         position={[0, -TILE_THICKNESS + 0.02, 0]}
       >
-        <meshStandardMaterial color={rimColor} roughness={0.18} metalness={0.82} />
+        <meshStandardMaterial
+          color={rimColor}
+          roughness={isMetropolis ? 0.12 : 0.18}
+          metalness={isMetropolis ? 0.95 : 0.82}
+        />
       </RoundedBox>
 
-      {/* Meta World City Street Infrastructure (Asphalt Road on Outer Edge) */}
+      {/* Meta World City Street Infrastructure (Asphalt Road & Curb Detailing on Outer Perimeter) */}
       {!layout.isCorner && (
         <group position={[0, 0.005, localDepth / 2 - 0.22]}>
-          {/* Dark Asphalt Road Bed */}
-          <mesh receiveShadow>
-            <boxGeometry args={[localWidth - 0.08, 0.016, 0.4]} />
-            <meshStandardMaterial color="#1e293b" roughness={0.88} />
+          {/* Raised Sidewalk Curb Stone */}
+          <mesh position={[0, 0.016, -0.21]} castShadow receiveShadow>
+            <boxGeometry args={[localWidth - 0.06, 0.024, 0.05]} />
+            <meshStandardMaterial
+              color={isMetropolis ? '#f1f5f9' : '#cbd5e1'}
+              roughness={0.35}
+              metalness={0.1}
+            />
           </mesh>
+
+          {/* Dark Asphalt Road Bed */}
+          <mesh receiveShadow position={[0, 0.008, 0]}>
+            <boxGeometry args={[localWidth - 0.06, 0.018, 0.4]} />
+            <meshStandardMaterial
+              color={isMetropolis ? '#0f172a' : '#1e293b'}
+              roughness={0.88}
+              metalness={0.05}
+            />
+          </mesh>
+
           {/* Yellow Dashed Highway Divider Line */}
-          <mesh position={[0, 0.01, 0]}>
-            <boxGeometry args={[localWidth * 0.45, 0.005, 0.03]} />
+          <mesh position={[0, 0.018, 0]}>
+            <boxGeometry args={[localWidth * 0.48, 0.004, 0.032]} />
             <meshBasicMaterial color="#facc15" />
           </mesh>
+
+          {/* Storm Drain Grate on Curb Edge for Metropolis */}
+          {isMetropolis && (
+            <mesh position={[localWidth / 2 - 0.22, 0.018, 0.12]} receiveShadow>
+              <boxGeometry args={[0.22, 0.005, 0.12]} />
+              <meshStandardMaterial color="#475569" metalness={0.85} roughness={0.25} />
+            </mesh>
+          )}
         </group>
       )}
 
@@ -566,20 +687,70 @@ function SingleTile3D({
             receiveShadow
             castShadow
           >
-            <meshStandardMaterial
-              color={bannerColor}
-              roughness={0.16}
-              metalness={0.25}
-              emissive={bannerColor}
-              emissiveIntensity={0.22}
+            <meshPhysicalMaterial
+              color={isMetropolis ? '#1d4ed8' : bannerColor}
+              clearcoat={isMetropolis ? 1.0 : 0.6}
+              clearcoatRoughness={isMetropolis ? 0.08 : 0.15}
+              roughness={isMetropolis ? 0.12 : 0.16}
+              metalness={isMetropolis ? 0.15 : 0.25}
+              emissive={isMetropolis ? '#2563eb' : bannerColor}
+              emissiveIntensity={isMetropolis ? 0.32 : 0.22}
             />
           </RoundedBox>
           {/* Gold Filigree Trim Bar */}
-          <mesh position={[0, 0.016, 0.22]}>
-            <boxGeometry args={[localWidth - 0.12, 0.008, 0.028]} />
-            <meshStandardMaterial color="#fbbf24" metalness={0.92} roughness={0.15} />
+          <mesh position={[0, 0.016, 0.22]} castShadow>
+            <boxGeometry args={[localWidth - 0.12, 0.01, 0.03]} />
+            <meshStandardMaterial
+              color="#f59e0b"
+              metalness={0.95}
+              roughness={0.1}
+            />
+          </mesh>
+          {/* Embossed Gold Filigree Medallion & Side Ornaments for Metropolis */}
+          {isMetropolis && (
+            <>
+              {/* Center golden crest seal */}
+              <mesh position={[0, 0.018, 0.22]} castShadow>
+                <cylinderGeometry args={[0.035, 0.035, 0.012, 12]} />
+                <meshStandardMaterial color="#f59e0b" metalness={0.95} roughness={0.1} />
+              </mesh>
+              {/* Left & Right filigree brackets */}
+              {[-localWidth / 2 + 0.16, localWidth / 2 - 0.16].map((x, i) => (
+                <mesh key={`filigree-trim-${i}`} position={[x, 0.018, 0.22]} castShadow>
+                  <sphereGeometry args={[0.022, 8, 8]} />
+                  <meshStandardMaterial color="#f59e0b" metalness={0.95} roughness={0.1} />
+                </mesh>
+              ))}
+            </>
+          )}
+        </group>
+      )}
+
+      {/* 3D Metropolis Gold Medal Seal on Tile Surface */}
+      {isMetropolis && (
+        <group position={[0, 0.012, 0.02]}>
+          <mesh castShadow receiveShadow>
+            <cylinderGeometry args={[0.11, 0.11, 0.02, 16]} />
+            <meshStandardMaterial
+              color="#f59e0b"
+              metalness={0.92}
+              roughness={0.18}
+            />
+          </mesh>
+          <mesh position={[0, 0.011, 0]}>
+            <cylinderGeometry args={[0.08, 0.08, 0.005, 16]} />
+            <meshStandardMaterial
+              color="#fef08a"
+              metalness={0.95}
+              roughness={0.1}
+            />
           </mesh>
         </group>
+      )}
+
+      {/* Owner Claim Spotlight / Beacon Ring on Tile Surface */}
+      {ownerColor && (
+        <OwnerSpotlightRing color={ownerColor} radius={localWidth * 0.35} />
       )}
 
       {/* Dynamic 3D Ownership Holographic Laser Fence & Neon Glow (Meta World Signature) */}
@@ -659,21 +830,59 @@ function SingleTile3D({
 
         {priceDisplay && !layout.isCorner && (
           <group position={[0, -0.22, 0]}>
-            <mesh position={[0, 0, -0.005]}>
-              <planeGeometry args={[0.92, 0.17]} />
-              <meshBasicMaterial color="#091322" transparent opacity={0.75} />
-            </mesh>
-            <Text
-              fontSize={0.13}
-              color="#fbbf24"
-              anchorX="center"
-              anchorY="middle"
-              outlineWidth={0.012}
-              outlineColor="#78350f"
-              fontWeight="bold"
-            >
-              {priceDisplay}
-            </Text>
+            {isMetropolis ? (
+              <group>
+                {/* 3D Raised Golden Cylinder Pill Medal */}
+                <mesh rotation={[Math.PI / 2, 0, 0]} scale={[3.6, 1, 1]} castShadow>
+                  <cylinderGeometry args={[0.11, 0.11, 0.02, 16]} />
+                  <meshStandardMaterial
+                    color="#f59e0b"
+                    metalness={0.92}
+                    roughness={0.18}
+                  />
+                </mesh>
+                {/* Inner Beveled Inset Gold Ring */}
+                <mesh position={[0, 0, 0.012]} rotation={[Math.PI / 2, 0, 0]} scale={[3.3, 1, 0.8]}>
+                  <cylinderGeometry args={[0.095, 0.095, 0.01, 16]} />
+                  <meshStandardMaterial
+                    color="#fef08a"
+                    metalness={0.95}
+                    roughness={0.12}
+                  />
+                </mesh>
+                {/* High-contrast bold numeral price text */}
+                <Text
+                  position={[0, 0, 0.02]}
+                  fontSize={0.12}
+                  color="#1e1b4b"
+                  anchorX="center"
+                  anchorY="middle"
+                  outlineWidth={0.008}
+                  outlineColor="#fef08a"
+                  fontWeight="bold"
+                >
+                  {formatShortPrice(tile.price)}
+                </Text>
+              </group>
+            ) : (
+              <>
+                <mesh position={[0, 0, -0.005]}>
+                  <planeGeometry args={[0.92, 0.17]} />
+                  <meshBasicMaterial color="#091322" transparent opacity={0.75} />
+                </mesh>
+                <Text
+                  fontSize={0.13}
+                  color="#fbbf24"
+                  anchorX="center"
+                  anchorY="middle"
+                  outlineWidth={0.012}
+                  outlineColor="#78350f"
+                  fontWeight="bold"
+                >
+                  {priceDisplay}
+                </Text>
+              </>
+            )}
           </group>
         )}
       </Billboard>
