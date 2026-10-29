@@ -20,9 +20,9 @@
    - Nội dung hiệu lực (ví dụ: "Nhận tiền mừng sinh nhật +200.000đ", "Nộp phạt vi phạm tốc độ -100.000đ", "Kim bài miễn phạt tù").
    - Nút xác nhận to bản, viền vàng kim, âm thanh vang nhẹ khi bấm.
 
-- [ ] Step 1.1: Bổ sung unit tests cho `ChanceCardModal` và các phân loại thẻ trong `tests/hud/hudComponents.test.ts`.
-- [ ] Step 1.2: Thiết kế lại `ChanceCardModal.tsx` với hiệu ứng bài 3D cao cấp và mưa vàng.
-- [ ] Step 1.3: Chạy vitest xác nhận test pass.
+- [x] Step 1.1: Bổ sung unit tests cho `ChanceCardModal` và các phân loại thẻ trong `tests/hud/hudComponents.test.ts`.
+- [x] Step 1.2: Thiết kế lại `ChanceCardModal.tsx` với hiệu ứng bài 3D cao cấp và mưa vàng.
+- [x] Step 1.3: Chạy vitest xác nhận test pass.
 
 ---
 
@@ -39,9 +39,9 @@
    - Bắn ra luồng 6-10 đồng tiền vàng 3D và tờ tiền Polymer bay theo đường cong parabol từ điểm gửi đến điểm nhận.
    - Hiệu ứng bung nổ xu vàng kèm âm thanh leng keng vui tai.
 
-- [ ] Step 2.1: Hiện thực hóa `FlyingMoneyVFX.tsx`.
-- [ ] Step 2.2: Tích hợp vào `CoTyPhuHUD.tsx` và export trong `hud/index.ts`.
-- [ ] Step 2.3: Viết unit tests kiểm tra rendering và kích hoạt hiệu ứng.
+- [x] Step 2.1: Hiện thực hóa `FlyingMoneyVFX.tsx`.
+- [x] Step 2.2: Tích hợp vào `CoTyPhuHUD.tsx` và export trong `hud/index.ts`.
+- [x] Step 2.3: Viết unit tests kiểm tra rendering và kích hoạt hiệu ứng.
 
 ---
 
@@ -59,9 +59,9 @@
 2. **TurnTimerBar (Đồng hồ đếm ngược lượt 60s)**:
    - Hiển thị thanh đếm thời gian với màu chuyển biến: Xanh lục (>30s) -> Vàng hổ phách (15-30s) -> Đỏ nhấp nháy khẩn cấp (<15s).
 
-- [ ] Step 3.1: Hoàn thiện `TurnTimerBar.tsx`, `PlayerListBar.tsx`, `GameHeader.tsx`.
-- [ ] Step 3.2: Chạy toàn bộ vitest suite và `npm run build`.
-- [ ] Step 3.3: Commit: `feat(art-stage-5): upgrade commercial arcade glassmorphic hud, 3d fortune cards and parabolic flying money vfx`.
+- [x] Step 3.1: Hoàn thiện `TurnTimerBar.tsx`, `PlayerListBar.tsx`, `GameHeader.tsx`.
+- [x] Step 3.2: Chạy toàn bộ vitest suite và `npm run build`.
+- [x] Step 3.3: Commit: `feat(art-stage-5): upgrade commercial arcade glassmorphic hud, 3d fortune cards and parabolic flying money vfx`.
 
 ---
 
@@ -69,6 +69,6 @@
 **Files:**
 - Test: Full Vitest suite & Next.js production build
 
-- [ ] Step 4.1: Chạy toàn bộ vitest (>210 tests 100% pass).
-- [ ] Step 4.2: Chạy Next.js production build kiểm tra TypeScript và bundling.
-- [ ] Step 4.3: Review bởi Task Reviewer subagent và phê duyệt hoàn thành toàn bộ 5 giai đoạn.
+- [x] Step 4.1: Chạy toàn bộ vitest (>210 tests 100% pass).
+- [x] Step 4.2: Chạy Next.js production build kiểm tra TypeScript và bundling.
+- [x] Step 4.3: Review bởi Task Reviewer subagent và phê duyệt hoàn thành toàn bộ 5 giai đoạn.
