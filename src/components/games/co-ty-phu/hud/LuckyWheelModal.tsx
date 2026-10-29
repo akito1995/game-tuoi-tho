@@ -79,6 +79,9 @@ export function LuckyWheelModal() {
       setIsSpinning(false);
       setIsFinished(true);
       soundManager.playWinFanfare();
+      if (activePlayer?.mascot) {
+        soundManager.playMascotVoice(activePlayer.mascot, 'event.lucky');
+      }
       if (isBot) {
         setTimeout(() => {
           handleFinish();

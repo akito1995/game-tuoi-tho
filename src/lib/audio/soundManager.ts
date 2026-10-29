@@ -8,6 +8,13 @@
  * Fully SSR-safe, Node.js-safe, and gracefully handles browser audio autoplay policies.
  */
 
+import { CharacterId, VoiceTriggerId, SfxId, BgmTrackId } from './types';
+import { voiceManager } from './voiceManager';
+import { sfxManager } from './sfxManager';
+import { musicManager } from './musicManager';
+import { audioSettings } from './audioSettings';
+import type { MascotType } from '@/lib/game-engine/types';
+
 export interface SoundSettings {
   bgmEnabled: boolean;
   sfxEnabled: boolean;
@@ -105,6 +112,33 @@ export class SoundManager {
   // ==========================================
   // Settings & Persistence
   // ==========================================
+
+  public playCashSound(): void {
+    this.playCoinSound();
+  }
+
+  public playVoice(characterId: CharacterId, trigger: VoiceTriggerId): boolean {
+    return voiceManager.playVoice(characterId, trigger);
+  }
+
+  public playMascotVoice(mascot?: MascotType, trigger: VoiceTriggerId = 'turn.start'): boolean {
+    const map: Record<string, CharacterId> = {
+      PIG: 'CHAR_01',
+      FOX: 'CHAR_02',
+      CAT: 'CHAR_03',
+      BUFFALO: 'CHAR_04',
+    };
+    const charId = mascot ? map[mascot] || 'CHAR_01' : 'CHAR_01';
+    return voiceManager.playVoice(charId, trigger);
+  }
+
+  public playSfx(id: SfxId): void {
+    sfxManager.play(id);
+  }
+
+  public playMusic(trackId: BgmTrackId): void {
+    musicManager.playTrack(trackId);
+  }
 
   public getSettings(): SoundSettings {
     return { ...this.settings };

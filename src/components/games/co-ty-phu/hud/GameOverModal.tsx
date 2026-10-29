@@ -30,6 +30,9 @@ export function GameOverModal({ onRestart }: GameOverModalProps) {
     if (isOpen && !fanfarePlayed.current) {
       fanfarePlayed.current = true;
       soundManager.playWinFanfare();
+      if (winner?.mascot) {
+        soundManager.playMascotVoice(winner.mascot, 'victory');
+      }
 
       // Fire celebratory confetti sequence
       if (typeof window !== 'undefined') {

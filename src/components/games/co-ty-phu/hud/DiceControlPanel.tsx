@@ -80,6 +80,9 @@ export function DiceControlPanel({ className = '' }: DiceControlPanelProps) {
   const handleRollDice = () => {
     if (!canRoll) return;
     soundManager.playDiceRoll();
+    if (activePlayer?.mascot) {
+      soundManager.playMascotVoice(activePlayer.mascot, 'dice.roll');
+    }
 
     const result = rollDice();
     if (result[0] === result[1]) {

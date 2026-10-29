@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useGameStore } from '@/lib/game-engine/gameStore';
 import { soundManager } from '@/lib/audio/soundManager';
+import { audioSettings } from '@/lib/audio/audioSettings';
 import { formatMoney } from './hudHelpers';
 
 export interface GameHeaderProps {
@@ -25,14 +26,22 @@ export function GameHeader({ onOpenRules, onQuit, className = '' }: GameHeaderPr
   const currentRound = useGameStore((state) => state.currentRound || 1);
   const jackpotFund = useGameStore((state) => state.jackpotFund || 0);
 
-  // Sound settings state synced with soundManager
+  // Sound settings state synced with soundManager & audioSettings
   const [bgmEnabled, setBgmEnabled] = useState(true);
   const [sfxEnabled, setSfxEnabled] = useState(true);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
 
   useEffect(() => {
     const s = soundManager.getSettings();
+    const as = audioSettings.getSettings();
     setBgmEnabled(s.bgmEnabled);
     setSfxEnabled(s.sfxEnabled);
+    setVoiceEnabled(!as.voiceMuted);
+
+    const unsub = audioSettings.subscribe((st) => {
+      setVoiceEnabled(!st.voiceMuted);
+    });
+    return unsub;
   }, []);
 
   const handleToggleBgm = () => {
@@ -45,6 +54,12 @@ export function GameHeader({ onOpenRules, onQuit, className = '' }: GameHeaderPr
     const updated = soundManager.toggleSfx();
     setSfxEnabled(updated);
     if (updated) soundManager.playClickSound();
+  };
+
+  const handleToggleVoice = () => {
+    const isMuted = audioSettings.toggleVoiceMute();
+    setVoiceEnabled(!isMuted);
+    if (sfxEnabled) soundManager.playClickSound();
   };
 
   const handleRulesClick = () => {
@@ -163,6 +178,24 @@ export function GameHeader({ onOpenRules, onQuit, className = '' }: GameHeaderPr
               <Volume2 className="h-3.5 w-3.5" />
             ) : (
               <VolumeX className="h-3.5 w-3.5" />
+            )}
+          </button>
+
+          {/* Voice Toggle */}
+          <button
+            onClick={handleToggleVoice}
+            title={voiceEnabled ? 'Tắt lồng tiếng nhân vật (Voice)' : 'Bật lồng tiếng nhân vật (Voice)'}
+            aria-label="Chuyển đổi giọng nói nhân vật"
+            className={`flex h-7 w-7 items-center justify-center rounded-lg transition-all ${
+              voiceEnabled
+                ? 'bg-gradient-to-tr from-amber-400 to-yellow-500 text-slate-950 font-bold shadow-md shadow-amber-500/30'
+                : 'text-slate-500 hover:text-slate-300'
+            }`}
+          >
+            {voiceEnabled ? (
+              <Mic className="h-3.5 w-3.5" />
+            ) : (
+              <MicOff className="h-3.5 w-3.5" />
             )}
           </button>
         </div>

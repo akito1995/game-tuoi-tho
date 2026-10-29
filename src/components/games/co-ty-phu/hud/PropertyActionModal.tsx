@@ -154,6 +154,9 @@ export function PropertyActionModal({
     const success = buyOrUpgradeProperty(tile.id, targetTier);
     if (success) {
       soundManager.playBuildSound();
+      if (activePlayer?.mascot) {
+        soundManager.playMascotVoice(activePlayer.mascot, 'property.buy');
+      }
     }
     onClose?.();
   };

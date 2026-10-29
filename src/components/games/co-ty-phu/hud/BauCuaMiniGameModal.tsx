@@ -76,7 +76,12 @@ export function BauCuaMiniGameModal() {
       setIsShaking(false);
       setIsRevealed(true);
 
-      if (res.isJackpot || res.matches >= 2) {
+      if (res.isJackpot) {
+        soundManager.playWinFanfare();
+        if (activePlayer?.mascot) {
+          soundManager.playMascotVoice(activePlayer.mascot, 'jackpot');
+        }
+      } else if (res.matches >= 2) {
         soundManager.playWinFanfare();
       } else {
         soundManager.playCashSound();
