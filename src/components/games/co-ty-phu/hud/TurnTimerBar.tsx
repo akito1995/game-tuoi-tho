@@ -71,36 +71,40 @@ export function TurnTimerBar({ turnTimeLimitSeconds = 60 }: TurnTimerBarProps) {
   return (
     <div className="flex items-center justify-center">
       <div
-        className={`flex items-center gap-2 rounded-full px-4 py-1.5 shadow-lg backdrop-blur-md transition-all duration-300 ${
+        className={`flex items-center gap-2.5 rounded-full px-5 py-2 shadow-2xl backdrop-blur-xl transition-all duration-300 border ${
           isBot
-            ? 'bg-slate-900/80 text-sky-200 ring-1 ring-sky-400/40'
+            ? 'bg-slate-950/90 text-sky-200 border-sky-400/50 ring-2 ring-sky-500/30 shadow-sky-500/20'
             : isLowTime
-              ? 'bg-rose-950/90 text-rose-200 ring-2 ring-rose-500 animate-pulse'
-              : 'bg-amber-950/80 text-amber-200 ring-1 ring-amber-400/50'
+              ? 'bg-rose-950/95 text-rose-100 border-rose-500 ring-4 ring-rose-500/60 animate-pulse shadow-rose-500/40'
+              : 'bg-gradient-to-r from-emerald-950/95 via-slate-950/95 to-emerald-950/95 text-emerald-100 border-emerald-400 ring-4 ring-emerald-400/40 shadow-emerald-500/30 animate-pulse'
         }`}
       >
         {/* Icon & Status */}
         {isBot ? (
-          <div className="flex items-center gap-1.5">
-            <Bot className="h-4 w-4 text-sky-400 animate-bounce" />
-            <span className="text-xs sm:text-sm font-semibold text-slate-100">
-              {activePlayer.name} đang tính toán...
+          <div className="flex items-center gap-2">
+            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-sky-500/20 border border-sky-400">
+              <Bot className="h-3.5 w-3.5 text-sky-300 animate-bounce" />
+            </div>
+            <span className="text-xs sm:text-sm font-bold text-sky-100">
+              🤖 Lượt của Máy: <strong className="text-amber-300">{activePlayer.name}</strong> (đang tính toán...)
             </span>
-            <div className="flex gap-0.5 ml-1">
+            <div className="flex gap-1 ml-1.5">
               <span className="h-1.5 w-1.5 rounded-full bg-sky-400 animate-ping" />
               <span className="h-1.5 w-1.5 rounded-full bg-sky-400 animate-ping delay-100" />
             </div>
           </div>
         ) : (
-          <div className="flex items-center gap-2">
-            <User className="h-4 w-4 text-amber-400" />
-            <span className="text-xs sm:text-sm font-semibold text-amber-100">
-              Đến lượt: <strong className="text-amber-300">{activePlayer.name}</strong>
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-tr from-amber-400 to-yellow-500 text-slate-950 shadow-md ring-2 ring-yellow-200 animate-bounce">
+              <span className="text-xs">🎲</span>
+            </div>
+            <span className="text-xs sm:text-sm font-black text-white">
+              👑 LƯỢT CỦA BẠN: <strong className="text-amber-300 text-glow-gold">{activePlayer.name}</strong>
             </span>
             {gamePhase !== 'GAME_OVER' && (
               <div
-                className={`flex items-center gap-1 font-mono text-xs sm:text-sm font-black px-2 py-0.5 rounded-full ${
-                  isLowTime ? 'bg-rose-600 text-white' : 'bg-amber-500/30 text-amber-300'
+                className={`flex items-center gap-1 font-mono text-xs sm:text-sm font-black px-2.5 py-0.5 rounded-full shadow ${
+                  isLowTime ? 'bg-rose-600 text-white animate-bounce' : 'bg-amber-400 text-slate-950 ring-1 ring-yellow-200'
                 }`}
               >
                 <Clock className="h-3 w-3" />

@@ -174,12 +174,12 @@ export function DiceControlPanel({ className = '' }: DiceControlPanelProps) {
         {canRoll ? (
           <button
             onClick={handleRollDice}
-            className={`flex flex-1 items-center justify-center gap-2.5 rounded-2xl px-5 py-3.5 text-base font-black uppercase tracking-wider text-slate-950 ${
-              isDouble ? 'btn-meta-double' : 'btn-meta-roll'
-            }`}
+            className={`flex flex-1 items-center justify-center gap-2.5 rounded-2xl px-5 py-3.5 text-base font-black uppercase tracking-wider text-slate-950 cursor-pointer ${
+              !activePlayer?.isBot ? 'ring-4 ring-amber-300 shadow-2xl shadow-amber-400 animate-pulse' : ''
+            } ${isDouble ? 'btn-meta-double' : 'btn-meta-roll'}`}
           >
-            <Dices className="h-6 w-6 fill-slate-950" />
-            <span>{isDouble ? 'ĐỔ TIẾP (SỐ ĐÔI)' : 'ĐỔ XÚC XẮC'}</span>
+            <Dices className="h-6 w-6 fill-slate-950 animate-bounce" />
+            <span>{!activePlayer?.isBot ? (isDouble ? '👉 ĐỔ TIẾP (SỐ ĐÔI)' : '👉 NHẤN ĐỔ XÚC XẮC') : '🤖 MÁY ĐANG ĐỔ...'}</span>
             <Sparkles className="h-5 w-5 fill-slate-950 animate-spin" />
           </button>
         ) : canEnd ? (

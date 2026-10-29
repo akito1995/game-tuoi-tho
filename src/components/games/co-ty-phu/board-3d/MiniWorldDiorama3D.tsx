@@ -114,28 +114,155 @@ function GiantFloatingPearl() {
 }
 
 /**
- * 2. LUSH TROPICAL RESORT KNOLL (Low-profile, never blocks board view)
+ * 2A. LUXURY RESORT POOL KNOLL (North-West)
+ * Sculpted terraced limestone cliff with azure pool, sun loungers & beach parasol
  */
-function TropicalResortKnoll({
-  position,
-  scale = [1, 1, 1],
-  rotationY = 0,
-}: {
-  position: [number, number, number];
-  scale?: [number, number, number];
-  rotationY?: number;
-}) {
+function ResortPoolKnoll({ position }: { position: [number, number, number] }) {
   return (
-    <group position={position} scale={scale} rotation={[0, rotationY, 0]}>
-      {/* Smooth rounded emerald grassy mound */}
+    <group position={position}>
+      {/* Terraced Rock Cliff Base */}
+      <mesh position={[0, 0.12, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[1.35, 1.55, 0.24, 16]} />
+        <meshStandardMaterial color="#64748b" roughness={0.85} />
+      </mesh>
+      {/* Manicured Emerald Lawn */}
       <mesh position={[0, 0.28, 0]} castShadow receiveShadow>
-        <sphereGeometry args={[0.9, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <cylinderGeometry args={[1.25, 1.35, 0.14, 16]} />
+        <meshStandardMaterial color="#15803d" roughness={0.7} />
+      </mesh>
+      {/* Azure Swimming Pool Basin */}
+      <mesh position={[-0.15, 0.36, -0.05]} receiveShadow>
+        <boxGeometry args={[0.9, 0.06, 0.6]} />
+        <meshStandardMaterial color="#0284c7" roughness={0.1} />
+      </mesh>
+      {/* Translucent Turquoise Water */}
+      <mesh position={[-0.15, 0.38, -0.05]}>
+        <boxGeometry args={[0.82, 0.02, 0.52]} />
+        <meshStandardMaterial color="#38bdf8" transparent opacity={0.88} roughness={0.05} />
+      </mesh>
+      {/* White Ceramic Pool Coping Trim */}
+      <mesh position={[-0.15, 0.39, -0.05]}>
+        <boxGeometry args={[0.94, 0.015, 0.64]} />
+        <meshStandardMaterial color="#f8fafc" roughness={0.2} />
+      </mesh>
+      {/* Beach Sun Loungers */}
+      <mesh position={[0.42, 0.38, -0.15]} rotation={[0, -0.2, 0]} castShadow>
+        <boxGeometry args={[0.34, 0.05, 0.15]} />
+        <meshStandardMaterial color="#f1f5f9" roughness={0.5} />
+      </mesh>
+      {/* Red & White Striped Beach Parasol */}
+      <group position={[0.48, 0.38, 0.22]}>
+        <mesh position={[0, 0.25, 0]} castShadow>
+          <cylinderGeometry args={[0.015, 0.015, 0.5, 6]} />
+          <meshStandardMaterial color="#f8fafc" metalness={0.5} />
+        </mesh>
+        <mesh position={[0, 0.48, 0]} castShadow>
+          <coneGeometry args={[0.28, 0.14, 8]} />
+          <meshStandardMaterial color="#ef4444" roughness={0.4} />
+        </mesh>
+      </group>
+      {/* Blooming Tropical Flower Bushes */}
+      <mesh position={[-0.65, 0.38, 0.25]} castShadow>
+        <dodecahedronGeometry args={[0.12, 0]} />
+        <meshStandardMaterial color="#f43f5e" roughness={0.9} />
+      </mesh>
+    </group>
+  );
+}
+
+/**
+ * 2B. COASTAL LIGHTHOUSE KNOLL (South-East)
+ * Miniature lighthouse on terraced karst with golden lantern beacon
+ */
+function LighthouseKnoll({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position}>
+      {/* Stepped Karst Foundation */}
+      <mesh position={[0, 0.14, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[1.2, 1.45, 0.28, 14]} />
+        <meshStandardMaterial color="#475569" roughness={0.9} />
+      </mesh>
+      <mesh position={[0, 0.32, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.95, 1.15, 0.12, 14]} />
         <meshStandardMaterial color="#16a34a" roughness={0.75} />
       </mesh>
-      {/* Terraced stone contour ledge */}
-      <mesh position={[0, 0.12, 0]} receiveShadow>
+      {/* Whitewashed Lighthouse Tower */}
+      <group position={[0.1, 0.38, 0]}>
+        <mesh position={[0, 0.35, 0]} castShadow>
+          <cylinderGeometry args={[0.14, 0.24, 0.7, 10]} />
+          <meshStandardMaterial color="#f8fafc" roughness={0.4} />
+        </mesh>
+        {/* Red Stripe Band */}
+        <mesh position={[0, 0.38, 0]} castShadow>
+          <cylinderGeometry args={[0.18, 0.2, 0.15, 10]} />
+          <meshStandardMaterial color="#dc2626" roughness={0.4} />
+        </mesh>
+        {/* Observation Gallery Deck */}
+        <mesh position={[0, 0.72, 0]} castShadow>
+          <cylinderGeometry args={[0.22, 0.22, 0.05, 12]} />
+          <meshStandardMaterial color="#334155" roughness={0.6} />
+        </mesh>
+        {/* Glass & Golden Lantern Cupola */}
+        <mesh position={[0, 0.82, 0]}>
+          <cylinderGeometry args={[0.13, 0.13, 0.16, 8]} />
+          <meshStandardMaterial color="#fef08a" emissive="#fbbf24" emissiveIntensity={1.5} />
+        </mesh>
+        {/* Point light beacon */}
+        <pointLight position={[0, 0.82, 0]} color="#fef08a" intensity={1.8} distance={3.5} />
+        {/* Conical Copper Roof Cap */}
+        <mesh position={[0, 0.95, 0]} castShadow>
+          <coneGeometry args={[0.16, 0.14, 8]} />
+          <meshStandardMaterial color="#b45309" metalness={0.8} />
+        </mesh>
+      </group>
+      {/* Stone Steps Path */}
+      <mesh position={[-0.32, 0.28, 0.18]} rotation={[0, 0.3, 0]} receiveShadow>
+        <boxGeometry args={[0.3, 0.08, 0.22]} />
+        <meshStandardMaterial color="#94a3b8" roughness={0.8} />
+      </mesh>
+    </group>
+  );
+}
+
+/**
+ * 2C. TIKI BEACH RESORT KNOLL (South-West)
+ * Thatched cocktail cabana, wooden deck, surfboard & coconut palms
+ */
+function TikiBeachBarKnoll({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position}>
+      {/* Sandy Grassy Island Mound */}
+      <mesh position={[0, 0.12, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[1.3, 1.5, 0.24, 14]} />
+        <meshStandardMaterial color="#eab308" roughness={0.85} />
+      </mesh>
+      <mesh position={[0, 0.28, 0]} castShadow receiveShadow>
         <cylinderGeometry args={[1.1, 1.25, 0.12, 14]} />
-        <meshStandardMaterial color="#ca8a04" roughness={0.8} />
+        <meshStandardMaterial color="#15803d" roughness={0.7} />
+      </mesh>
+      {/* Wooden Cabana Deck */}
+      <mesh position={[0, 0.36, 0]} receiveShadow>
+        <boxGeometry args={[0.75, 0.06, 0.65]} />
+        <meshStandardMaterial color="#78350f" roughness={0.8} />
+      </mesh>
+      {/* 4 Bamboo Posts */}
+      {[-0.26, 0.26].map((x) =>
+        [-0.22, 0.22].map((z) => (
+          <mesh key={`post-${x}-${z}`} position={[x, 0.56, z]} castShadow>
+            <cylinderGeometry args={[0.02, 0.025, 0.38, 6]} />
+            <meshStandardMaterial color="#ca8a04" roughness={0.7} />
+          </mesh>
+        ))
+      )}
+      {/* Conical Thatched Palm Roof */}
+      <mesh position={[0, 0.85, 0]} castShadow>
+        <coneGeometry args={[0.55, 0.28, 6]} />
+        <meshStandardMaterial color="#a16207" roughness={0.9} />
+      </mesh>
+      {/* Surfboard leaning on bar */}
+      <mesh position={[0.35, 0.45, 0.12]} rotation={[0.2, 0.2, -0.35]} castShadow>
+        <boxGeometry args={[0.08, 0.45, 0.02]} />
+        <meshStandardMaterial color="#ec4899" roughness={0.3} />
       </mesh>
     </group>
   );
@@ -332,10 +459,10 @@ export function MiniWorldDiorama3D() {
       {/* Wooden Footbridge connecting Central Arena to Pagoda */}
       <WoodenFootbridge position={[1.8, 0.06, -1.8]} rotationY={-Math.PI / 4} />
 
-      {/* Low-profile Tropical Knolls (Never obstructs board tiles) */}
-      <TropicalResortKnoll position={[-3.2, 0.04, -2.8]} scale={[1.2, 0.8, 1.2]} />
-      <TropicalResortKnoll position={[-3.4, 0.04, 1.6]} scale={[1.1, 0.7, 1.1]} />
-      <TropicalResortKnoll position={[3.2, 0.04, 1.8]} scale={[1.2, 0.8, 1.2]} />
+      {/* Meta World 3D Architectural Island Knolls (Never obstructs board tiles) */}
+      <ResortPoolKnoll position={[-3.2, 0.04, -2.6]} />
+      <TikiBeachBarKnoll position={[-3.3, 0.04, 1.8]} />
+      <LighthouseKnoll position={[3.2, 0.04, 1.8]} />
 
       {/* Tropical Coconut Palms around the Island */}
       <TropicalPalm position={[-2.4, 0.06, -2.2]} scale={0.85} leanAngle={0.18} />

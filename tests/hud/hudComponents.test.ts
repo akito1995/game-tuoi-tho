@@ -30,9 +30,9 @@ describe('HUD Helpers and UI Logic Suite', () => {
     });
 
     it('should format short money for compact cards and tags', () => {
-      expect(formatShortMoney(1850000)).toBe('1.850k');
-      expect(formatShortMoney(200000)).toBe('200k');
-      expect(formatShortMoney(50000)).toBe('50k');
+      expect(formatShortMoney(1850000)).toBe('1.850.000đ');
+      expect(formatShortMoney(200000)).toBe('200.000đ');
+      expect(formatShortMoney(50000)).toBe('50.000đ');
       expect(formatShortMoney(500)).toBe('500đ');
       expect(formatShortMoney(0)).toBe('0đ');
     });

@@ -59,6 +59,7 @@ function AdaptiveCamera() {
     }
   }, [size.width, size.height, camera]);
 
+  const threeState = useThree();
   useFrame((_, delta) => {
     if (!camera) return;
     const isMoving = gamePhase === 'MOVING' || gamePhase === 'ROLLING';
@@ -66,9 +67,15 @@ function AdaptiveCamera() {
     const targetX = isMoving ? pawnTilePos[0] * 0.2 : 0;
     const targetZ = isMoving ? pawnTilePos[2] * 0.2 : 0;
 
-    lookTargetRef.current.x = THREE.MathUtils.damp(lookTargetRef.current.x, targetX, 3.5, delta);
-    lookTargetRef.current.z = THREE.MathUtils.damp(lookTargetRef.current.z, targetZ, 3.5, delta);
-    camera.lookAt(lookTargetRef.current.x, 0, lookTargetRef.current.z);
+    const ctrl = (threeState as unknown as { controls: { target: THREE.Vector3; update: () => void } }).controls;
+    if (ctrl && ctrl.target) {
+      ctrl.target.x = THREE.MathUtils.damp(ctrl.target.x, targetX, 3.5, delta);
+      ctrl.target.z = THREE.MathUtils.damp(ctrl.target.z, targetZ, 3.5, delta);
+    } else {
+      lookTargetRef.current.x = THREE.MathUtils.damp(lookTargetRef.current.x, targetX, 3.5, delta);
+      lookTargetRef.current.z = THREE.MathUtils.damp(lookTargetRef.current.z, targetZ, 3.5, delta);
+      camera.lookAt(lookTargetRef.current.x, 0, lookTargetRef.current.z);
+    }
   });
 
   return null;
@@ -113,10 +120,6 @@ export function BoardCanvas({
   const [mounted, setMounted] = useState(false);
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   const handleResetCamera = () => {
     if (controlsRef.current) {
       controlsRef.current.reset();
@@ -125,6 +128,13 @@ export function BoardCanvas({
       controlsRef.current.update();
     }
   };
+
+  useEffect(() => {
+    setMounted(true);
+    const onResetEvent = () => handleResetCamera();
+    window.addEventListener('reset-3d-camera', onResetEvent);
+    return () => window.removeEventListener('reset-3d-camera', onResetEvent);
+  }, []);
 
   if (!mounted) {
     return (
@@ -138,16 +148,7 @@ export function BoardCanvas({
     <div
       className={`relative overflow-hidden select-none bg-gradient-to-b from-[#0284c7] via-[#38bdf8] to-[#bae6fd] ${className}`}
     >
-      {/* Quick Camera Reset Button (VIS-09) */}
-      <button
-        onClick={handleResetCamera}
-        title="Đặt lại góc nhìn bàn cờ 3D"
-        aria-label="Đặt lại góc nhìn"
-        className="absolute top-20 right-3 z-30 flex items-center gap-1.5 rounded-full bg-slate-900/75 px-3 py-1.5 text-[11px] font-bold text-white shadow-lg backdrop-blur-md border border-white/20 hover:bg-slate-800 transition-all active:scale-95"
-      >
-        <RotateCcw className="h-3.5 w-3.5 text-amber-400" />
-        <span className="hidden sm:inline">Góc Nhìn Chuẩn</span>
-      </button>
+
 
       <Canvas
         shadows

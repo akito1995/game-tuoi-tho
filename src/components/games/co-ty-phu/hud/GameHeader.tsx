@@ -7,6 +7,7 @@ import {
   Music,
   PiggyBank,
   BookOpen,
+  RotateCcw,
   Sparkles,
   Home,
   Flame,
@@ -123,6 +124,20 @@ export function GameHeader({ onOpenRules, onQuit, className = '' }: GameHeaderPr
 
       {/* Right: Controls & Help */}
       <div className="flex items-center gap-2">
+        {/* Camera Reset Button (Always functional & clickable) */}
+        <button
+          onClick={() => {
+            if (sfxEnabled) soundManager.playClickSound();
+            window.dispatchEvent(new CustomEvent('reset-3d-camera'));
+          }}
+          title="Đặt lại góc nhìn bàn cờ 3D chuẩn"
+          aria-label="Đặt lại góc nhìn bàn cờ 3D"
+          className="flex items-center gap-1.5 rounded-xl border border-amber-400/50 bg-amber-500/15 hover:bg-amber-500/30 px-3 py-1.5 text-xs font-bold text-amber-200 transition-all hover:scale-105 active:scale-95 shadow-md shadow-amber-500/20 cursor-pointer"
+        >
+          <RotateCcw className="h-3.5 w-3.5 text-amber-400" />
+          <span className="hidden sm:inline">Góc Nhìn Chuẩn</span>
+        </button>
+
         {/* Rules Guide Button */}
         <button
           onClick={handleRulesClick}

@@ -747,12 +747,58 @@ function SingleMascotPawn({
         <MascotModel mascot={player.mascot} />
       </group>
 
-      {/* Ground Glowing Aura Ring for Active Player */}
+      {/* 3D Vertical Spotlight God-Ray Beam from Sky (Meta World Turn Spotlight) */}
+      {isActiveTurn && (
+        <group position={[0, 1.6, 0]}>
+          <mesh>
+            <cylinderGeometry args={[0.38, 0.65, 3.2, 16, 1, true]} />
+            <meshBasicMaterial
+              color={player.isBot ? "#38bdf8" : "#fbbf24"}
+              transparent
+              opacity={0.32}
+              side={THREE.DoubleSide}
+              depthWrite={false}
+            />
+          </mesh>
+          <pointLight
+            color={player.isBot ? "#38bdf8" : "#fef08a"}
+            intensity={2.8}
+            distance={5.5}
+            position={[0, -0.2, 0]}
+          />
+        </group>
+      )}
+
+      {/* Ground Glowing Aura Ring with Dual Concentric Neon Rings */}
       {isActiveTurn && (
         <group position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.36, 0.48, 24]} />
-          <meshBasicMaterial color="#fbbf24" transparent opacity={0.85} side={THREE.DoubleSide} />
+          <ringGeometry args={[0.38, 0.68, 32]} />
+          <meshBasicMaterial
+            color={player.isBot ? "#0ea5e9" : "#f59e0b"}
+            transparent
+            opacity={0.88}
+            side={THREE.DoubleSide}
+          />
         </group>
+      )}
+
+      {/* High-Visibility Billboard Floating Pointer */}
+      {isActiveTurn && (
+        <Billboard position={[0, 1.08, 0]} follow>
+          <mesh position={[0, 0, -0.01]}>
+            <planeGeometry args={[0.62, 0.22]} />
+            <meshBasicMaterial color="#020617" transparent opacity={0.85} />
+          </mesh>
+          <Text
+            fontSize={0.12}
+            color={player.isBot ? "#38bdf8" : "#facc15"}
+            fontWeight="bold"
+            anchorX="center"
+            anchorY="middle"
+          >
+            {player.isBot ? "🤖 MÁY" : "👑 BẠN"}
+          </Text>
+        </Billboard>
       )}
 
       {/* Meta World Tactical Runic Aura Ring (When Even/Odd Dice Card is Active) */}

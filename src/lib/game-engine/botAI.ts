@@ -302,7 +302,7 @@ export async function executeBotTurn(
 
     // 2. Rolling dice
     if (state.gamePhase === 'WAITING' && rollDice) {
-      await delay(200);
+      await delay(800);
       const diceResult = rollDice(options?.diceOverride);
       actionSummary.push(
         `${state.players[state.activePlayerIndex].name}: ROLLED [${diceResult[0]}, ${diceResult[1]}]`
@@ -311,11 +311,12 @@ export async function executeBotTurn(
       state = getState();
     }
 
-    // 3. Post-roll Action handling
-    await delay(200);
+    // 3. Post-roll Action handling (allows tumbling dice animation & pawn movement to play comfortably)
+    await delay(2200);
     state = getState();
 
     if (state.gamePhase === 'ACTION_REQUIRED') {
+      await delay(1200);
       const activeP = state.players[state.activePlayerIndex];
       const landedTile = state.tiles[activeP.position];
       if (landedTile) {
@@ -336,6 +337,8 @@ export async function executeBotTurn(
     }
 
     if (state.gamePhase === 'CARD_DRAWN') {
+      // Pause so human player has time to read the card drawn by the bot
+      await delay(3000);
       if (dismissCard) {
         actionSummary.push(`${state.players[state.activePlayerIndex].name}: DISMISSED_CARD`);
         dismissCard();

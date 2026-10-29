@@ -43,7 +43,7 @@ export function MascotDialogueBanner() {
 
       const timer = setTimeout(() => {
         setIsVisible(false);
-      }, 4200);
+      }, 5800);
 
       return () => clearTimeout(timer);
     });

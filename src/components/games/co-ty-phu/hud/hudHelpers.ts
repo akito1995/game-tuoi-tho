@@ -15,11 +15,7 @@ export function formatMoney(amount: number): string {
  */
 export function formatShortMoney(amount: number): string {
   if (isNaN(amount) || amount === null || amount === undefined) return '0đ';
-  if (Math.abs(amount) >= 1000) {
-    const inK = Math.round(amount / 1000);
-    return `${inK.toLocaleString('vi-VN')}k`;
-  }
-  return `${amount}đ`;
+  return `${amount.toLocaleString('vi-VN')}đ`;
 }
 
 /**

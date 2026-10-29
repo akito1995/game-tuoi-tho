@@ -41,17 +41,25 @@ export function PlayerListBar({ className = '' }: PlayerListBarProps) {
             key={player.id}
             className={`relative flex items-center gap-2.5 rounded-2xl p-2.5 sm:p-3 transition-all duration-300 backdrop-blur-xl ${
               isBankrupt
-                ? 'border border-red-900/40 bg-red-950/20 opacity-50 grayscale shadow-inner'
+                ? 'border border-red-900/40 bg-red-950/20 opacity-40 grayscale shadow-inner'
                 : isActive
-                ? 'glass-hud-active scale-105 z-10'
-                : 'glass-hud hover:border-white/30 hover:scale-102'
+                ? player.isBot
+                  ? 'scale-110 z-20 border-2 border-sky-400 bg-sky-950/90 shadow-2xl shadow-sky-500/60 ring-4 ring-sky-400/50'
+                  : 'scale-115 z-20 border-2 border-amber-300 bg-amber-950/90 shadow-2xl shadow-amber-500/80 ring-4 ring-amber-400 animate-pulse'
+                : 'glass-hud opacity-65 hover:opacity-100 hover:scale-102'
             }`}
           >
-            {/* Active Turn Floating Crown Tag */}
+            {/* Active Turn Floating Banner */}
             {isActive && !isBankrupt && (
-              <div className="absolute -top-3 left-4 flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 px-2.5 py-0.5 text-[9px] font-black text-slate-950 shadow-lg shadow-amber-500/40 animate-bounce ring-2 ring-yellow-200">
-                <Crown className="h-3 w-3 fill-slate-950 text-slate-950" />
-                <span>LƯỢT ĐI</span>
+              <div
+                className={`absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap flex items-center gap-1.5 rounded-full px-3 py-0.5 text-[10px] font-black shadow-xl ring-2 ${
+                  player.isBot
+                    ? 'bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-600 text-white ring-sky-300 shadow-sky-500/50'
+                    : 'bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-slate-950 ring-yellow-200 shadow-amber-500/60 animate-bounce'
+                }`}
+              >
+                <Crown className="h-3.5 w-3.5 fill-current" />
+                <span>{player.isBot ? '🤖 MÁY ĐANG ĐI' : '👑 LƯỢT CỦA BẠN!'}</span>
               </div>
             )}
 
@@ -65,18 +73,24 @@ export function PlayerListBar({ className = '' }: PlayerListBarProps) {
                 {isBankrupt ? <Skull className="h-6 w-6 text-white" /> : mascot.emoji}
               </div>
 
-              {/* Bot vs Human Identifier */}
+              {/* Bot vs Human Identifier with text pill */}
               <div
-                className={`absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold shadow-md border ${
+                className={`absolute -bottom-1 -right-2 flex items-center gap-0.5 rounded-full px-1.5 py-0.2 text-[8px] font-black shadow-md border ${
                   player.isBot
-                    ? 'bg-sky-950 text-sky-300 border-sky-400'
-                    : 'bg-emerald-950 text-emerald-300 border-emerald-400'
+                    ? 'bg-sky-900 text-sky-200 border-sky-400'
+                    : 'bg-emerald-600 text-white border-emerald-300 ring-1 ring-white/50'
                 }`}
               >
                 {player.isBot ? (
-                  <Bot className="h-2.5 w-2.5 text-sky-400" />
+                  <>
+                    <Bot className="h-2.5 w-2.5" />
+                    <span>MÁY</span>
+                  </>
                 ) : (
-                  <User className="h-2.5 w-2.5 text-emerald-400" />
+                  <>
+                    <User className="h-2.5 w-2.5" />
+                    <span>BẠN</span>
+                  </>
                 )}
               </div>
             </div>

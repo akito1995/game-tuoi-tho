@@ -17,6 +17,8 @@ import { TurnTimerBar } from './TurnTimerBar';
 import { DiceRevealOverlay } from './DiceRevealOverlay';
 import { PropertyInspectorModal } from './PropertyInspectorModal';
 import { MascotDialogueBanner } from './MascotDialogueBanner';
+import { RotateCcw } from 'lucide-react';
+import { soundManager } from '@/lib/audio/soundManager';
 
 export interface CoTyPhuHUDProps {
   className?: string;
@@ -57,6 +59,20 @@ export function CoTyPhuHUD({
 
       {/* Mascot Animated Dialogue Banner (Speech bubble popup) */}
       <MascotDialogueBanner />
+
+      {/* Floating Camera Reset Button (Always functional & clickable with pointer-events-auto z-40) */}
+      <button
+        onClick={() => {
+          soundManager.playClickSound();
+          window.dispatchEvent(new CustomEvent('reset-3d-camera'));
+        }}
+        title="Đặt lại góc nhìn bàn cờ 3D chuẩn"
+        aria-label="Đặt lại góc nhìn"
+        className="pointer-events-auto fixed top-24 right-3 z-40 flex items-center gap-1.5 rounded-full bg-slate-900/90 px-3 py-1.5 text-[11px] font-black text-amber-300 shadow-xl backdrop-blur-md border border-amber-400/50 hover:bg-slate-800 hover:scale-105 active:scale-95 transition-all cursor-pointer ring-1 ring-white/20"
+      >
+        <RotateCcw className="h-3.5 w-3.5 text-amber-400" />
+        <span className="hidden sm:inline">Góc Nhìn Chuẩn</span>
+      </button>
 
       {/* Bottom Controls: Live Chat & Emotes (Left) & Dice Controls (Right) */}
       <div className="pointer-events-auto flex flex-wrap items-end justify-between gap-2.5 p-2.5 sm:p-4">

@@ -61,9 +61,7 @@ interface SingleTile3DProps {
 
 function formatPrice(price?: number): string {
   if (!price) return '';
-  if (price >= 1000000) return `${(price / 1000000).toFixed(1)}Tr`;
-  if (price >= 1000) return `${Math.round(price / 1000)}k`;
-  return `${price}`;
+  return `${price.toLocaleString('vi-VN')}đ`;
 }
 
 function formatTileName(name: string, isCorner: boolean): string {

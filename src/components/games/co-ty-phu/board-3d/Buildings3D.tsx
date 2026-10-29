@@ -442,14 +442,35 @@ function EmptyPlotMarker() {
     <group position={[0, 0.02, 0]}>
       {/* Golden Real Estate Plot Boundary Ring */}
       <mesh rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.16, 0.22, 16]} />
-        <meshBasicMaterial color="#fbbf24" transparent opacity={0.4} />
+        <ringGeometry args={[0.18, 0.26, 20]} />
+        <meshBasicMaterial color="#fbbf24" transparent opacity={0.55} side={THREE.DoubleSide} />
       </mesh>
-      {/* Little Polished Brass Plot Peg */}
-      <mesh position={[0, 0.04, 0]}>
-        <cylinderGeometry args={[0.025, 0.035, 0.08, 8]} />
-        <meshStandardMaterial color="#f59e0b" metalness={0.8} />
-      </mesh>
+      {/* 4 Corner Golden Survey Pegs */}
+      {[-0.18, 0.18].map((x, xi) =>
+        [-0.14, 0.14].map((z, zi) => (
+          <mesh key={`peg-${xi}-${zi}`} position={[x, 0.04, z]} castShadow>
+            <cylinderGeometry args={[0.015, 0.02, 0.08, 8]} />
+            <meshStandardMaterial color="#fbbf24" metalness={0.9} roughness={0.2} />
+          </mesh>
+        ))
+      )}
+      {/* Miniature Wooden 'FOR SALE' Signpost */}
+      <group position={[0, 0.02, 0]}>
+        <mesh position={[0, 0.08, 0]} castShadow>
+          <cylinderGeometry args={[0.01, 0.012, 0.16, 6]} />
+          <meshStandardMaterial color="#78350f" roughness={0.8} />
+        </mesh>
+        {/* Signboard */}
+        <mesh position={[0, 0.14, 0]} castShadow>
+          <boxGeometry args={[0.18, 0.09, 0.015]} />
+          <meshStandardMaterial color="#fef08a" roughness={0.4} />
+        </mesh>
+        {/* Golden Border on Signboard */}
+        <mesh position={[0, 0.14, 0.009]}>
+          <planeGeometry args={[0.16, 0.07]} />
+          <meshBasicMaterial color="#f59e0b" />
+        </mesh>
+      </group>
     </group>
   );
 }
