@@ -1415,51 +1415,51 @@ export const useGameStore = create<GameStore>((set, get) => ({
     switch (prizeIndex) {
       case 0: // Jackpot
         title = 'HEO ĐẤT JACKPOT';
-        rewardText = +đ;
+        rewardText = `+${state.jackpotFund.toLocaleString('vi-VN')}đ`;
         activePlayer.money += state.jackpotFund;
         newJackpot = 20000;
-        logs.push(🐷  QUAY TRÚNG HEO ĐẤT JACKPOT! Ẵm trọn !);
+        logs.push(`🐷 ${activePlayer.name} QUAY TRÚNG HEO ĐẤT JACKPOT! Ẵm trọn ${state.jackpotFund.toLocaleString('vi-VN')}đ!`);
         break;
       case 1: // Cash 150k
         title = 'THƯỞNG NÓNG';
         rewardText = '+150.000đ tiền mặt';
         activePlayer.money += 150000;
-        logs.push(💰  quay trúng Thưởng Nóng +150.000đ!);
+        logs.push(`💰 ${activePlayer.name} quay trúng Thưởng Nóng +150.000đ!`);
         break;
       case 2: // Shield
         title = 'KHIÊN BẢO HỘ';
         rewardText = '+1 Thẻ Khiên Chắn tiền thuê';
         activePlayer.tacticalCards.rentShield = (activePlayer.tacticalCards.rentShield || 0) + 1;
-        logs.push(🛡️  quay trúng 1 Thẻ Khiên Bảo Hộ!);
+        logs.push(`🛡️ ${activePlayer.name} quay trúng 1 Thẻ Khiên Bảo Hộ!`);
         break;
       case 3: // Even/Odd
         title = 'XÚC XẮC CHẴN/LẺ';
         rewardText = '+2 Thẻ Xúc Xắc Chẵn/Lẻ';
         activePlayer.tacticalCards.evenOdd = (activePlayer.tacticalCards.evenOdd || 0) + 2;
-        logs.push(✨  quay trúng 2 Thẻ Xúc Xắc Chẵn/Lẻ!);
+        logs.push(`✨ ${activePlayer.name} quay trúng 2 Thẻ Xúc Xắc Chẵn/Lẻ!`);
         break;
       case 4: // Teleport Phu Quoc
         title = 'BAY ĐẾN PHÚ QUỐC';
         rewardText = 'Dịch chuyển đến Đảo Ngọc Phú Quốc';
         activePlayer.position = 10;
-        logs.push(✈️  quay trúng chuyến bay thẳng ra Phú Quốc!);
+        logs.push(`✈️ ${activePlayer.name} quay trúng chuyến bay thẳng ra Phú Quốc!`);
         break;
       case 5: // Double Step
         title = 'TĂNG TỐC +2 BƯỚC';
         rewardText = '+2 Thẻ Tăng Tốc';
         activePlayer.tacticalCards.doubleStep = (activePlayer.tacticalCards.doubleStep || 0) + 2;
-        logs.push(⚡  quay trúng 2 Thẻ Tăng Tốc!);
+        logs.push(`⚡ ${activePlayer.name} quay trúng 2 Thẻ Tăng Tốc!`);
         break;
       case 6: // Lucky Money 80k
         title = 'LÌ XÌ MAY MẮN';
         rewardText = '+80.000đ lì xì';
         activePlayer.money += 80000;
-        logs.push(🧧  quay trúng Lì Xì May Mắn +80.000đ!);
+        logs.push(`🧧 ${activePlayer.name} quay trúng Lì Xì May Mắn +80.000đ!`);
         break;
       case 7: // Extra Roll
         title = 'ĐỔ TIẾP LẬP TỨC';
         rewardText = 'Tặng thêm 1 lượt đổ tự do';
-        logs.push(🎲  quay trúng thêm 1 Lượt Đổ Tự Do!);
+        logs.push(`🎲 ${activePlayer.name} quay trúng thêm 1 Lượt Đổ Tự Do!`);
         break;
     }
 
@@ -1493,7 +1493,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     const logs = [
       ...state.eventLogs,
-      ✨  kích hoạt Thẻ Xúc Xắc !,
+      `✨ ${activePlayer.name} kích hoạt Thẻ Xúc Xắc ${modifier === 'EVEN' ? 'Chẵn' : 'Lẻ'}!`,
     ];
 
     set({
@@ -1512,7 +1512,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     const logs = [
       ...state.eventLogs,
-      🛡️  kích hoạt Khiên Bảo Hộ! Sẽ được miễn phí trả tiền thuê lần tới!,
+      `🛡️ ${activePlayer.name} kích hoạt Khiên Bảo Hộ! Sẽ được miễn phí trả tiền thuê lần tới!`,
     ];
 
     set({
@@ -1528,10 +1528,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     activePlayer.tacticalCards.doubleStep -= 1;
     activePlayer.position = (activePlayer.position + 2) % 32;
+    const dest = state.tiles[activePlayer.position];
 
     const logs = [
       ...state.eventLogs,
-      ⚡  kích hoạt Thẻ Tăng Tốc, tiến thêm +2 bước tới ô [] !,
+      `⚡ ${activePlayer.name} kích hoạt Thẻ Tăng Tốc, tiến thêm +2 bước tới ô [${activePlayer.position}] ${dest?.name || ''}!`,
     ];
 
     set({
