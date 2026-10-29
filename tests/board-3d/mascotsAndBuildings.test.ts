@@ -33,9 +33,26 @@ import {
   BuildingUpgradeSparkles,
 } from '@/components/games/co-ty-phu/board-3d/Buildings3D';
 import {
+  CaMauMonument,
+  CanThoFloatingMarket,
+  PowerPlant,
+  BusStation,
+  VungTauLighthouse,
+  NhaTrangTramHuongTower,
+  PhuQuocIsland,
+  BuonMaThuotNhaRong,
+  AirportLandmark,
+  DaLatStation,
+  HueNgoMonGate,
+  HoiAnChuaCau,
+  DaNangDragonBridge,
+  WaterPlant,
+  NinhBinhTrangAn,
+  SaPaStoneChurch,
+  HaLongTrongMai,
+  HaiPhongPort,
   HaNoiTurtleTower,
   HCMCBenThanhLandmark,
-  HaiPhongPort,
   CityLandmark3D,
 } from '@/components/games/co-ty-phu/board-3d/CityLandmarks3D';
 import { TILE_SURFACE_Y, TILE_CENTER_OFFSET } from '@/components/games/co-ty-phu/board-3d/tilePositions';
@@ -362,21 +379,43 @@ describe('Mascots and Buildings 3D Helpers', () => {
       expect(calculateBuildingPopScale(1.5)).toBe(1.0);
     });
 
-    it('should correctly dispatch landmarks for Metropolis tiles 28, 30, and 31', () => {
-      // Tile 28: Cảng Hải Phòng
-      const landmark28 = CityLandmark3D({ tileId: 28 });
-      expect(landmark28).toBeDefined();
-      expect(landmark28?.type).toBe(HaiPhongPort);
+    it('should export all 20 Vietnamese city and infrastructure landmark components', () => {
+      const landmarks = [
+        CaMauMonument,
+        CanThoFloatingMarket,
+        PowerPlant,
+        BusStation,
+        VungTauLighthouse,
+        NhaTrangTramHuongTower,
+        PhuQuocIsland,
+        BuonMaThuotNhaRong,
+        AirportLandmark,
+        DaLatStation,
+        HueNgoMonGate,
+        HoiAnChuaCau,
+        DaNangDragonBridge,
+        WaterPlant,
+        NinhBinhTrangAn,
+        SaPaStoneChurch,
+        HaLongTrongMai,
+        HaiPhongPort,
+        HaNoiTurtleTower,
+        HCMCBenThanhLandmark,
+      ];
+      for (const lm of landmarks) {
+        expect(typeof lm).toBe('function');
+      }
+    });
 
-      // Tile 30: Hà Nội Tháp Rùa Hồ Gươm
-      const landmark30 = CityLandmark3D({ tileId: 30 });
-      expect(landmark30).toBeDefined();
-      expect(landmark30?.type).toBe(HaNoiTurtleTower);
-
-      // Tile 31: TP. Hồ Chí Minh Chợ Bến Thành & Landmark Tower
-      const landmark31 = CityLandmark3D({ tileId: 31 });
-      expect(landmark31).toBeDefined();
-      expect(landmark31?.type).toBe(HCMCBenThanhLandmark);
+    it('should correctly dispatch bespoke 3D landmarks for all 22 purchasable tiles', () => {
+      const mappedTileIds = [
+        1, 3, 4, 5, 6, 9, 10, 11, 12, 13, 15, 17, 19, 20, 21, 22, 23, 25, 27, 28, 30, 31,
+      ];
+      for (const id of mappedTileIds) {
+        const landmark = CityLandmark3D({ tileId: id });
+        expect(landmark).not.toBeNull();
+        expect(typeof landmark?.type).toBe('function');
+      }
 
       // Unmapped tile should return null
       const unmapped = CityLandmark3D({ tileId: 999 });

@@ -164,6 +164,8 @@ export function VungTauLighthouse() {
         <sphereGeometry args={[0.07, 8, 8]} />
         <meshStandardMaterial color="#fef08a" emissive="#fef08a" emissiveIntensity={1.4} />
       </mesh>
+      {/* Lighthouse Beacon Light */}
+      <pointLight position={[0, 0.82, 0]} color="#fef08a" intensity={1.2} distance={3} />
       {/* Ocean Beach Strip */}
       <mesh position={[0, 0.02, 0.22]} receiveShadow>
         <boxGeometry args={[0.65, 0.03, 0.16]} />
@@ -191,11 +193,12 @@ export function NhaTrangTramHuongTower() {
         <coneGeometry args={[0.18, 0.32, 5]} />
         <meshStandardMaterial color="#fb923c" roughness={0.3} />
       </mesh>
-      {/* Top Beacon Ball */}
+      {/* Top Beacon Ball with Warm Light */}
       <mesh position={[0, 0.72, 0]}>
         <sphereGeometry args={[0.06, 8, 8]} />
         <meshStandardMaterial color="#fef08a" emissive="#fef08a" emissiveIntensity={1.0} />
       </mesh>
+      <pointLight position={[0, 0.72, 0]} color="#fef08a" intensity={1.0} distance={2.5} />
     </group>
   );
 }
@@ -384,6 +387,7 @@ export function HoiAnChuaCau() {
           <meshStandardMaterial color="#f43f5e" emissive="#f43f5e" emissiveIntensity={1.2} />
         </mesh>
       ))}
+      <pointLight position={[0, 0.24, 0.18]} color="#f43f5e" intensity={0.9} distance={2.5} />
     </group>
   );
 }
@@ -414,6 +418,8 @@ export function DaNangDragonBridge() {
         <coneGeometry args={[0.07, 0.18, 4]} />
         <meshStandardMaterial color="#f59e0b" metalness={0.8} roughness={0.2} />
       </mesh>
+      {/* Dragon Fire Breath Beacon Light */}
+      <pointLight position={[0.34, 0.26, 0]} color="#ea580c" intensity={1.1} distance={2.5} />
     </group>
   );
 }
@@ -490,6 +496,8 @@ export function SaPaStoneChurch() {
         <coneGeometry args={[0.14, 0.24, 4]} />
         <meshStandardMaterial color="#991b1b" roughness={0.6} />
       </mesh>
+      {/* Warm Cathedral Bell Tower Glow */}
+      <pointLight position={[0.18, 0.45, 0]} color="#f59e0b" intensity={0.8} distance={2.5} />
     </group>
   );
 }
