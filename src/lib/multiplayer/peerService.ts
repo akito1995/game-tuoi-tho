@@ -238,6 +238,13 @@ export class PeerService {
         break;
       }
 
+      case 'MASCOT_CHANGE': {
+        const { playerId, mascot } = packet.payload;
+        useRoomStore.getState().updatePlayerMascot(playerId, mascot);
+        this.broadcastLobbyUpdate();
+        break;
+      }
+
       case 'ACTION_REQUEST': {
         this.executeHostGameAction(packet.payload);
         break;
@@ -568,3 +575,4 @@ export class PeerService {
 
 export const peerService = new PeerService();
 export default peerService;
+

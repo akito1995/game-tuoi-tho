@@ -60,7 +60,7 @@ export function GameGrid({ onPlayGame }: GameGridProps) {
       </div>
 
       {/* Featured Game Card: CỜ TỶ PHÚ 3D */}
-      <div className="relative overflow-hidden rounded-3xl border-2 border-amber-500/40 bg-gradient-to-r from-amber-950/40 via-slate-900 to-indigo-950/40 p-6 sm:p-8 shadow-2xl shadow-amber-500/10">
+      <div className="shine-parent card-hover relative overflow-hidden rounded-3xl border-2 border-amber-500/40 bg-gradient-to-r from-amber-950/40 via-slate-900 to-indigo-950/40 p-6 sm:p-8 shadow-2xl shadow-amber-500/10">
         {/* Glow effect */}
         <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-amber-500/15 blur-3xl" />
 
@@ -155,7 +155,7 @@ export function GameGrid({ onPlayGame }: GameGridProps) {
             return (
               <div
                 key={game.id}
-                className="group relative flex flex-col justify-between rounded-2xl border border-slate-800 bg-slate-900/70 p-5 backdrop-blur-md transition-all hover:border-slate-700 hover:bg-slate-900/90 hover:shadow-xl"
+                className="card-hover group relative flex flex-col justify-between rounded-2xl border border-slate-800 bg-slate-900/70 p-5 backdrop-blur-md transition-all hover:border-amber-500/30 hover:bg-slate-900/90 hover:shadow-xl"
               >
                 <div>
                   {/* Top: Icon & Badge */}
@@ -237,3 +237,4 @@ export function GameGrid({ onPlayGame }: GameGridProps) {
 }
 
 export default GameGrid;
+

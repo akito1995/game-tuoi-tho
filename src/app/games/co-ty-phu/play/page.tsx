@@ -11,6 +11,7 @@ import { MascotType } from '@/lib/game-engine/types';
 import {
   getUserProfile,
   recordGameStats,
+  saveLeaderboardEntry,
 } from '@/components/hub/hubHelpers';
 import { calculatePlayerNetWorth } from '@/components/games/co-ty-phu/hud/hudHelpers';
 import { BoardCanvas } from '@/components/games/co-ty-phu/board-3d';
@@ -96,7 +97,7 @@ function MonopolyGameContent() {
     }
   }, [activePlayerIndex, gamePhase, gameOver, players]);
 
-  // Record Game Stats on GameOver
+  // Record Game Stats & Leaderboard on GameOver
   useEffect(() => {
     if (gameOver && !statsRecordedRef.current) {
       statsRecordedRef.current = true;
@@ -109,7 +110,22 @@ function MonopolyGameContent() {
       if (humanPlayer) {
         const won = winner?.id === humanPlayer.id;
         const netWorth = calculatePlayerNetWorth(humanPlayer, tiles);
-        recordGameStats({ won, netWorth });
+
+        // Update profile stats
+        const updatedProfile = recordGameStats({ won, netWorth });
+
+        // Save to local leaderboard
+        saveLeaderboardEntry({
+          nickname: updatedProfile.nickname,
+          mascot: updatedProfile.mascot,
+          netWorth,
+          wins: updatedProfile.wins,
+          matchesPlayed: updatedProfile.matchesPlayed,
+          winRate:
+            updatedProfile.matchesPlayed > 0
+              ? Math.round((updatedProfile.wins / updatedProfile.matchesPlayed) * 100)
+              : 0,
+        });
       }
     } else if (!gameOver) {
       statsRecordedRef.current = false;

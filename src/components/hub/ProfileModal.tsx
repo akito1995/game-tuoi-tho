@@ -207,6 +207,13 @@ export function ProfileModal({ isOpen, onClose, onProfileUpdated }: ProfileModal
             </div>
           </div>
 
+          {/* Leaderboard Tip */}
+          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-center">
+            <p className="text-[11px] text-amber-400/80">
+              🏆 Hoàn thành ván chơi để lên <strong className="text-amber-300">Bảng Danh Vọng</strong>!
+            </p>
+          </div>
+
           {/* Action Buttons */}
           <div className="flex items-center justify-end gap-3 pt-2">
             <button
@@ -240,3 +247,4 @@ export function ProfileModal({ isOpen, onClose, onProfileUpdated }: ProfileModal
 }
 
 export default ProfileModal;
+

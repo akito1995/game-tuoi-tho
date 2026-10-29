@@ -202,12 +202,26 @@ export default function RoomLobbyPage({ params }: RoomPageProps) {
       } else {
         // Broadcast ready/lobby update via action or chat notice
         peerService.sendToHost(
-          createPacket('PLAYER_READY', myPlayer.id, {
+          createPacket('MASCOT_CHANGE', myPlayer.id, {
             playerId: myPlayer.id,
-            isReady: myPlayer.isReady,
+            mascot,
           })
         );
       }
+    }
+  };
+
+  // Reconnect handler
+  const handleReconnect = () => {
+    soundManager.playClickSound();
+    setConnectionError(null);
+    if (isHost) {
+      const hostPlayer = players.find((p) => p.isHost) || players[0];
+      if (hostPlayer) {
+        peerService.initHost(roomId, hostPlayer);
+      }
+    } else if (myPlayer) {
+      peerService.connectToHost(roomId, myPlayer);
     }
   };
 
@@ -418,6 +432,20 @@ export default function RoomLobbyPage({ params }: RoomPageProps) {
             </div>
           </div>
         </div>
+
+                {/* Connection Error Banner */}
+        {connectionError && mode === 'ONLINE_P2P' && (
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/40 text-xs font-semibold animate-fade-in-up">
+            <WifiOff className="w-4 h-4 text-rose-400" />
+            <span>Mất kết nối P2P</span>
+            <button
+              onClick={handleReconnect}
+              className="ml-1 px-2.5 py-0.5 rounded-lg bg-rose-500 hover:bg-rose-400 text-white text-[11px] font-bold transition"
+            >
+              Kết Nối Lại
+            </button>
+          </div>
+        )}
 
         {/* Copy Feedback Toast */}
         {copyFeedback && (

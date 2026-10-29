@@ -5,15 +5,14 @@ import {
   Volume2,
   VolumeX,
   Music,
-  User,
-  Sparkles,
-  Gamepad2,
+  Trophy,
 } from 'lucide-react';
 import {
   GameHero,
   GameGrid,
   ProfileModal,
   GameModeSelectModal,
+  LeaderboardModal,
   getUserProfile,
   UserProfile,
 } from '@/components/hub';
@@ -24,6 +23,7 @@ export default function HomePage() {
   const [profile, setProfile] = useState<UserProfile>(getUserProfile());
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isModeSelectOpen, setIsModeSelectOpen] = useState(false);
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
 
   // Audio toggles state
   const [bgmEnabled, setBgmEnabled] = useState(true);
@@ -58,6 +58,11 @@ export default function HomePage() {
     setIsModeSelectOpen(true);
   };
 
+  const handleOpenLeaderboard = () => {
+    soundManager.playCoinSound();
+    setIsLeaderboardOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-white selection:bg-amber-500 selection:text-slate-950">
       {/* Top Navigation Bar */}
@@ -78,12 +83,12 @@ export default function HomePage() {
                 </span>
               </div>
               <p className="text-[11px] text-slate-400 hidden sm:block">
-                Ký ức dân gian & Cờ Tỷ Phú 3D Đảo Ngọc
+                Ký ức dân gian &amp; Cờ Tỷ Phú 3D Đảo Ngọc
               </p>
             </div>
           </div>
 
-          {/* Right Header Actions: Sound Controls & Profile Button */}
+          {/* Right Header Actions */}
           <div className="flex items-center gap-2.5">
             {/* Audio Toggles */}
             <div className="flex items-center rounded-xl border border-slate-800 bg-slate-900/80 p-1">
@@ -117,6 +122,16 @@ export default function HomePage() {
                 )}
               </button>
             </div>
+
+            {/* Leaderboard Button */}
+            <button
+              onClick={handleOpenLeaderboard}
+              title="Bảng Danh Vọng"
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-amber-500/30 bg-slate-900/80 text-amber-400 hover:bg-amber-500/10 hover:border-amber-400 transition-all active:scale-95"
+              aria-label="Xem bảng danh vọng"
+            >
+              <Trophy className="h-4 w-4" />
+            </button>
 
             {/* Profile Button with Active Mascot Badge */}
             <button
@@ -163,10 +178,10 @@ export default function HomePage() {
             <span>Cổng Game Tuổi Thơ Việt Nam © 2026</span>
           </div>
           <p className="text-slate-400">
-            Tái hiện ký ức tuổi thơ bằng công nghệ 3D WebGL & WebRTC hiện đại.
+            Tái hiện ký ức tuổi thơ bằng công nghệ 3D WebGL &amp; WebRTC hiện đại.
           </p>
           <div className="flex items-center gap-4 text-slate-400">
-            <span>Pass & Play</span>
+            <span>Pass &amp; Play</span>
             <span>•</span>
             <span>Bot AI</span>
             <span>•</span>
@@ -185,6 +200,11 @@ export default function HomePage() {
       <GameModeSelectModal
         isOpen={isModeSelectOpen}
         onClose={() => setIsModeSelectOpen(false)}
+      />
+
+      <LeaderboardModal
+        isOpen={isLeaderboardOpen}
+        onClose={() => setIsLeaderboardOpen(false)}
       />
     </div>
   );

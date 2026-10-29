@@ -309,3 +309,82 @@ export function voteForGame(gameId: string): Record<string, number> {
 
   return updated;
 }
+
+// ============================================================
+//  LOCAL LEADERBOARD – lưu top 20 sessions trong localStorage
+// ============================================================
+
+export const LEADERBOARD_STORAGE_KEY = 'vcg_leaderboard_v1';
+
+export interface LeaderboardEntry {
+  id: string;          // unique per session
+  nickname: string;
+  mascot: MascotType;
+  netWorth: number;
+  wins: number;
+  matchesPlayed: number;
+  winRate: number;
+  timestamp: number;
+}
+
+/**
+ * Read the leaderboard from localStorage, sorted by netWorth desc.
+ */
+export function getLocalLeaderboard(): LeaderboardEntry[] {
+  const storage = getSafeStorage();
+  try {
+    const raw = storage.getItem(LEADERBOARD_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed as LeaderboardEntry[];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Upsert the current player's session into the leaderboard (max 20 entries).
+ * Merges by nickname so the same player's record is updated, not duplicated.
+ */
+export function saveLeaderboardEntry(entry: Omit<LeaderboardEntry, 'id' | 'timestamp'>): void {
+  const storage = getSafeStorage();
+  const current = getLocalLeaderboard();
+
+  const newEntry: LeaderboardEntry = {
+    ...entry,
+    id: `${entry.nickname}_${Date.now()}`,
+    timestamp: Date.now(),
+  };
+
+  // Replace existing record for same nickname, or push new
+  const existingIdx = current.findIndex(
+    (e) => e.nickname === entry.nickname
+  );
+
+  let updated: LeaderboardEntry[];
+  if (existingIdx >= 0) {
+    // Keep best net worth
+    const existing = current[existingIdx];
+    updated = [...current];
+    updated[existingIdx] = {
+      ...newEntry,
+      netWorth: Math.max(existing.netWorth, entry.netWorth),
+      wins: entry.wins,
+      matchesPlayed: entry.matchesPlayed,
+      winRate: entry.winRate,
+    };
+  } else {
+    updated = [...current, newEntry];
+  }
+
+  // Sort by net worth descending and keep top 20
+  updated.sort((a, b) => b.netWorth - a.netWorth);
+  updated = updated.slice(0, 20);
+
+  try {
+    storage.setItem(LEADERBOARD_STORAGE_KEY, JSON.stringify(updated));
+  } catch (e) {
+    console.warn('Failed to save leaderboard', e);
+  }
+}

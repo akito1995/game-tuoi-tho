@@ -54,6 +54,7 @@ export type NetworkPacketType =
   | 'LOBBY_JOIN'
   | 'LOBBY_UPDATE'
   | 'PLAYER_READY'
+  | 'MASCOT_CHANGE'
   | 'START_GAME'
   | 'STATE_SYNC'
   | 'ACTION_REQUEST'
@@ -87,6 +88,14 @@ export interface PlayerReadyPacket extends BasePacket {
   payload: {
     playerId: string;
     isReady: boolean;
+  };
+}
+
+export interface MascotChangePacket extends BasePacket {
+  type: 'MASCOT_CHANGE';
+  payload: {
+    playerId: string;
+    mascot: MascotType;
   };
 }
 
@@ -140,6 +149,7 @@ export type NetworkPacket =
   | LobbyJoinPacket
   | LobbyUpdatePacket
   | PlayerReadyPacket
+  | MascotChangePacket
   | StartGamePacket
   | StateSyncPacket
   | ActionRequestPacket
@@ -196,6 +206,7 @@ export function deserializePacket(raw: unknown): NetworkPacket | null {
       'LOBBY_JOIN',
       'LOBBY_UPDATE',
       'PLAYER_READY',
+      'MASCOT_CHANGE',
       'START_GAME',
       'STATE_SYNC',
       'ACTION_REQUEST',
@@ -214,3 +225,4 @@ export function deserializePacket(raw: unknown): NetworkPacket | null {
     return null;
   }
 }
+
