@@ -108,11 +108,11 @@
    - Tactile 3D Golden CTA button: "XÁC NHẬN ĐẦU TƯ" with beveled depth and sound feedback.
    - Non-blocking layout: Board remains visible and interactive behind the drawer without murky full-screen backdrop blur.
 
-- [ ] Step 4.1: Update tests in `tests/hud/hudComponents.test.ts` for property modal rendering and interaction.
-- [ ] Step 4.2: Redesign modal UI with land deed styling, tier cards, and slide-over drawer layout.
-- [ ] Step 4.3: Verify responsiveness on mobile screen sizes.
-- [ ] Step 4.4: Run vitest and check tests pass.
-- [ ] Step 4.5: Commit with message `feat(art-vertical-slice): upgrade property action modal to tactile land deed drawer`.
+- [x] Step 4.1: Update tests in `tests/hud/hudComponents.test.ts` for property modal rendering and interaction.
+- [x] Step 4.2: Redesign modal UI with land deed styling, tier cards, and slide-over drawer layout.
+- [x] Step 4.3: Verify responsiveness on mobile screen sizes.
+- [x] Step 4.4: Run vitest and check tests pass.
+- [x] Step 4.5: Commit with message `feat(art-vertical-slice): upgrade property action modal to tactile land deed drawer`.
 
 ---
 
