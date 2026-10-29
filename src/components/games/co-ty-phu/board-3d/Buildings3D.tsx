@@ -39,34 +39,56 @@ function getOwnerColor(ownerId?: string | null, players?: Player[]): string {
 export function FlagStructure({ color = '#ec4899' }: { color?: string }) {
   return (
     <group position={[0, 0, 0]}>
-      {/* Small Stone Circular Base */}
-      <mesh position={[0, 0.02, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.08, 0.09, 0.04, 12]} />
-        <meshStandardMaterial color="#64748b" roughness={0.7} />
+      {/* Glowing Ground Claim Beacon Ring */}
+      <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.16, 0.24, 24]} />
+        <meshBasicMaterial color={color} transparent opacity={0.8} side={THREE.DoubleSide} />
       </mesh>
 
-      {/* Flagpole */}
-      <mesh position={[0, 0.28, 0]} castShadow>
-        <cylinderGeometry args={[0.012, 0.015, 0.52, 8]} />
-        <meshStandardMaterial color="#94a3b8" metalness={0.8} roughness={0.2} />
+      {/* Polished Gold Pedestal Base */}
+      <mesh position={[0, 0.03, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.1, 0.14, 0.06, 16]} />
+        <meshStandardMaterial color="#f59e0b" metalness={0.9} roughness={0.18} />
       </mesh>
 
-      {/* Golden Finial Ball */}
-      <mesh position={[0, 0.54, 0]}>
-        <sphereGeometry args={[0.025, 8, 8]} />
-        <meshStandardMaterial color="#fbbf24" metalness={0.9} roughness={0.1} />
+      {/* Golden Brass Flagpole */}
+      <mesh position={[0, 0.35, 0]} castShadow>
+        <cylinderGeometry args={[0.014, 0.018, 0.65, 10]} />
+        <meshStandardMaterial color="#fbbf24" metalness={0.95} roughness={0.12} />
       </mesh>
 
-      {/* Player Waving Flag Banner */}
-      <group position={[0.1, 0.44, 0]}>
+      {/* Radiant Top Gold Stupa Ball */}
+      <mesh position={[0, 0.68, 0]}>
+        <sphereGeometry args={[0.035, 12, 12]} />
+        <meshStandardMaterial
+          color="#fef08a"
+          emissive="#fbbf24"
+          emissiveIntensity={1.2}
+          metalness={0.9}
+        />
+      </mesh>
+
+      {/* High-Impact Player Waving Pennant Banner */}
+      <group position={[0.15, 0.52, 0]}>
+        {/* Double-sided flag banner */}
         <mesh castShadow>
-          <boxGeometry args={[0.18, 0.12, 0.01]} />
-          <meshStandardMaterial color={color} roughness={0.3} />
+          <boxGeometry args={[0.28, 0.18, 0.012]} />
+          <meshStandardMaterial
+            color={color}
+            emissive={color}
+            emissiveIntensity={0.35}
+            roughness={0.25}
+          />
         </mesh>
-        {/* Star / Emblem on Flag */}
-        <mesh position={[0, 0, 0.006]}>
-          <circleGeometry args={[0.03, 5]} />
-          <meshBasicMaterial color="#fbbf24" />
+        {/* Golden Border Trim */}
+        <mesh position={[0, 0, 0]}>
+          <boxGeometry args={[0.29, 0.19, 0.008]} />
+          <meshStandardMaterial color="#fbbf24" metalness={0.9} roughness={0.1} />
+        </mesh>
+        {/* Golden Star Crest on Flag */}
+        <mesh position={[0, 0, 0.009]}>
+          <circleGeometry args={[0.045, 5]} />
+          <meshBasicMaterial color="#fef08a" side={THREE.DoubleSide} />
         </mesh>
       </group>
     </group>

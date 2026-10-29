@@ -81,6 +81,12 @@ export function BauCuaMiniGameModal() {
       } else {
         soundManager.playCashSound();
       }
+
+      if (isBot) {
+        setTimeout(() => {
+          handleFinish();
+        }, 2200);
+      }
     }, 1800);
   };
 

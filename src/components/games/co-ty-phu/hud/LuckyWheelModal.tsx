@@ -79,6 +79,11 @@ export function LuckyWheelModal() {
       setIsSpinning(false);
       setIsFinished(true);
       soundManager.playWinFanfare();
+      if (isBot) {
+        setTimeout(() => {
+          handleFinish();
+        }, 2200);
+      }
     }, 4000);
   };
 

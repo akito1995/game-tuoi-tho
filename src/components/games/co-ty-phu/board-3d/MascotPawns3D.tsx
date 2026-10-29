@@ -702,6 +702,49 @@ function SingleMascotPawn({
         </group>
       )}
 
+      {/* Meta World Tactical Runic Aura Ring (When Even/Odd Dice Card is Active) */}
+      {player.activeDiceModifier && (
+        <group position={[0, 0.025, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.48, 0.58, 32]} />
+          <meshBasicMaterial
+            color={player.activeDiceModifier === 'EVEN' ? '#fbbf24' : '#06b6d4'}
+            transparent
+            opacity={0.9}
+            side={THREE.DoubleSide}
+          />
+        </group>
+      )}
+
+      {/* Meta World Tactical Energy Shield Dome (When Rent Shield is Active) */}
+      {player.hasActiveShield && (
+        <group position={[0, 0.38, 0]}>
+          {/* Outer Translucent Hexagonal Energy Shield */}
+          <mesh>
+            <sphereGeometry args={[0.56, 24, 24]} />
+            <meshStandardMaterial
+              color="#38bdf8"
+              emissive="#0284c7"
+              emissiveIntensity={0.85}
+              transparent
+              opacity={0.38}
+              roughness={0.1}
+              metalness={0.2}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
+          {/* Equatorial Glowing Shield Ring 1 */}
+          <mesh rotation={[Math.PI / 3, 0, 0]}>
+            <torusGeometry args={[0.58, 0.022, 8, 32]} />
+            <meshStandardMaterial color="#bae6fd" emissive="#38bdf8" emissiveIntensity={1.8} />
+          </mesh>
+          {/* Equatorial Glowing Shield Ring 2 */}
+          <mesh rotation={[-Math.PI / 3, 0, 0]}>
+            <torusGeometry args={[0.58, 0.022, 8, 32]} />
+            <meshStandardMaterial color="#bae6fd" emissive="#38bdf8" emissiveIntensity={1.8} />
+          </mesh>
+        </group>
+      )}
+
       {/* Active Turn Floating Crown & Clean Name Badge */}
       {isActiveTurn && (
         <group ref={turnArrowRef} position={[0, 1.05, 0]}>

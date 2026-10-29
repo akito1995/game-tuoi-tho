@@ -129,27 +129,105 @@ function StoneCavernArch() {
   );
 }
 
+function BauCuaFestivalProp() {
+  const bowlRef = useRef<THREE.Group>(null);
+
+  useFrame(({ clock }) => {
+    if (!bowlRef.current) return;
+    const t = clock.getElapsedTime();
+    bowlRef.current.position.y = 0.32 + Math.sin(t * 2) * 0.05;
+  });
+
+  return (
+    <group position={[0, 0.05, 0]}>
+      {/* Red Lacquer Plate with Gold Rim */}
+      <mesh position={[0, 0.04, 0]} receiveShadow>
+        <cylinderGeometry args={[0.55, 0.58, 0.06, 24]} />
+        <meshStandardMaterial color="#991b1b" roughness={0.3} metalness={0.2} />
+      </mesh>
+      <mesh position={[0, 0.072, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.48, 0.54, 24]} />
+        <meshStandardMaterial color="#fbbf24" metalness={0.9} roughness={0.15} />
+      </mesh>
+
+      {/* 3 Miniature Folk Dice on Plate */}
+      <mesh position={[-0.14, 0.12, 0]} castShadow>
+        <boxGeometry args={[0.12, 0.12, 0.12]} />
+        <meshStandardMaterial color="#b45309" roughness={0.3} />
+      </mesh>
+      <mesh position={[0.14, 0.12, -0.08]} castShadow>
+        <boxGeometry args={[0.12, 0.12, 0.12]} />
+        <meshStandardMaterial color="#059669" roughness={0.3} />
+      </mesh>
+      <mesh position={[0.02, 0.12, 0.14]} castShadow>
+        <boxGeometry args={[0.12, 0.12, 0.12]} />
+        <meshStandardMaterial color="#e11d48" roughness={0.3} />
+      </mesh>
+
+      {/* Hovering Golden Bronze Bowl */}
+      <group ref={bowlRef} position={[0, 0.32, 0]}>
+        <mesh castShadow>
+          <sphereGeometry args={[0.34, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
+          <meshStandardMaterial
+            color="#f59e0b"
+            metalness={0.9}
+            roughness={0.2}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+        <mesh position={[0, 0.35, 0]} castShadow>
+          <sphereGeometry args={[0.06, 8, 8]} />
+          <meshStandardMaterial color="#fbbf24" metalness={0.95} roughness={0.1} />
+        </mesh>
+      </group>
+
+      <pointLight position={[0, 0.6, 0]} color="#f59e0b" intensity={0.9} distance={3} />
+    </group>
+  );
+}
+
+function FloatingLuckyWheel() {
+  const wheelRef = useRef<THREE.Group>(null);
+
+  useFrame(({ clock }) => {
+    if (!wheelRef.current) return;
+    const t = clock.getElapsedTime();
+    wheelRef.current.rotation.y = t * 1.5;
+    wheelRef.current.position.y = 0.42 + Math.sin(t * 3) * 0.05;
+  });
+
+  return (
+    <group ref={wheelRef} position={[0, 0.42, 0.35]}>
+      {/* Outer Golden Wheel Rim */}
+      <mesh>
+        <torusGeometry args={[0.25, 0.025, 8, 24]} />
+        <meshStandardMaterial color="#fbbf24" metalness={0.9} roughness={0.15} />
+      </mesh>
+      {/* Inner Wheel Disc with 8 Color Slices */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.23, 0.23, 0.02, 8]} />
+        <meshStandardMaterial
+          color="#8b5cf6"
+          emissive="#6d28d9"
+          emissiveIntensity={0.65}
+          roughness={0.2}
+        />
+      </mesh>
+      {/* Center Golden Gem Hub */}
+      <mesh position={[0, 0, 0.02]}>
+        <sphereGeometry args={[0.055, 8, 8]} />
+        <meshStandardMaterial color="#fbbf24" metalness={0.95} roughness={0.1} />
+      </mesh>
+    </group>
+  );
+}
+
 function SpecialTileProp({ tileId }: { tileId: number }) {
   if (tileId === 0) return <StartToriiGate />;
   if (tileId === 8) return <StoneCavernArch />;
   if (tileId === 16) {
-    // Festival Gift Box
-    return (
-      <group position={[0, 0.05, 0]}>
-        <mesh position={[0, 0.25, 0]} castShadow>
-          <boxGeometry args={[0.6, 0.48, 0.6]} />
-          <meshStandardMaterial color="#e11d48" roughness={0.2} metalness={0.1} />
-        </mesh>
-        <mesh position={[0, 0.25, 0]}>
-          <boxGeometry args={[0.62, 0.5, 0.16]} />
-          <meshStandardMaterial color="#fbbf24" metalness={0.85} roughness={0.15} />
-        </mesh>
-        <mesh position={[0, 0.25, 0]}>
-          <boxGeometry args={[0.16, 0.5, 0.62]} />
-          <meshStandardMaterial color="#fbbf24" metalness={0.85} roughness={0.15} />
-        </mesh>
-      </group>
-    );
+    // 3D Bầu Cua Tôm Cá Festival Stage (Meta World Mini-Game Landmark)
+    return <BauCuaFestivalProp />;
   }
   if (tileId === 24) {
     // Police Car
@@ -326,9 +404,12 @@ function SingleTile3D({
       {/* Special Corner 3D Props */}
       {layout.isCorner && <SpecialTileProp tileId={tile.id} />}
 
-      {/* Floating 3D Cube for Chance & Fate */}
-      {!layout.isCorner && (tile.type === 'CHANCE' || tile.type === 'FATE') && (
+      {/* Floating 3D Prop: Gold Question Cube for Chance, Spinning Wheel for Fate */}
+      {!layout.isCorner && tile.type === 'CHANCE' && (
         <FloatingCardCube type={tile.type} />
+      )}
+      {!layout.isCorner && tile.type === 'FATE' && (
+        <FloatingLuckyWheel />
       )}
 
       {/* ================= BILLBOARD TEXT (ALWAYS FACING CAMERA) ================= */}
