@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useRef, useMemo, useEffect } from 'react';
+import React, { useRef, useMemo, useEffect, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Billboard, Text } from '@react-three/drei';
 import * as THREE from 'three';
 import { useGameStore } from '@/lib/game-engine/gameStore';
 import { Player, MascotType } from '@/lib/game-engine/types';
 import { getTile3DPosition } from './tilePositions';
+import { voiceManager } from '@/lib/audio/voiceManager';
 import {
   getPlayerTileOffset,
   calculatePathTiles,
@@ -538,6 +539,38 @@ interface SingleMascotPawnProps {
   isActiveTurn: boolean;
 }
 
+
+/**
+ * 3D Comic Speech Bubble floating above Mascot head during dialogue
+ */
+function Mascot3DSpeechBubble({ text }: { text: string }) {
+  const width = Math.min(2.8, Math.max(1.4, text.length * 0.075));
+  return (
+    <Billboard position={[0, 1.45, 0]} follow lockX={false} lockY={false} lockZ={false}>
+      {/* Speech bubble rounded dark background */}
+      <mesh position={[0, 0, -0.01]}>
+        <planeGeometry args={[width, 0.38]} />
+        <meshBasicMaterial color="#020617" transparent opacity={0.92} />
+      </mesh>
+      {/* Golden border */}
+      <mesh position={[0, 0, -0.015]}>
+        <planeGeometry args={[width + 0.04, 0.42]} />
+        <meshBasicMaterial color="#f59e0b" />
+      </mesh>
+      <Text
+        fontSize={0.11}
+        maxWidth={2.6}
+        color="#ffffff"
+        anchorX="center"
+        anchorY="middle"
+        fontWeight="bold"
+      >
+        {text}
+      </Text>
+    </Billboard>
+  );
+}
+
 function SingleMascotPawn({
   player,
   playerIndex,
@@ -548,6 +581,26 @@ function SingleMascotPawn({
   const groupRef = useRef<THREE.Group>(null);
   const meshHolderRef = useRef<THREE.Group>(null);
   const turnArrowRef = useRef<THREE.Group>(null);
+  const [bubbleText, setBubbleText] = useState<string | null>(null);
+
+  useEffect(() => {
+    const mascotCharMap: Record<string, string> = {
+      PIG: 'CHAR_01',
+      FOX: 'CHAR_02',
+      CAT: 'CHAR_03',
+      BUFFALO: 'CHAR_04',
+    };
+    const targetCharId = mascotCharMap[player.mascot] || 'CHAR_01';
+
+    const unsub = voiceManager.onDialogue((event) => {
+      if (event.characterId === targetCharId) {
+        setBubbleText(event.textVi);
+        const timer = setTimeout(() => setBubbleText(null), 3800);
+        return () => clearTimeout(timer);
+      }
+    });
+    return unsub;
+  }, [player.mascot]);
 
   // Animation state stored in refs to avoid re-renders during useFrame
   const animState = useRef({
@@ -744,6 +797,9 @@ function SingleMascotPawn({
           </mesh>
         </group>
       )}
+
+      {/* 3D Comic Speech Bubble over Mascot */}
+      {bubbleText && <Mascot3DSpeechBubble text={bubbleText} />}
 
       {/* Active Turn Floating Crown & Clean Name Badge */}
       {isActiveTurn && (

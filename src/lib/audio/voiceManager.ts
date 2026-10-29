@@ -8,6 +8,14 @@ import { CharacterId, VoiceTriggerId } from './types';
 import { CHARACTER_PROFILES, VOICE_SCRIPT_BANK } from './audioManifest';
 import { audioSettings } from './audioSettings';
 import { musicManager } from './musicManager';
+import { sfxManager } from './sfxManager';
+
+export interface DialogueEvent {
+  characterId: CharacterId;
+  trigger: VoiceTriggerId;
+  textVi: string;
+  timestamp: number;
+}
 
 export class VoiceManager {
   private lastVoiceTime = 0;
@@ -16,6 +24,12 @@ export class VoiceManager {
   private currentUtterance: SpeechSynthesisUtterance | null = null;
   private duckingSafetyTimer: ReturnType<typeof setTimeout> | null = null;
   private duckingListeners: Set<(ducked: boolean) => void> = new Set();
+  private dialogueListeners: Set<(event: DialogueEvent) => void> = new Set();
+
+  public onDialogue(listener: (event: DialogueEvent) => void): () => void {
+    this.dialogueListeners.add(listener);
+    return () => this.dialogueListeners.delete(listener);
+  }
 
   public getIsSpeaking(): boolean {
     return this.isSpeaking;
@@ -63,6 +77,21 @@ export class VoiceManager {
       this.duckingSafetyTimer = null;
     }
 
+    // Broadcast dialogue event to UI subscribers (3D Speech Bubble & HUD Banner)
+    const dialogueEvt: DialogueEvent = {
+      characterId,
+      trigger,
+      textVi: match.textVi,
+      timestamp: now,
+    };
+    this.dialogueListeners.forEach((fn) => {
+      try {
+        fn(dialogueEvt);
+      } catch {
+        // Safe callback isolation
+      }
+    });
+
     // Trigger BGM ducking
     this.isSpeaking = true;
     this.notifyDucking(true);
@@ -77,23 +106,37 @@ export class VoiceManager {
       this.notifyDucking(false);
     };
 
+    // Check if genuine Vietnamese speech synthesis is available
+    let hasViVoice = false;
+    let viVoice: SpeechSynthesisVoice | null = null;
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       try {
-        window.speechSynthesis.cancel(); // Cancel any lingering speech
+        const voices = window.speechSynthesis.getVoices();
+        viVoice = voices.find(
+          (v) =>
+            v.lang.toLowerCase().startsWith('vi') ||
+            v.lang.toLowerCase().includes('vie') ||
+            v.name.toLowerCase().includes('vietnam')
+        ) || null;
+        hasViVoice = viVoice !== null;
+      } catch {
+        hasViVoice = false;
+      }
+    }
 
+    if (hasViVoice && viVoice && typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(match.textVi);
-        utterance.lang = 'vi-VN';
+        utterance.voice = viVoice;
+        utterance.lang = viVoice.lang || 'vi-VN';
         utterance.volume = effectiveVol;
         utterance.pitch = profile?.pitch || 1.0;
         utterance.rate = profile?.rate || 1.0;
 
         utterance.onend = onComplete;
         utterance.onerror = onComplete;
-
-        // Keep persistent reference to prevent Chromium GC premature termination
         this.currentUtterance = utterance;
-
-        // Fallback safety timeout (6.5s) to guarantee ducking restoration
         this.duckingSafetyTimer = setTimeout(onComplete, 6500);
 
         window.speechSynthesis.speak(utterance);
@@ -102,9 +145,11 @@ export class VoiceManager {
         onComplete();
       }
     } else {
-      // Auto-restore ducking after estimated reading duration
-      const estimatedDurationMs = Math.max(1500, match.textVi.length * 75);
-      this.duckingSafetyTimer = setTimeout(onComplete, estimatedDurationMs);
+      // If no genuine Vietnamese voice exists in the browser/OS:
+      // NEVER allow English voice fallback (which produces unintelligible gibberish).
+      // Instead, play delightful Chibi Emote audio and display Speech Bubble & Dialogue Banner!
+      sfxManager.playChibiEmote(characterId, trigger);
+      this.duckingSafetyTimer = setTimeout(onComplete, 1600);
     }
 
     return true;

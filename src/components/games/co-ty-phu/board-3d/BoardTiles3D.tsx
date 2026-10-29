@@ -276,6 +276,133 @@ function FloatingCardCube({ type }: { type: 'CHANCE' | 'FATE' }) {
   );
 }
 
+
+/* =========================================================================
+   MINIATURE CITY LANDMARK ICONS (Iconic Vietnamese Monuments on Tiles)
+   ========================================================================= */
+function MiniTileLandmark({ tileId }: { tileId: number }) {
+  switch (tileId) {
+    case 31: // TP. Hồ Chí Minh: Mini Landmark 81 Spire
+      return (
+        <group position={[0.42, 0.02, 0.12]}>
+          <mesh position={[0, 0.32, 0]} castShadow>
+            <boxGeometry args={[0.16, 0.64, 0.16]} />
+            <meshStandardMaterial color="#38bdf8" metalness={0.8} roughness={0.15} />
+          </mesh>
+          <mesh position={[0, 0.68, 0]}>
+            <cylinderGeometry args={[0.015, 0.04, 0.16, 8]} />
+            <meshStandardMaterial color="#f8fafc" metalness={0.9} />
+          </mesh>
+          <mesh position={[0, 0.76, 0]}>
+            <sphereGeometry args={[0.02, 8, 8]} />
+            <meshBasicMaterial color="#ef4444" />
+          </mesh>
+        </group>
+      );
+    case 30: // Hà Nội: Mini Khuê Văn Các Pavilion
+      return (
+        <group position={[0.42, 0.02, 0.12]}>
+          <mesh position={[0, 0.1, 0]} castShadow>
+            <boxGeometry args={[0.24, 0.2, 0.24]} />
+            <meshStandardMaterial color="#dc2626" roughness={0.4} />
+          </mesh>
+          <mesh position={[0, 0.24, 0]} castShadow>
+            <coneGeometry args={[0.22, 0.12, 4]} />
+            <meshStandardMaterial color="#b91c1c" roughness={0.3} />
+          </mesh>
+          <mesh position={[0, 0.32, 0]}>
+            <sphereGeometry args={[0.03, 8, 8]} />
+            <meshStandardMaterial color="#fbbf24" metalness={0.9} />
+          </mesh>
+        </group>
+      );
+    case 28: // Cảng Hải Phòng: Mini Harbor Crane & Cargo
+      return (
+        <group position={[0.42, 0.02, 0.12]}>
+          <mesh position={[0, 0.18, 0]} castShadow>
+            <boxGeometry args={[0.04, 0.36, 0.04]} />
+            <meshStandardMaterial color="#f59e0b" metalness={0.7} />
+          </mesh>
+          <mesh position={[0.08, 0.36, 0]} rotation={[0, 0, -0.2]} castShadow>
+            <boxGeometry args={[0.22, 0.03, 0.04]} />
+            <meshStandardMaterial color="#f59e0b" metalness={0.7} />
+          </mesh>
+          <mesh position={[-0.08, 0.06, 0]} castShadow>
+            <boxGeometry args={[0.14, 0.1, 0.1]} />
+            <meshStandardMaterial color="#0284c7" />
+          </mesh>
+        </group>
+      );
+    case 22: // Đà Nẵng: Mini Cầu Rồng Golden Dragon Arch
+      return (
+        <group position={[0.42, 0.02, 0.12]}>
+          <mesh position={[0, 0.14, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+            <torusGeometry args={[0.16, 0.04, 8, 16, Math.PI]} />
+            <meshStandardMaterial color="#fbbf24" metalness={0.9} roughness={0.15} />
+          </mesh>
+          <mesh position={[0.16, 0.2, 0]}>
+            <coneGeometry args={[0.05, 0.08, 4]} />
+            <meshStandardMaterial color="#f59e0b" metalness={0.9} />
+          </mesh>
+        </group>
+      );
+    case 13: // Nha Trang: Mini Beach Parasol & Sunbed
+      return (
+        <group position={[0.42, 0.02, 0.12]}>
+          <mesh position={[0, 0.16, 0]} castShadow>
+            <cylinderGeometry args={[0.015, 0.015, 0.32, 6]} />
+            <meshStandardMaterial color="#78350f" />
+          </mesh>
+          <mesh position={[0, 0.32, 0]} castShadow>
+            <coneGeometry args={[0.18, 0.08, 12]} />
+            <meshStandardMaterial color="#0284c7" />
+          </mesh>
+        </group>
+      );
+    case 10: // Phú Quốc: Mini Tropical Pearl Shell
+      return (
+        <group position={[0.42, 0.02, 0.12]}>
+          <mesh position={[0, 0.06, 0]} rotation={[0.3, 0, 0]} castShadow>
+            <cylinderGeometry args={[0.12, 0.15, 0.04, 12]} />
+            <meshStandardMaterial color="#fef08a" roughness={0.4} />
+          </mesh>
+          <mesh position={[0, 0.1, 0]}>
+            <sphereGeometry args={[0.045, 12, 12]} />
+            <meshStandardMaterial color="#ffffff" emissive="#e0f2fe" emissiveIntensity={0.8} />
+          </mesh>
+        </group>
+      );
+    case 4: // Cần Thơ: Mini Floating Market Sampan
+      return (
+        <group position={[0.42, 0.02, 0.12]} rotation={[0, 0.3, 0]}>
+          <mesh position={[0, 0.04, 0]} castShadow>
+            <boxGeometry args={[0.26, 0.05, 0.1]} />
+            <meshStandardMaterial color="#78350f" roughness={0.7} />
+          </mesh>
+          <mesh position={[0, 0.08, 0]}>
+            <coneGeometry args={[0.04, 0.03, 10]} />
+            <meshStandardMaterial color="#fef08a" />
+          </mesh>
+        </group>
+      );
+    case 14: // Vũng Tàu: Mini Coastal Lighthouse
+      return (
+        <group position={[0.42, 0.02, 0.12]}>
+          <mesh position={[0, 0.18, 0]} castShadow>
+            <cylinderGeometry args={[0.05, 0.08, 0.36, 12]} />
+            <meshStandardMaterial color="#f8fafc" />
+          </mesh>
+          <mesh position={[0, 0.38, 0]}>
+            <sphereGeometry args={[0.04, 8, 8]} />
+            <meshBasicMaterial color="#ef4444" />
+          </mesh>
+        </group>
+      );
+    default:
+      return null;
+  }
+}
+
 /* =========================================================================
    SINGLE 3D TILE SLAB COMPONENT (Meta World High-End Ceramic Acrylic Finish)
    ========================================================================= */
@@ -362,43 +489,122 @@ function SingleTile3D({
         }
       }}
     >
-      {/* 3D Base Slab with high-gloss ceramic finish and tactile beveled edges */}
+      {/* 3D Base Slab with High-Gloss Marble / Ceramic Finish */}
       <mesh castShadow receiveShadow position={[0, -TILE_THICKNESS / 2, 0]}>
-        <boxGeometry args={[localWidth - 0.08, TILE_THICKNESS, localDepth - 0.08]} />
+        <boxGeometry args={[localWidth - 0.06, TILE_THICKNESS, localDepth - 0.06]} />
         <meshStandardMaterial
           color={slabColor}
           roughness={0.18}
           metalness={0.12}
           emissive={isSelected ? '#ca8a04' : activeHover ? '#0284c7' : '#000000'}
-          emissiveIntensity={isSelected ? 0.35 : activeHover ? 0.15 : 0}
+          emissiveIntensity={isSelected ? 0.35 : activeHover ? 0.18 : 0}
         />
       </mesh>
 
-      {/* Decorative Metallic Bevel Trim */}
+      {/* Polished Gold & Chrome Beveled Rim */}
       <mesh position={[0, -TILE_THICKNESS + 0.02, 0]}>
-        <boxGeometry args={[localWidth - 0.04, 0.04, localDepth - 0.04]} />
-        <meshStandardMaterial color={rimColor} roughness={0.3} metalness={0.4} />
+        <boxGeometry args={[localWidth - 0.02, 0.04, localDepth - 0.02]} />
+        <meshStandardMaterial color={rimColor} roughness={0.2} metalness={0.65} />
       </mesh>
 
-      {/* Glowing Owner Color Border Ring when owned */}
-      {ownerColor && (
-        <mesh position={[0, 0.005, 0]}>
-          <boxGeometry args={[localWidth - 0.06, 0.018, localDepth - 0.06]} />
-          <meshStandardMaterial
-            color={ownerColor}
-            emissive={ownerColor}
-            emissiveIntensity={0.9}
-            roughness={0.2}
-          />
+      {/* Meta World City Street Infrastructure (Asphalt Road on Outer Edge) */}
+      {!layout.isCorner && (
+        <group position={[0, 0.005, localDepth / 2 - 0.22]}>
+          {/* Dark Asphalt Road Bed */}
+          <mesh receiveShadow>
+            <boxGeometry args={[localWidth - 0.08, 0.016, 0.4]} />
+            <meshStandardMaterial color="#1e293b" roughness={0.88} />
+          </mesh>
+          {/* Yellow Dashed Highway Divider Line */}
+          <mesh position={[0, 0.01, 0]}>
+            <boxGeometry args={[localWidth * 0.45, 0.005, 0.03]} />
+            <meshBasicMaterial color="#facc15" />
+          </mesh>
+        </group>
+      )}
+
+      {/* Manicured Emerald Lawn Plot in Center of Property */}
+      {!layout.isCorner && tile.type === 'PROPERTY' && (
+        <mesh position={[0, 0.008, 0.05]} receiveShadow>
+          <boxGeometry args={[localWidth - 0.16, 0.012, localDepth * 0.4]} />
+          <meshStandardMaterial color="#15803d" roughness={0.7} />
         </mesh>
       )}
 
-      {/* Header color band (facing the island center: local -Z side) */}
+      {/* Miniature Streetlamp on Property Curbs */}
+      {!layout.isCorner && tile.type === 'PROPERTY' && (
+        <group position={[-localWidth / 2 + 0.22, 0.01, -0.15]}>
+          <mesh position={[0, 0.16, 0]} castShadow>
+            <cylinderGeometry args={[0.016, 0.022, 0.32, 8]} />
+            <meshStandardMaterial color="#0f172a" metalness={0.8} />
+          </mesh>
+          <mesh position={[0, 0.33, 0]}>
+            <sphereGeometry args={[0.035, 8, 8]} />
+            <meshStandardMaterial color="#fef08a" emissive="#fef08a" emissiveIntensity={1.2} />
+          </mesh>
+        </group>
+      )}
+
+      {/* Miniature 3D City Landmarks on Iconic Vietnamese Tiles */}
+      {!layout.isCorner && <MiniTileLandmark tileId={tile.id} />}
+
+      {/* Header Color Band (Facing island center: local -Z side) */}
       {!layout.isCorner && (
-        <mesh position={[0, 0.015, -localDepth / 2 + 0.32]} receiveShadow>
-          <boxGeometry args={[localWidth - 0.12, 0.02, 0.48]} />
-          <meshStandardMaterial color={bannerColor} roughness={0.18} metalness={0.2} />
-        </mesh>
+        <group position={[0, 0.015, -localDepth / 2 + 0.28]}>
+          <mesh receiveShadow castShadow>
+            <boxGeometry args={[localWidth - 0.12, 0.024, 0.44]} />
+            <meshStandardMaterial color={bannerColor} roughness={0.16} metalness={0.25} />
+          </mesh>
+          {/* Gold Filigree Trim Bar */}
+          <mesh position={[0, 0.014, 0.22]}>
+            <boxGeometry args={[localWidth - 0.12, 0.006, 0.025]} />
+            <meshStandardMaterial color="#fbbf24" metalness={0.9} roughness={0.15} />
+          </mesh>
+        </group>
+      )}
+
+      {/* Dynamic 3D Ownership Holographic Laser Fence & Neon Glow (Meta World Signature) */}
+      {ownerColor && (
+        <group position={[0, 0.01, 0]}>
+          {/* Glowing Floor Boundary */}
+          <mesh position={[0, 0.005, 0]}>
+            <boxGeometry args={[localWidth - 0.05, 0.02, localDepth - 0.05]} />
+            <meshStandardMaterial
+              color={ownerColor}
+              emissive={ownerColor}
+              emissiveIntensity={1.2}
+              roughness={0.2}
+            />
+          </mesh>
+
+          {/* 4 Corner Radiant Neon Laser Pylons */}
+          {[-localWidth / 2 + 0.12, localWidth / 2 - 0.12].map((x, xi) =>
+            [-localDepth / 2 + 0.12, localDepth / 2 - 0.12].map((z, zi) => (
+              <mesh key={`pylon-${xi}-${zi}`} position={[x, 0.2, z]}>
+                <cylinderGeometry args={[0.018, 0.018, 0.4, 8]} />
+                <meshStandardMaterial
+                  color={ownerColor}
+                  emissive={ownerColor}
+                  emissiveIntensity={1.8}
+                  transparent
+                  opacity={0.85}
+                />
+              </mesh>
+            ))
+          )}
+
+          {/* 3D Owner Golden Crest Pin */}
+          <group position={[0, 0.15, 0.15]}>
+            <mesh castShadow>
+              <cylinderGeometry args={[0.06, 0.08, 0.12, 8]} />
+              <meshStandardMaterial color="#fbbf24" metalness={0.95} roughness={0.1} />
+            </mesh>
+            <mesh position={[0, 0.1, 0]}>
+              <octahedronGeometry args={[0.06, 0]} />
+              <meshStandardMaterial color={ownerColor} emissive={ownerColor} emissiveIntensity={1.5} />
+            </mesh>
+          </group>
+        </group>
       )}
 
       {/* Special Corner 3D Props */}

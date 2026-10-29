@@ -1,125 +1,141 @@
 'use client';
 
-import React, { useRef, useMemo } from 'react';
+import React, { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
 /* =========================================================================
-   ISOMETRIC MINI WORLD DIORAMA 3D - "ĐẢO NGỌC VIỆT NAM"
-   Inspired by Meta World: My City's AAA visual polish:
-   - Floating Giant Iridescent Pearl above a Golden Lotus Fountain
-   - Emerald Karst Peaks (Hạ Long & Phú Quốc) with lush tropical foliage
-   - Central Emerald Velvet Dice Arena with gold relief trim
-   - Golden Dragon Pagoda & Wooden Footbridge across a turquoise lagoon
-   - Tropical Coconut Palms & Exotic Flora
+   ISOMETRIC MINI WORLD DIORAMA 3D - "ĐẢO NGỌC VIỆT NAM" (META WORLD AAA FIDELITY)
+   
+   Features:
+   - Radiant Floating Giant Iridescent Pearl with golden lotus sanctuary
+   - Crystal clear turquoise lagoon water with gentle animated ripples
+   - Low-profile sculptured emerald hills & golden sand beach (never blocks tiles)
+   - Iconic Vietnamese Golden Pagoda, wooden arched bridge & conical hat sampan
+   - Tropical coconut palms with lush leafy fronds & coconut clusters
+   - Luxury emerald velvet dice tray with gold-filigree molding
    ========================================================================= */
 
 /**
  * 1. THE LEGENDARY GIANT PEARL (Hòn Ngọc Viễn Đông / Đảo Ngọc)
- * Floating gracefully above the central fountain, gently rotating with iridescent shimmer.
+ * Floating gracefully above the golden lotus, gently rotating with iridescent shimmer.
  */
 function GiantFloatingPearl() {
   const pearlRef = useRef<THREE.Mesh>(null);
-  const ringRef = useRef<THREE.Group>(null);
+  const ring1Ref = useRef<THREE.Group>(null);
+  const ring2Ref = useRef<THREE.Group>(null);
+  const glowLightRef = useRef<THREE.PointLight>(null);
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
+    const bobbingY = 1.65 + Math.sin(t * 1.6) * 0.1;
+
     if (pearlRef.current) {
-      pearlRef.current.position.y = 1.95 + Math.sin(t * 1.5) * 0.12;
-      pearlRef.current.rotation.y = t * 0.4;
+      pearlRef.current.position.y = bobbingY;
+      pearlRef.current.rotation.y = t * 0.35;
     }
-    if (ringRef.current) {
-      ringRef.current.position.y = 1.95 + Math.sin(t * 1.5) * 0.12;
-      ringRef.current.rotation.z = Math.sin(t * 0.8) * 0.15;
-      ringRef.current.rotation.y = -t * 0.6;
+    if (ring1Ref.current) {
+      ring1Ref.current.position.y = bobbingY;
+      ring1Ref.current.rotation.y = -t * 0.5;
+      ring1Ref.current.rotation.z = Math.sin(t * 0.7) * 0.12;
+    }
+    if (ring2Ref.current) {
+      ring2Ref.current.position.y = bobbingY;
+      ring2Ref.current.rotation.y = t * 0.65;
+      ring2Ref.current.rotation.x = Math.PI / 4 + Math.cos(t * 0.8) * 0.15;
+    }
+    if (glowLightRef.current) {
+      glowLightRef.current.position.y = bobbingY;
+      glowLightRef.current.intensity = 2.0 + Math.sin(t * 2.2) * 0.4;
     }
   });
 
   return (
     <group position={[0, 0, 0]}>
-      {/* Golden Lotus Pedestal Base */}
-      <mesh position={[0, 0.45, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.9, 1.2, 0.4, 16]} />
-        <meshStandardMaterial color="#f59e0b" metalness={0.85} roughness={0.2} />
+      {/* Golden Lotus Pedestal Base - Tiered Luxury */}
+      <mesh position={[0, 0.32, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[1.0, 1.25, 0.3, 24]} />
+        <meshStandardMaterial color="#f59e0b" metalness={0.92} roughness={0.16} />
+      </mesh>
+      <mesh position={[0, 0.48, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.82, 0.96, 0.12, 24]} />
+        <meshStandardMaterial color="#fbbf24" metalness={0.95} roughness={0.12} />
       </mesh>
 
-      {/* 8 Golden Lotus Petals curving upwards */}
+      {/* 8 Blooming Golden Lotus Petals */}
       {Array.from({ length: 8 }).map((_, i) => {
         const angle = (i * Math.PI) / 4;
         return (
-          <group key={i} position={[0, 0.62, 0]} rotation={[0, angle, 0]}>
-            <mesh position={[0.72, 0.28, 0]} rotation={[0, 0, -0.42]} castShadow>
-              <coneGeometry args={[0.22, 0.7, 4]} />
+          <group key={`petal-${i}`} position={[0, 0.52, 0]} rotation={[0, angle, 0]}>
+            <mesh position={[0.62, 0.22, 0]} rotation={[0, 0, -0.48]} castShadow>
+              <coneGeometry args={[0.22, 0.62, 4]} />
               <meshStandardMaterial
                 color="#fbbf24"
-                metalness={0.9}
+                metalness={0.92}
                 roughness={0.15}
+                emissive="#f59e0b"
+                emissiveIntensity={0.2}
               />
             </mesh>
           </group>
         );
       })}
 
-      {/* The Giant Iridescent Pearl */}
-      <mesh ref={pearlRef} position={[0, 1.95, 0]} castShadow>
-        <sphereGeometry args={[0.72, 32, 32]} />
+      {/* Radiant Giant Pearl with iridescent crystalline material */}
+      <mesh ref={pearlRef} position={[0, 1.65, 0]} castShadow>
+        <sphereGeometry args={[0.68, 32, 32]} />
         <meshStandardMaterial
           color="#fdf4ff"
-          emissive="#e0f2fe"
-          emissiveIntensity={0.65}
-          roughness={0.12}
-          metalness={0.25}
+          emissive="#bae6fd"
+          emissiveIntensity={0.75}
+          roughness={0.08}
+          metalness={0.3}
         />
       </mesh>
 
-      {/* Golden Orbital Ring */}
-      <group ref={ringRef} position={[0, 1.95, 0]}>
-        <mesh rotation={[Math.PI / 3, 0, 0]}>
-          <torusGeometry args={[1.05, 0.035, 12, 32]} />
-          <meshStandardMaterial color="#fbbf24" metalness={0.9} roughness={0.1} />
+      {/* Dual Golden Orbital Rings with Crystal Inlays */}
+      <group ref={ring1Ref} position={[0, 1.65, 0]}>
+        <mesh rotation={[Math.PI / 3.5, 0, 0]}>
+          <torusGeometry args={[0.96, 0.028, 12, 32]} />
+          <meshStandardMaterial color="#fbbf24" metalness={0.95} roughness={0.1} />
+        </mesh>
+      </group>
+      <group ref={ring2Ref} position={[0, 1.65, 0]}>
+        <mesh rotation={[-Math.PI / 3.2, 0, 0]}>
+          <torusGeometry args={[1.08, 0.022, 12, 32]} />
+          <meshStandardMaterial color="#fef08a" metalness={0.95} roughness={0.1} />
         </mesh>
       </group>
 
-      {/* Pearl Soft Glow Halo */}
-      <pointLight position={[0, 2.0, 0]} color="#bae6fd" intensity={1.8} distance={6} />
+      {/* Pulsing Ethereal Halo Point Light */}
+      <pointLight ref={glowLightRef} position={[0, 1.65, 0]} color="#7dd3fc" intensity={2.2} distance={7} />
     </group>
   );
 }
 
 /**
- * 2. EMERALD TROPICAL KARST PEAK (Vịnh Hạ Long Style)
+ * 2. LUSH TROPICAL RESORT KNOLL (Low-profile, never blocks board view)
  */
-interface KarstPeakProps {
-  position: [number, number, number];
-  height?: number;
-  radius?: number;
-  rotationY?: number;
-}
-
-function KarstIslandPeak({
+function TropicalResortKnoll({
   position,
-  height = 2.8,
-  radius = 1.1,
+  scale = [1, 1, 1],
   rotationY = 0,
-}: KarstPeakProps) {
+}: {
+  position: [number, number, number];
+  scale?: [number, number, number];
+  rotationY?: number;
+}) {
   return (
-    <group position={position} rotation={[0, rotationY, 0]}>
-      {/* Limestone Rock Base - weathered sea cliffs */}
-      <mesh position={[0, height / 2, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[radius * 0.65, radius, height, 7]} />
-        <meshStandardMaterial color="#475569" roughness={0.88} flatShading />
+    <group position={position} scale={scale} rotation={[0, rotationY, 0]}>
+      {/* Smooth rounded emerald grassy mound */}
+      <mesh position={[0, 0.28, 0]} castShadow receiveShadow>
+        <sphereGeometry args={[0.9, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshStandardMaterial color="#16a34a" roughness={0.75} />
       </mesh>
-
-      {/* Moss / Vegetation cap on peak */}
-      <mesh position={[0, height + 0.15, 0]} castShadow>
-        <coneGeometry args={[radius * 0.72, 0.55, 7]} />
-        <meshStandardMaterial color="#15803d" roughness={0.7} flatShading />
-      </mesh>
-
-      {/* Hanging Vines */}
-      <mesh position={[radius * 0.4, height * 0.7, 0]} rotation={[0, 0, -0.2]}>
-        <cylinderGeometry args={[0.06, 0.04, 0.8, 5]} />
-        <meshStandardMaterial color="#166534" roughness={0.8} />
+      {/* Terraced stone contour ledge */}
+      <mesh position={[0, 0.12, 0]} receiveShadow>
+        <cylinderGeometry args={[1.1, 1.25, 0.12, 14]} />
+        <meshStandardMaterial color="#ca8a04" roughness={0.8} />
       </mesh>
     </group>
   );
@@ -131,7 +147,7 @@ function KarstIslandPeak({
 function TropicalPalm({
   position,
   scale = 1,
-  leanAngle = 0.18,
+  leanAngle = 0.16,
 }: {
   position: [number, number, number];
   scale?: number;
@@ -139,23 +155,23 @@ function TropicalPalm({
 }) {
   return (
     <group position={position} scale={[scale, scale, scale]}>
-      {/* Slender Curved Trunk */}
-      <mesh position={[0, 0.55, 0]} rotation={[0.05, 0, leanAngle]} castShadow>
-        <cylinderGeometry args={[0.07, 0.11, 1.1, 7]} />
+      {/* Curved slender trunk */}
+      <mesh position={[0, 0.45, 0]} rotation={[0.04, 0, leanAngle]} castShadow>
+        <cylinderGeometry args={[0.06, 0.1, 0.9, 8]} />
         <meshStandardMaterial color="#78350f" roughness={0.85} />
       </mesh>
-      {/* Fronds */}
-      {[0, 1.05, 2.1, 3.15, 4.2, 5.25].map((angle, i) => (
-        <group key={i} position={[0.1, 1.1, 0]} rotation={[0.3, angle, 0]}>
-          <mesh position={[0, 0, 0.35]} rotation={[-0.4, 0, 0]} castShadow>
-            <coneGeometry args={[0.2, 0.8, 4]} />
-            <meshStandardMaterial color="#16a34a" roughness={0.5} />
+      {/* 6 Leafy Fronds with downward curve */}
+      {[0, 1.05, 2.09, 3.14, 4.19, 5.24].map((angle, i) => (
+        <group key={`frond-${i}`} position={[0.08, 0.9, 0]} rotation={[0.28, angle, 0]}>
+          <mesh position={[0, 0, 0.32]} rotation={[-0.45, 0, 0]} castShadow>
+            <coneGeometry args={[0.18, 0.75, 4]} />
+            <meshStandardMaterial color="#22c55e" roughness={0.45} />
           </mesh>
         </group>
       ))}
-      {/* Coconut cluster */}
-      <mesh position={[0.1, 1.05, 0.05]} castShadow>
-        <sphereGeometry args={[0.07, 6, 6]} />
+      {/* Coconuts */}
+      <mesh position={[0.08, 0.86, 0.04]} castShadow>
+        <sphereGeometry args={[0.065, 6, 6]} />
         <meshStandardMaterial color="#451a03" roughness={0.7} />
       </mesh>
     </group>
@@ -163,82 +179,63 @@ function TropicalPalm({
 }
 
 /**
- * 4. MINIATURE VIETNAMESE GOLDEN PAGODA
+ * 4. VIETNAMESE GOLDEN DRAGON PAGODA
  */
 function VietnamesePagoda({ position }: { position: [number, number, number] }) {
   return (
-    <group position={position} scale={[0.85, 0.85, 0.85]}>
-      {/* Stone Foundation */}
-      <mesh position={[0, 0.1, 0]} castShadow receiveShadow>
-        <boxGeometry args={[1.2, 0.2, 1.2]} />
-        <meshStandardMaterial color="#64748b" roughness={0.8} />
+    <group position={position}>
+      {/* White Marble Base Plinth */}
+      <mesh position={[0, 0.08, 0]} castShadow receiveShadow>
+        <boxGeometry args={[1.1, 0.16, 1.1]} />
+        <meshStandardMaterial color="#f8fafc" roughness={0.3} />
       </mesh>
-
-      {/* Red Timber Columns */}
-      {[-0.38, 0.38].map((x) =>
-        [-0.38, 0.38].map((z) => (
-          <mesh key={`${x}-${z}`} position={[x, 0.45, z]} castShadow>
-            <cylinderGeometry args={[0.04, 0.04, 0.5, 8]} />
-            <meshStandardMaterial color="#b91c1c" roughness={0.4} />
+      {/* Red Columns */}
+      {[-0.34, 0.34].map((x) =>
+        [-0.34, 0.34].map((z) => (
+          <mesh key={`col-${x}-${z}`} position={[x, 0.42, z]} castShadow>
+            <cylinderGeometry args={[0.04, 0.04, 0.52, 8]} />
+            <meshStandardMaterial color="#dc2626" roughness={0.3} metalness={0.1} />
           </mesh>
         ))
       )}
-
-      {/* Pagoda Shrine Chamber */}
-      <mesh position={[0, 0.45, 0]} castShadow>
-        <boxGeometry args={[0.7, 0.45, 0.7]} />
-        <meshStandardMaterial color="#fef08a" roughness={0.6} />
+      {/* Lower Terracotta Curved Roof Eaves */}
+      <mesh position={[0, 0.72, 0]} castShadow>
+        <coneGeometry args={[0.82, 0.24, 4]} />
+        <meshStandardMaterial color="#b91c1c" roughness={0.35} />
       </mesh>
-
-      {/* Curved Tier 1 Roof (Ngói Âm Dương) */}
-      <mesh position={[0, 0.76, 0]} castShadow>
-        <coneGeometry args={[0.95, 0.35, 4]} />
-        <meshStandardMaterial color="#dc2626" roughness={0.3} />
-      </mesh>
-
-      {/* Upper Spire Tier */}
-      <mesh position={[0, 1.02, 0]} castShadow>
-        <cylinderGeometry args={[0.15, 0.22, 0.22, 8]} />
+      {/* Upper Spire Chamber */}
+      <mesh position={[0, 0.94, 0]} castShadow>
+        <cylinderGeometry args={[0.18, 0.24, 0.2, 8]} />
         <meshStandardMaterial color="#b91c1c" roughness={0.4} />
       </mesh>
-
-      {/* Top Gold Stupa Finial */}
-      <mesh position={[0, 1.25, 0]} castShadow>
-        <coneGeometry args={[0.18, 0.3, 8]} />
-        <meshStandardMaterial color="#fbbf24" metalness={0.9} roughness={0.15} />
+      {/* Golden Roof Pinnacle Finial */}
+      <mesh position={[0, 1.15, 0]} castShadow>
+        <coneGeometry args={[0.16, 0.28, 8]} />
+        <meshStandardMaterial color="#fbbf24" metalness={0.92} roughness={0.15} />
       </mesh>
-
-      {/* Warm Lantern Glow */}
-      <pointLight position={[0, 0.5, 0]} color="#f59e0b" intensity={0.9} distance={3} />
+      <pointLight position={[0, 0.45, 0]} color="#f59e0b" intensity={0.8} distance={2.5} />
     </group>
   );
 }
 
 /**
- * 5. TRADITIONAL WOODEN ARCHED FOOTBRIDGE ACROSS THE LAGOON
+ * 5. TRADITIONAL WOODEN ARCHED BRIDGE
  */
 function WoodenFootbridge({ position, rotationY = 0 }: { position: [number, number, number]; rotationY?: number }) {
   return (
     <group position={position} rotation={[0, rotationY, 0]}>
-      {/* Arched Bridge Plank */}
-      <mesh position={[0, 0.2, 0]} castShadow>
-        <boxGeometry args={[1.5, 0.08, 0.5]} />
+      {/* Arched Plank */}
+      <mesh position={[0, 0.16, 0]} castShadow>
+        <boxGeometry args={[1.35, 0.06, 0.46]} />
         <meshStandardMaterial color="#78350f" roughness={0.7} />
       </mesh>
-      {/* Side Railings */}
-      {[-0.22, 0.22].map((z, i) => (
-        <group key={i} position={[0, 0.32, z]}>
+      {/* Railings */}
+      {[-0.2, 0.2].map((z, i) => (
+        <group key={`rail-${i}`} position={[0, 0.26, z]}>
           <mesh castShadow>
-            <boxGeometry args={[1.5, 0.05, 0.04]} />
+            <boxGeometry args={[1.35, 0.04, 0.035]} />
             <meshStandardMaterial color="#b45309" roughness={0.6} />
           </mesh>
-          {/* Posts */}
-          {[-0.6, 0, 0.6].map((x, j) => (
-            <mesh key={j} position={[x, -0.07, 0]} castShadow>
-              <cylinderGeometry args={[0.02, 0.02, 0.22, 6]} />
-              <meshStandardMaterial color="#78350f" />
-            </mesh>
-          ))}
         </group>
       ))}
     </group>
@@ -247,30 +244,27 @@ function WoodenFootbridge({ position, rotationY = 0 }: { position: [number, numb
 
 /**
  * 6. CENTRAL DICE FELT ARENA (Sới Xúc Xắc Đảo Ngọc)
- * Opulent emerald velvet octagon tray where the dice roll and rest.
  */
 function CentralDiceArena() {
   return (
-    <group position={[0, 0.02, 0]}>
-      {/* Gold Outer Molding */}
-      <mesh position={[0, 0.08, 0]} receiveShadow>
-        <cylinderGeometry args={[2.85, 3.0, 0.16, 8]} />
-        <meshStandardMaterial color="#f59e0b" metalness={0.88} roughness={0.18} />
+    <group position={[0, 0.02, 1.8]}>
+      {/* Outer Golden Molding Ring */}
+      <mesh position={[0, 0.06, 0]} receiveShadow>
+        <cylinderGeometry args={[1.45, 1.55, 0.12, 28]} />
+        <meshStandardMaterial color="#f59e0b" metalness={0.92} roughness={0.18} />
       </mesh>
-
-      {/* Emerald Velvet Felt Basin Floor */}
-      <mesh position={[0, 0.17, 0]} receiveShadow>
-        <cylinderGeometry args={[2.7, 2.7, 0.04, 8]} />
-        <meshStandardMaterial color="#047857" roughness={0.92} />
+      {/* Emerald Velvet Basin Floor */}
+      <mesh position={[0, 0.12, 0]} receiveShadow>
+        <cylinderGeometry args={[1.36, 1.36, 0.04, 28]} />
+        <meshStandardMaterial color="#047857" roughness={0.88} />
       </mesh>
-
-      {/* Decorative Gold Circular Filigree in Felt */}
-      <mesh position={[0, 0.192, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[1.6, 1.66, 32]} />
+      {/* Gold Inner Filigree Rings */}
+      <mesh position={[0, 0.142, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.82, 0.88, 32]} />
         <meshBasicMaterial color="#fbbf24" />
       </mesh>
-      <mesh position={[0, 0.192, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[2.3, 2.36, 32]} />
+      <mesh position={[0, 0.142, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[1.22, 1.28, 32]} />
         <meshBasicMaterial color="#fbbf24" />
       </mesh>
     </group>
@@ -278,27 +272,35 @@ function CentralDiceArena() {
 }
 
 /**
- * 7. TURQUOISE LAGOON WATER STREAM
+ * 7. TURQUOISE LAGOON WATER STREAM & BEACH
  */
 function CentralLagoon() {
+  const waterRef = useRef<THREE.Mesh>(null);
+
+  useFrame(({ clock }) => {
+    if (!waterRef.current) return;
+    const t = clock.getElapsedTime();
+    waterRef.current.position.y = 0.05 + Math.sin(t * 1.4) * 0.015;
+  });
+
   return (
-    <group position={[0, 0.06, 0]}>
-      {/* Crystal Clear Turquoise Lagoon Basin */}
-      <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <circleGeometry args={[4.8, 32]} />
+    <group position={[0, 0.02, 0]}>
+      {/* Shimmering Turquoise Water Basin */}
+      <mesh ref={waterRef} position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <circleGeometry args={[4.2, 32]} />
         <meshStandardMaterial
           color="#06b6d4"
-          roughness={0.1}
-          metalness={0.1}
+          roughness={0.08}
+          metalness={0.12}
           transparent
-          opacity={0.8}
+          opacity={0.82}
         />
       </mesh>
 
-      {/* Sandy Lagoon Shoreline Collar */}
-      <mesh position={[0, -0.01, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <ringGeometry args={[4.7, 5.5, 32]} />
-        <meshStandardMaterial color="#fef08a" roughness={0.9} />
+      {/* Warm Golden Beach Sand Border */}
+      <mesh position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <ringGeometry args={[4.1, 5.2, 32]} />
+        <meshStandardMaterial color="#fde047" roughness={0.85} />
       </mesh>
     </group>
   );
@@ -311,49 +313,45 @@ export function MiniWorldDiorama3D() {
   return (
     <group name="meta-world-pearl-island-diorama">
       {/* Base Tropical Island Landscape Terrain */}
-      <mesh position={[0, 0.02, 0]} receiveShadow>
-        <boxGeometry args={[11.2, 0.08, 11.2]} />
+      <mesh position={[0, 0.01, 0]} receiveShadow>
+        <boxGeometry args={[10.6, 0.06, 10.6]} />
         <meshStandardMaterial color="#15803d" roughness={0.85} />
       </mesh>
 
-      {/* Central Turquoise Lagoon Basin */}
+      {/* Central Turquoise Lagoon Basin & Beach */}
       <CentralLagoon />
 
-      {/* Central Emerald Dice Felt Arena */}
-      <CentralDiceArena />
+
 
       {/* The Legendary Giant Floating Pearl in Center */}
       <GiantFloatingPearl />
 
       {/* Vietnamese Golden Pagoda in North-East Islet */}
-      <VietnamesePagoda position={[3.2, 0.08, -3.2]} />
+      <VietnamesePagoda position={[2.8, 0.06, -2.8]} />
 
       {/* Wooden Footbridge connecting Central Arena to Pagoda */}
-      <WoodenFootbridge position={[2.2, 0.08, -2.1]} rotationY={-Math.PI / 4} />
+      <WoodenFootbridge position={[1.8, 0.06, -1.8]} rotationY={-Math.PI / 4} />
 
-      {/* Emerald Karst Peaks (Hạ Long & Phú Quốc limestone spires) */}
-      <KarstIslandPeak position={[-3.8, 0.08, -3.4]} height={3.2} radius={1.2} rotationY={0.6} />
-      <KarstIslandPeak position={[-4.5, 0.08, -1.8]} height={2.4} radius={0.9} rotationY={1.2} />
-      <KarstIslandPeak position={[4.0, 0.08, 2.8]} height={2.8} radius={1.1} rotationY={-0.8} />
-      <KarstIslandPeak position={[-3.6, 0.08, 3.6]} height={2.6} radius={1.0} rotationY={0.4} />
+      {/* Low-profile Tropical Knolls (Never obstructs board tiles) */}
+      <TropicalResortKnoll position={[-3.2, 0.04, -2.8]} scale={[1.2, 0.8, 1.2]} />
+      <TropicalResortKnoll position={[-3.4, 0.04, 1.6]} scale={[1.1, 0.7, 1.1]} />
+      <TropicalResortKnoll position={[3.2, 0.04, 1.8]} scale={[1.2, 0.8, 1.2]} />
 
       {/* Tropical Coconut Palms around the Island */}
-      <TropicalPalm position={[-2.8, 0.08, -2.2]} scale={0.95} leanAngle={0.2} />
-      <TropicalPalm position={[-4.0, 0.08, 0.2]} scale={0.85} leanAngle={-0.15} />
-      <TropicalPalm position={[3.8, 0.08, -1.8]} scale={0.9} leanAngle={0.12} />
-      <TropicalPalm position={[2.6, 0.08, 3.5]} scale={1.0} leanAngle={-0.22} />
-      <TropicalPalm position={[-2.4, 0.08, 3.8]} scale={0.9} leanAngle={0.18} />
-      <TropicalPalm position={[4.2, 0.08, 0.8]} scale={0.8} leanAngle={-0.1} />
+      <TropicalPalm position={[-2.4, 0.06, -2.2]} scale={0.85} leanAngle={0.18} />
+      <TropicalPalm position={[-3.2, 0.06, 0.0]} scale={0.78} leanAngle={-0.14} />
+      <TropicalPalm position={[3.1, 0.06, -1.6]} scale={0.82} leanAngle={0.12} />
+      <TropicalPalm position={[2.2, 0.06, 2.8]} scale={0.88} leanAngle={-0.2} />
+      <TropicalPalm position={[-2.0, 0.06, 3.0]} scale={0.82} leanAngle={0.16} />
 
-      {/* Miniature Vietnamese Sampan Boat in South Lagoon */}
-      <group position={[1.5, 0.12, 2.6]} rotation={[0, 0.4, 0]}>
+      {/* Miniature Vietnamese Sampan with Conical Hat */}
+      <group position={[1.2, 0.08, 2.3]} rotation={[0, 0.35, 0]}>
         <mesh castShadow>
-          <boxGeometry args={[0.65, 0.1, 0.22]} />
+          <boxGeometry args={[0.55, 0.08, 0.18]} />
           <meshStandardMaterial color="#78350f" roughness={0.7} />
         </mesh>
-        {/* Conical Straw Hat (Nón Lá) on boat */}
-        <mesh position={[0, 0.08, 0]} castShadow>
-          <coneGeometry args={[0.08, 0.05, 12]} />
+        <mesh position={[0, 0.07, 0]} castShadow>
+          <coneGeometry args={[0.07, 0.04, 12]} />
           <meshStandardMaterial color="#fef08a" roughness={0.8} />
         </mesh>
       </group>

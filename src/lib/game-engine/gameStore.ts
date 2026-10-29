@@ -144,15 +144,9 @@ function processBankruptcy(
     return p;
   });
 
-  // Transfer properties to creditor if bankrupt due to rent, otherwise foreclose
+  // Reclaim all properties owned by debtor to the bank
   const updatedTiles = tiles.map((t) => {
     if (t.ownerId === debtor.id) {
-      if (creditorId) {
-        return {
-          ...t,
-          ownerId: creditorId,
-        };
-      }
       return {
         ...t,
         ownerId: null,
@@ -362,10 +356,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }
     }
 
-    // 2. Double bonus & speed check (BUG-04: Award +50,000 VND on doubles)
+    // 2. Double bonus & speed check
     if (isDouble && !activePlayer.inJail) {
-      activePlayer.money += 50000;
-      logs.push(`${activePlayer.name} đổ xúc xắc đôi [${d1}, ${d2}]! Nhận thưởng nóng +50.000đ và được đổ thêm lượt nữa!`);
+      logs.push(`${activePlayer.name} đổ xúc xắc đôi [${d1}, ${d2}]! Được đổ thêm lượt nữa!`);
 
       if (newDoubleStreak >= 3) {
         logs.push(
@@ -425,8 +418,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
       nextPhase = 'TURN_END';
     } else if (landedTile.type === 'FESTIVAL') {
       logs.push(
-        `🏮 ${activePlayer.name} tham gia Lễ Hội Dân Gian tại Sới Bầu Cua Đảo Ngọc!`
+        `🏮 ${activePlayer.name} tham gia Lễ Hội Dân Gian tại Sới Bầu Cua Đảo Ngọc và nhận thưởng Quỹ Heo Đất ${currentJackpot.toLocaleString('vi-VN')}đ!`
       );
+      activePlayer.money += currentJackpot;
+      currentJackpot = 20000;
       nextPhase = 'FESTIVAL_GAME';
     } else if (landedTile.type === 'CHANCE' || landedTile.type === 'FATE') {
       const deck = landedTile.type === 'CHANCE' ? CHANCE_CARDS : FATE_CARDS;

@@ -125,6 +125,95 @@ export class SfxManager {
     }
   }
 
+  /**
+   * Expressive Chibi Voice Emote Sound synthesizer (PIG, FOX, CAT, BUFFALO)
+   * Guaranteed clear, delightful audio feedback regardless of OS TTS language packs.
+   */
+  public playChibiEmote(characterId: string, trigger: string): void {
+    const effectiveVol = audioSettings.getEffectiveVolume('voice');
+    if (effectiveVol <= 0) return;
+    const ctx = this.ensureContext();
+    if (!ctx) return;
+    const dest = this.getDestination(ctx);
+    const t = ctx.currentTime;
+
+    try {
+      switch (characterId) {
+        case 'CHAR_01': {
+          // PIG (Đại ca tự tin): Joyful brass trumpet fanfare
+          const notes = [523.25, 659.25, 783.99, 1046.5];
+          notes.forEach((freq, idx) => {
+            const st = t + idx * 0.07;
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(freq, st);
+            g.gain.setValueAtTime(0.001, st);
+            g.gain.linearRampToValueAtTime(effectiveVol * 0.22, st + 0.015);
+            g.gain.exponentialRampToValueAtTime(0.001, st + 0.18);
+            osc.connect(g);
+            g.connect(dest);
+            osc.start(st);
+            osc.stop(st + 0.19);
+          });
+          break;
+        }
+        case 'CHAR_02': {
+          // FOX (Nữ hoàng cà khịa): Sparkling harp glissando
+          const notes = [880.0, 1046.5, 1318.51, 1567.98];
+          notes.forEach((freq, idx) => {
+            const st = t + idx * 0.05;
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, st);
+            g.gain.setValueAtTime(0.001, st);
+            g.gain.linearRampToValueAtTime(effectiveVol * 0.26, st + 0.01);
+            g.gain.exponentialRampToValueAtTime(0.001, st + 0.22);
+            osc.connect(g);
+            g.connect(dest);
+            osc.start(st);
+            osc.stop(st + 0.23);
+          });
+          break;
+        }
+        case 'CHAR_03': {
+          // CAT (Thánh nhọ hài hước): Cartoon spring boing / wa-wa
+          const osc = ctx.createOscillator();
+          const g = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(392, t);
+          osc.frequency.exponentialRampToValueAtTime(784, t + 0.14);
+          osc.frequency.exponentialRampToValueAtTime(330, t + 0.28);
+          g.gain.setValueAtTime(effectiveVol * 0.28, t);
+          g.gain.exponentialRampToValueAtTime(0.001, t + 0.32);
+          osc.connect(g);
+          g.connect(dest);
+          osc.start(t);
+          osc.stop(t + 0.33);
+          break;
+        }
+        case 'CHAR_04': {
+          // BUFFALO (Cao thủ lạnh lùng): Resonant bell of calm mastery
+          const osc = ctx.createOscillator();
+          const g = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(220, t);
+          osc.frequency.exponentialRampToValueAtTime(110, t + 0.45);
+          g.gain.setValueAtTime(effectiveVol * 0.35, t);
+          g.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
+          osc.connect(g);
+          g.connect(dest);
+          osc.start(t);
+          osc.stop(t + 0.58);
+          break;
+        }
+      }
+    } catch {
+      // Safe audio catch
+    }
+  }
+
   private synthesizeSfx(id: SfxId, ctx: AudioContext, vol: number): void {
     const t = ctx.currentTime;
     const dest = this.getDestination(ctx);

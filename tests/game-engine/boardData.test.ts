@@ -122,6 +122,7 @@ describe('Board Data & Core Engine Structures', () => {
       'TELEPORT',
       'JAIL_FREE',
       'PAY_EACH_PLAYER',
+      'LUCKY_WHEEL',
     ];
 
     it('should have at least 12 distinct Chance cards with valid types and content', () => {

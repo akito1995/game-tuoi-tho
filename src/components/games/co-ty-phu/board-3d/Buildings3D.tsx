@@ -436,6 +436,24 @@ interface SingleBuilding3DProps {
   players?: Player[];
 }
 
+
+function EmptyPlotMarker() {
+  return (
+    <group position={[0, 0.02, 0]}>
+      {/* Golden Real Estate Plot Boundary Ring */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.16, 0.22, 16]} />
+        <meshBasicMaterial color="#fbbf24" transparent opacity={0.4} />
+      </mesh>
+      {/* Little Polished Brass Plot Peg */}
+      <mesh position={[0, 0.04, 0]}>
+        <cylinderGeometry args={[0.025, 0.035, 0.08, 8]} />
+        <meshStandardMaterial color="#f59e0b" metalness={0.8} />
+      </mesh>
+    </group>
+  );
+}
+
 function SingleBuilding3D({ tile, players }: SingleBuilding3DProps) {
   const groupRef = useRef<THREE.Group>(null);
   const tier = getBuildingTier(tile);
@@ -479,7 +497,18 @@ function SingleBuilding3D({ tile, players }: SingleBuilding3DProps) {
     }
   });
 
-  if (tier === -1) return null;
+  if (tier === -1) {
+    if (tile.type === 'PROPERTY') {
+      const pos = getTileBuildingPosition(tile.id, 0.65);
+      const layout = getTileLayoutInfo(tile.id);
+      return (
+        <group position={pos} rotation={[0, layout.rotationY, 0]}>
+          <EmptyPlotMarker />
+        </group>
+      );
+    }
+    return null;
+  }
 
   const pos = getTileBuildingPosition(tile.id, 0.65);
   const layout = getTileLayoutInfo(tile.id);

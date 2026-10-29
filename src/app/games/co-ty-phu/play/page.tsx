@@ -37,6 +37,14 @@ function MonopolyGameContent() {
   const botRunningRef = useRef(false);
   const statsRecordedRef = useRef(false);
 
+  // BGM Lifecycle: start tropical background music on mount and clean up on unmount
+  useEffect(() => {
+    soundManager.startBgm();
+    return () => {
+      soundManager.stopBgm();
+    };
+  }, []);
+
   // Initialize fallback game if players empty (e.g. direct URL visit)
   useEffect(() => {
     if (players.length === 0) {

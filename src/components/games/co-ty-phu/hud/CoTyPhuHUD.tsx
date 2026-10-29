@@ -16,6 +16,7 @@ import { EmoteWheel } from './EmoteWheel';
 import { TurnTimerBar } from './TurnTimerBar';
 import { DiceRevealOverlay } from './DiceRevealOverlay';
 import { PropertyInspectorModal } from './PropertyInspectorModal';
+import { MascotDialogueBanner } from './MascotDialogueBanner';
 
 export interface CoTyPhuHUDProps {
   className?: string;
@@ -29,7 +30,7 @@ export interface CoTyPhuHUDProps {
  * Complete Responsive 2D HUD Overlay for Cờ Tỷ Phú 3D
  * Optimized for Mobile (iPhone, Samsung Z Fold 8) & Desktop.
  * Includes: Header, 60s Turn Countdown Timer, Big Dice Reveal Overlay,
- * Player list, Property Inspector, Action modals, Rules guide, Chat & Emotes.
+ * Mascot Dialogue Banner, Player list, Property Inspector, Action modals, Rules guide, Chat & Emotes.
  */
 export function CoTyPhuHUD({
   className = '',
@@ -53,6 +54,9 @@ export function CoTyPhuHUD({
         </div>
         <PlayerListBar className="mt-0.5" />
       </div>
+
+      {/* Mascot Animated Dialogue Banner (Speech bubble popup) */}
+      <MascotDialogueBanner />
 
       {/* Bottom Controls: Live Chat & Emotes (Left) & Dice Controls (Right) */}
       <div className="pointer-events-auto flex flex-wrap items-end justify-between gap-2.5 p-2.5 sm:p-4">

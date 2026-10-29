@@ -656,14 +656,14 @@ export class SoundManager {
 
   public startBgm(): void {
     if (!this.settings.bgmEnabled) return;
-    if (this.isBgmPlaying) return;
-
     this.isBgmPlaying = true;
+    musicManager.start();
     this.scheduleNextBgmNote();
   }
 
   public stopBgm(): void {
     this.isBgmPlaying = false;
+    musicManager.stop();
     if (this.bgmTimer !== null) {
       clearTimeout(this.bgmTimer);
       this.bgmTimer = null;
