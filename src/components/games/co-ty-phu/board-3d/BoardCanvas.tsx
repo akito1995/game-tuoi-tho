@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import { OrbitControls, ContactShadows, Sparkles } from '@react-three/drei';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import * as THREE from 'three';
 import { Tile } from '@/lib/game-engine/types';
@@ -146,23 +146,23 @@ export function BoardCanvas({
 
   return (
     <div
-      className={`relative overflow-hidden select-none bg-gradient-to-b from-[#0284c7] via-[#38bdf8] to-[#bae6fd] ${className}`}
+      className={`relative overflow-hidden select-none bg-gradient-to-b from-[#0369a1] via-[#0284c7] to-[#38bdf8] ${className}`}
     >
-
-
       <Canvas
-        shadows
-        dpr={[1, 1.5]}
+        shadows="soft"
+        dpr={[1, 2]}
         gl={{
           antialias: true,
           alpha: true,
           powerPreference: 'high-performance',
+          toneMapping: THREE.ACESFilmicToneMapping,
+          toneMappingExposure: 1.25,
         }}
         camera={{
           position: [13, 18, 15],
           fov: 32,
           near: 0.1,
-          far: 160,
+          far: 180,
         }}
       >
         <Suspense fallback={null}>
@@ -171,6 +171,26 @@ export function BoardCanvas({
 
           {/* Meta World Cinematic Tropical Lighting & Sunny Sky Atmosphere */}
           <Environment3D />
+
+          {/* Golden Ambient Particle Dust floating over the island */}
+          <Sparkles
+            count={45}
+            scale={28}
+            size={3.5}
+            speed={0.4}
+            opacity={0.55}
+            color="#fbbf24"
+          />
+
+          {/* Soft Ground Contact Shadows grounding the entire board & diorama */}
+          <ContactShadows
+            position={[0, -0.06, 0]}
+            opacity={0.68}
+            scale={34}
+            blur={1.8}
+            far={6}
+            color="#040d1a"
+          />
 
           {/* Meta World Floating Tropical Pearl Island Base & Sparkling Ocean */}
           <BoardTableFrame />

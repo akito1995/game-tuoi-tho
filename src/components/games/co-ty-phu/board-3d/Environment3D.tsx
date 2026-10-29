@@ -34,25 +34,25 @@ function FluffyTropicalCloud({ initialPosition, scale = 1, speed = 0.02 }: Cloud
   return (
     <group ref={groupRef} position={initialPosition} scale={[scale, scale, scale]}>
       <mesh castShadow={false}>
-        <sphereGeometry args={[2.2, 8, 8]} />
+        <sphereGeometry args={[2.2, 10, 10]} />
         <meshStandardMaterial
           color="#ffffff"
-          roughness={0.7}
-          opacity={0.88}
+          roughness={0.65}
+          opacity={0.92}
           transparent
         />
       </mesh>
       <mesh position={[-1.6, -0.2, 0.3]} castShadow={false}>
-        <sphereGeometry args={[1.6, 7, 7]} />
-        <meshStandardMaterial color="#f8fafc" roughness={0.7} opacity={0.88} transparent />
+        <sphereGeometry args={[1.6, 8, 8]} />
+        <meshStandardMaterial color="#f8fafc" roughness={0.65} opacity={0.9} transparent />
       </mesh>
       <mesh position={[1.7, -0.15, -0.3]} castShadow={false}>
-        <sphereGeometry args={[1.7, 7, 7]} />
-        <meshStandardMaterial color="#f8fafc" roughness={0.7} opacity={0.88} transparent />
+        <sphereGeometry args={[1.7, 8, 8]} />
+        <meshStandardMaterial color="#f8fafc" roughness={0.65} opacity={0.9} transparent />
       </mesh>
       <mesh position={[0.4, 0.9, 0.1]} castShadow={false}>
-        <sphereGeometry args={[1.3, 7, 7]} />
-        <meshStandardMaterial color="#ffffff" roughness={0.7} opacity={0.9} transparent />
+        <sphereGeometry args={[1.3, 8, 8]} />
+        <meshStandardMaterial color="#ffffff" roughness={0.65} opacity={0.92} transparent />
       </mesh>
     </group>
   );
@@ -75,13 +75,13 @@ function MetaAirBalloon({ position, scale = 0.8 }: { position: [number, number, 
     <group ref={groupRef} position={position} scale={[scale, scale, scale]}>
       {/* Balloon Envelope */}
       <mesh castShadow={false} position={[0, 1.4, 0]}>
-        <sphereGeometry args={[1.2, 16, 16]} />
-        <meshStandardMaterial color="#f59e0b" roughness={0.3} metalness={0.1} />
+        <sphereGeometry args={[1.2, 18, 18]} />
+        <meshStandardMaterial color="#f59e0b" roughness={0.25} metalness={0.12} />
       </mesh>
       {/* Accent stripes */}
       <mesh castShadow={false} position={[0, 1.4, 0]} scale={[1.02, 0.98, 1.02]}>
-        <cylinderGeometry args={[1.2, 1.2, 0.4, 16]} />
-        <meshStandardMaterial color="#ef4444" roughness={0.3} />
+        <cylinderGeometry args={[1.2, 1.2, 0.4, 18]} />
+        <meshStandardMaterial color="#ef4444" roughness={0.25} />
       </mesh>
       {/* Basket */}
       <mesh castShadow={false} position={[0, 0.1, 0]}>
@@ -96,6 +96,7 @@ function MetaAirBalloon({ position, scale = 0.8 }: { position: [number, number, 
  * 3D Tropical Island Environment with radiant Meta World studio lighting:
  * - Golden sunlight with crisp contact shadows
  * - Lush ocean turquoise bounce
+ * - Rim light for cinematic edge separation
  * - Deep tropical sky gradient without murky grey fog
  */
 export function Environment3D() {
@@ -103,49 +104,56 @@ export function Environment3D() {
 
   return (
     <group name="meta-world-environment">
-      {/* Clean, distant tropical haze (Never dull grey; vivid light cyan) */}
-      <fog attach="fog" args={['#0284c7', 60, 140]} />
+      {/* Clean, distant tropical haze */}
+      <fog attach="fog" args={['#0284c7', 65, 160]} />
 
       {/* Radiant baseline ambient light */}
-      <ambientLight color="#ffffff" intensity={0.85} />
+      <ambientLight color="#ffffff" intensity={0.8} />
 
       {/* Hemisphere Light: Turquoise Sky Top & Golden Sand Ground Reflection */}
       <hemisphereLight
         color="#38bdf8"
-        groundColor="#f59e0b"
-        intensity={0.9}
+        groundColor="#fde047"
+        intensity={0.85}
       />
 
       {/* Primary Key Sunlight (Cinematic high-angle tropical sun) */}
       <directionalLight
         ref={dirLightRef}
         position={[-18, 30, -14]}
-        color="#fffbeb"
-        intensity={2.8}
+        color="#fffdf2"
+        intensity={2.9}
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
         shadow-camera-near={1.0}
         shadow-camera-far={80}
-        shadow-camera-left={-20}
-        shadow-camera-right={20}
-        shadow-camera-top={20}
-        shadow-camera-bottom={-20}
-        shadow-bias={-0.0003}
+        shadow-camera-left={-22}
+        shadow-camera-right={22}
+        shadow-camera-top={22}
+        shadow-camera-bottom={-22}
+        shadow-bias={-0.00015}
       />
 
       {/* Secondary Fill Light: Soft Warm Amber Glow on shaded faces */}
       <directionalLight
         position={[16, 20, 16]}
         color="#fed7aa"
-        intensity={1.2}
+        intensity={1.25}
+      />
+
+      {/* Cinematic Rim Light: Edge highlight separating pawns & buildings from background */}
+      <directionalLight
+        position={[-14, 14, 20]}
+        color="#e0f2fe"
+        intensity={0.85}
       />
 
       {/* Cyan Ocean Underglow Bounce */}
       <directionalLight
         position={[0, -10, 0]}
         color="#06b6d4"
-        intensity={0.6}
+        intensity={0.65}
       />
 
       {/* High Sky Tropical Fluffy Clouds */}

@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Text, Billboard } from '@react-three/drei';
+import { Text, Billboard, RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import { BOARD_TILES } from '@/lib/game-engine/boardData';
 import { Tile, ColorGroupType } from '@/lib/game-engine/types';
@@ -487,23 +487,33 @@ function SingleTile3D({
         }
       }}
     >
-      {/* 3D Base Slab with High-Gloss Marble / Ceramic Finish */}
-      <mesh castShadow receiveShadow position={[0, -TILE_THICKNESS / 2, 0]}>
-        <boxGeometry args={[localWidth - 0.06, TILE_THICKNESS, localDepth - 0.06]} />
+      {/* 3D Base Slab with High-Gloss Tactile Ceramic Acrylic Finish */}
+      <RoundedBox
+        args={[localWidth - 0.06, TILE_THICKNESS, localDepth - 0.06]}
+        radius={0.045}
+        smoothness={4}
+        castShadow
+        receiveShadow
+        position={[0, -TILE_THICKNESS / 2, 0]}
+      >
         <meshStandardMaterial
           color={slabColor}
-          roughness={0.18}
-          metalness={0.12}
+          roughness={0.14}
+          metalness={0.08}
           emissive={isSelected ? '#ca8a04' : activeHover ? '#0284c7' : '#000000'}
-          emissiveIntensity={isSelected ? 0.35 : activeHover ? 0.18 : 0}
+          emissiveIntensity={isSelected ? 0.35 : activeHover ? 0.2 : 0}
         />
-      </mesh>
+      </RoundedBox>
 
-      {/* Polished Gold & Chrome Beveled Rim */}
-      <mesh position={[0, -TILE_THICKNESS + 0.02, 0]}>
-        <boxGeometry args={[localWidth - 0.02, 0.04, localDepth - 0.02]} />
-        <meshStandardMaterial color={rimColor} roughness={0.2} metalness={0.65} />
-      </mesh>
+      {/* Polished Gold & Chrome Beveled Chamfer Rim */}
+      <RoundedBox
+        args={[localWidth - 0.03, 0.04, localDepth - 0.03]}
+        radius={0.02}
+        smoothness={3}
+        position={[0, -TILE_THICKNESS + 0.02, 0]}
+      >
+        <meshStandardMaterial color={rimColor} roughness={0.18} metalness={0.82} />
+      </RoundedBox>
 
       {/* Meta World City Street Infrastructure (Asphalt Road on Outer Edge) */}
       {!layout.isCorner && (
@@ -548,15 +558,26 @@ function SingleTile3D({
 
       {/* Header Color Band (Facing island center: local -Z side) */}
       {!layout.isCorner && (
-        <group position={[0, 0.015, -localDepth / 2 + 0.28]}>
-          <mesh receiveShadow castShadow>
-            <boxGeometry args={[localWidth - 0.12, 0.024, 0.44]} />
-            <meshStandardMaterial color={bannerColor} roughness={0.16} metalness={0.25} />
-          </mesh>
+        <group position={[0, 0.016, -localDepth / 2 + 0.28]}>
+          <RoundedBox
+            args={[localWidth - 0.12, 0.026, 0.44]}
+            radius={0.02}
+            smoothness={3}
+            receiveShadow
+            castShadow
+          >
+            <meshStandardMaterial
+              color={bannerColor}
+              roughness={0.16}
+              metalness={0.25}
+              emissive={bannerColor}
+              emissiveIntensity={0.22}
+            />
+          </RoundedBox>
           {/* Gold Filigree Trim Bar */}
-          <mesh position={[0, 0.014, 0.22]}>
-            <boxGeometry args={[localWidth - 0.12, 0.006, 0.025]} />
-            <meshStandardMaterial color="#fbbf24" metalness={0.9} roughness={0.15} />
+          <mesh position={[0, 0.016, 0.22]}>
+            <boxGeometry args={[localWidth - 0.12, 0.008, 0.028]} />
+            <meshStandardMaterial color="#fbbf24" metalness={0.92} roughness={0.15} />
           </mesh>
         </group>
       )}
@@ -637,18 +658,23 @@ function SingleTile3D({
         </Text>
 
         {priceDisplay && !layout.isCorner && (
-          <Text
-            position={[0, -0.22, 0]}
-            fontSize={0.15}
-            color="#d97706"
-            anchorX="center"
-            anchorY="middle"
-            outlineWidth={0.02}
-            outlineColor="#ffffff"
-            fontWeight="bold"
-          >
-            {priceDisplay}
-          </Text>
+          <group position={[0, -0.22, 0]}>
+            <mesh position={[0, 0, -0.005]}>
+              <planeGeometry args={[0.92, 0.17]} />
+              <meshBasicMaterial color="#091322" transparent opacity={0.75} />
+            </mesh>
+            <Text
+              fontSize={0.13}
+              color="#fbbf24"
+              anchorX="center"
+              anchorY="middle"
+              outlineWidth={0.012}
+              outlineColor="#78350f"
+              fontWeight="bold"
+            >
+              {priceDisplay}
+            </Text>
+          </group>
         )}
       </Billboard>
     </group>
