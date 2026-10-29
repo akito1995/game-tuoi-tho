@@ -658,7 +658,9 @@ export class SoundManager {
     if (!this.settings.bgmEnabled) return;
     this.isBgmPlaying = true;
     musicManager.start();
-    this.scheduleNextBgmNote();
+    if (this.customCtxProvided) {
+      this.scheduleNextBgmNote();
+    }
   }
 
   public stopBgm(): void {

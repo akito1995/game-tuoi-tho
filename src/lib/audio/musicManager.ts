@@ -113,7 +113,16 @@ export class MusicManager {
       this.autoplayUnlocked = true;
       const ctx = this.ensureContext();
       if (ctx && ctx.state === 'suspended') {
-        ctx.resume().catch(() => {});
+        ctx.resume().then(() => {
+          if (this.isPlaying) {
+            this.stepIndex = 0;
+            if (this.loopTimer) {
+              clearTimeout(this.loopTimer);
+              this.loopTimer = null;
+            }
+            this.scheduleStep();
+          }
+        }).catch(() => {});
       }
       // If BGM is enabled in settings and not already playing, start it smoothly!
       const s = audioSettings.getSettings();
@@ -211,8 +220,8 @@ export class MusicManager {
     if (!this.isPlaying) return;
 
     const ctx = this.ensureContext();
-    if (!ctx) {
-      this.loopTimer = setTimeout(() => this.scheduleStep(), 250);
+    if (!ctx || ctx.state === 'suspended') {
+      this.loopTimer = setTimeout(() => this.scheduleStep(), 200);
       return;
     }
 
