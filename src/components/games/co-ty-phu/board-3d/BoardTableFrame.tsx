@@ -5,12 +5,19 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
 /* =========================================================================
-   BOARD TABLE FRAME COMPONENT (Meta World Floating Tropical Island & Ocean)
-   Transforms the board into an ultra-luxury Imperial Rosewood & Gold Island
-   floating upon sparkling turquoise waters with luxury yachts and palm atolls.
+   BOARD TABLE FRAME COMPONENT (Royal Ebony & 24k Gold Island Frame)
+   Transforms the board into an ultra-luxury Imperial Ebony & 24k Gold Inlay
+   island floating upon sparkling turquoise waters with luxury yachts and palm atolls.
    ========================================================================= */
 
-interface BoardTableFrameProps {
+export const FRAME_DIMENSIONS = {
+  outerSize: 19.2,
+  innerSize: 16.2,
+  rimHeight: 0.44,
+  baseDepth: 0.85,
+};
+
+export interface BoardTableFrameProps {
   outerSize?: number;
   innerSize?: number;
   rimHeight?: number;
@@ -20,7 +27,7 @@ interface BoardTableFrameProps {
 /**
  * Animated Tropical Ocean Water Surface with specular glints & wave motion
  */
-function TropicalOceanWater() {
+export function TropicalOceanWater() {
   const meshRef = useRef<THREE.Mesh>(null);
   const lagoonRef = useRef<THREE.Mesh>(null);
 
@@ -78,7 +85,7 @@ function TropicalOceanWater() {
 /**
  * Distant Tropical Island / Atoll on horizon (Breaks the flat void)
  */
-function DistantIslandAtoll({
+export function DistantIslandAtoll({
   position,
   scale = 1,
 }: {
@@ -109,7 +116,7 @@ function DistantIslandAtoll({
 /**
  * Miniature Tropical Palm Tree for beach perimeter
  */
-function BeachPalmTree({ position, scale = 0.9 }: { position: [number, number, number]; scale?: number }) {
+export function BeachPalmTree({ position, scale = 0.9 }: { position: [number, number, number]; scale?: number }) {
   return (
     <group position={position} scale={[scale, scale, scale]}>
       {/* Curved Trunk */}
@@ -138,7 +145,7 @@ function BeachPalmTree({ position, scale = 0.9 }: { position: [number, number, n
 /**
  * Luxury Yacht cruising peacefully in the surrounding ocean
  */
-function CruisingYacht({ initialRadius = 16, speed = 0.1 }: { initialRadius?: number; speed?: number }) {
+export function CruisingYacht({ initialRadius = 16, speed = 0.1 }: { initialRadius?: number; speed?: number }) {
   const groupRef = useRef<THREE.Group>(null);
   const angleRef = useRef(0.4);
 
@@ -189,39 +196,29 @@ function CruisingYacht({ initialRadius = 16, speed = 0.1 }: { initialRadius?: nu
 }
 
 export function BoardTableFrame({
-  outerSize = 19.2,
-  innerSize = 16.2,
-  rimHeight = 0.44,
-  baseDepth = 0.85,
+  outerSize = FRAME_DIMENSIONS.outerSize,
+  innerSize = FRAME_DIMENSIONS.innerSize,
+  rimHeight = FRAME_DIMENSIONS.rimHeight,
+  baseDepth = FRAME_DIMENSIONS.baseDepth,
 }: BoardTableFrameProps) {
-  // Luxury Imperial Rosewood Wood Material
+  // Luxury Imperial Rosewood/Ebony Wood Material
   const rosewoodMaterial = useMemo(
     () =>
       new THREE.MeshStandardMaterial({
-        color: '#26160e', // Deep polished dark rosewood/walnut
-        roughness: 0.24,
-        metalness: 0.12,
+        color: '#1a0f0a', // Deep polished imperial ebony / dark walnut
+        roughness: 0.22,
+        metalness: 0.15,
       }),
     []
   );
 
-  // Polished Gilded Gold Metal
+  // Polished Gilded 24k Gold Metal
   const goldMetalMaterial = useMemo(
     () =>
       new THREE.MeshStandardMaterial({
         color: '#f59e0b',
-        roughness: 0.18,
-        metalness: 0.92,
-      }),
-    []
-  );
-
-  // Royal Emerald Velvet Tray Material
-  const velvetTrayMaterial = useMemo(
-    () =>
-      new THREE.MeshStandardMaterial({
-        color: '#044e39',
-        roughness: 0.9,
+        roughness: 0.16,
+        metalness: 0.94,
       }),
     []
   );
@@ -248,11 +245,10 @@ export function BoardTableFrame({
     return () => {
       rosewoodMaterial.dispose();
       goldMetalMaterial.dispose();
-      velvetTrayMaterial.dispose();
       sandMaterial.dispose();
       islandCliffMaterial.dispose();
     };
-  }, [rosewoodMaterial, goldMetalMaterial, velvetTrayMaterial, sandMaterial, islandCliffMaterial]);
+  }, [rosewoodMaterial, goldMetalMaterial, sandMaterial, islandCliffMaterial]);
 
   const rimWidth = (outerSize - innerSize) / 2;
   const halfOuter = outerSize / 2;
@@ -283,7 +279,7 @@ export function BoardTableFrame({
         <meshStandardMaterial
           color="#38bdf8"
           emissive="#0284c7"
-          emissiveIntensity={1.3}
+          emissiveIntensity={1.4}
           roughness={0.2}
         />
       </mesh>
