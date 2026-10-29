@@ -13,7 +13,6 @@ import {
   TILE_THICKNESS,
   TileLayoutInfo,
 } from './tilePositions';
-import { CityLandmark3D } from './CityLandmarks3D';
 
 export const COLOR_GROUP_PALETTE: Record<ColorGroupType, string> = {
   ME_KONG: '#10b981', // Emerald Green (Miền Tây)
@@ -27,13 +26,13 @@ export const COLOR_GROUP_PALETTE: Record<ColorGroupType, string> = {
 };
 
 export const SPECIAL_TILE_COLORS: Record<string, string> = {
-  START: '#b91c1c',
+  START: '#dc2626',
   JAIL: '#ea580c',
   FESTIVAL: '#e11d48',
-  GO_TO_JAIL: '#dc2626',
+  GO_TO_JAIL: '#b91c1c',
   CHANCE: '#f59e0b',
-  FATE: '#6366f1',
-  SPECIAL: '#ca8a04',
+  FATE: '#8b5cf6',
+  SPECIAL: '#eab308',
 };
 
 const OWNER_MASCOT_COLORS: Record<string, string> = {
@@ -78,107 +77,34 @@ function formatTileName(name: string, isCorner: boolean): string {
 }
 
 /* =========================================================================
-   PROGRESSIVE BUILDING MODELS (TIER 0 -> 1 -> 2 -> 3)
-   ========================================================================= */
-
-/**
- * Flagpole with waving player color pennant banner (Tier 0: Đất nền đã mua)
- */
-function OwnerFlagpole({ color }: { color: string }) {
-  return (
-    <group position={[-0.42, 0.02, -0.42]}>
-      {/* Brass pole */}
-      <mesh position={[0, 0.28, 0]} castShadow>
-        <cylinderGeometry args={[0.015, 0.02, 0.56, 8]} />
-        <meshStandardMaterial color="#d4af37" metalness={0.8} roughness={0.2} />
-      </mesh>
-      {/* Gold top finial sphere */}
-      <mesh position={[0, 0.58, 0]}>
-        <sphereGeometry args={[0.035, 8, 8]} />
-        <meshStandardMaterial color="#fbbf24" metalness={0.9} roughness={0.1} />
-      </mesh>
-      {/* Waving triangle flag in owner's color */}
-      <mesh position={[0.1, 0.48, 0]} rotation={[0, 0, -Math.PI / 2]}>
-        <coneGeometry args={[0.08, 0.22, 3]} />
-        <meshStandardMaterial color={color} side={THREE.DoubleSide} roughness={0.4} />
-      </mesh>
-    </group>
-  );
-}
-
-/**
- * Tier 1: Cute red-roof townhouse
- */
-function TownhouseModel() {
-  return (
-    <group position={[0, 0.02, 0.22]} scale={[0.8, 0.8, 0.8]}>
-      <mesh position={[0, 0.16, 0]} castShadow receiveShadow>
-        <boxGeometry args={[0.42, 0.32, 0.36]} />
-        <meshStandardMaterial color="#fef3c7" roughness={0.6} />
-      </mesh>
-      <mesh position={[0, 0.38, 0]} castShadow>
-        <coneGeometry args={[0.34, 0.22, 4]} />
-        <meshStandardMaterial color="#b91c1c" roughness={0.4} />
-      </mesh>
-      <mesh position={[0.1, 0.44, 0.08]} castShadow>
-        <boxGeometry args={[0.06, 0.16, 0.06]} />
-        <meshStandardMaterial color="#64748b" roughness={0.8} />
-      </mesh>
-    </group>
-  );
-}
-
-/**
- * Tier 2: Modern 2-story apartment building
- */
-function ApartmentModel() {
-  return (
-    <group position={[0, 0.02, 0.22]} scale={[0.8, 0.8, 0.8]}>
-      <mesh position={[0, 0.28, 0]} castShadow receiveShadow>
-        <boxGeometry args={[0.46, 0.56, 0.38]} />
-        <meshStandardMaterial color="#e0f2fe" roughness={0.4} />
-      </mesh>
-      <mesh position={[0, 0.58, 0]} castShadow>
-        <boxGeometry args={[0.5, 0.06, 0.42]} />
-        <meshStandardMaterial color="#0369a1" roughness={0.3} />
-      </mesh>
-      {/* Windows row */}
-      {[-0.12, 0.12].map((wx, i) => (
-        <mesh key={i} position={[wx, 0.32, 0.195]}>
-          <boxGeometry args={[0.12, 0.18, 0.01]} />
-          <meshStandardMaterial color="#38bdf8" roughness={0.2} />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
-/* =========================================================================
-   SPECIAL CORNER PROPS (START, JAIL, FESTIVAL, POLICE)
+   SPECIAL CORNER 3D PROPS (START, JAIL, FESTIVAL, POLICE)
    ========================================================================= */
 
 function StartToriiGate() {
   return (
     <group position={[0, 0.05, 0]}>
+      {/* Stone Foundation */}
       <mesh position={[0, 0.015, 0]} receiveShadow>
         <boxGeometry args={[1.9, 0.03, 1.9]} />
         <meshStandardMaterial color="#64748b" roughness={0.9} />
       </mesh>
+      {/* Red Columns */}
       <mesh position={[-0.72, 0.55, 0]} castShadow>
         <cylinderGeometry args={[0.08, 0.1, 1.1, 8]} />
-        <meshStandardMaterial color="#b91c1c" roughness={0.35} />
+        <meshStandardMaterial color="#dc2626" roughness={0.3} metalness={0.1} />
       </mesh>
       <mesh position={[0.72, 0.55, 0]} castShadow>
         <cylinderGeometry args={[0.08, 0.1, 1.1, 8]} />
-        <meshStandardMaterial color="#b91c1c" roughness={0.35} />
+        <meshStandardMaterial color="#dc2626" roughness={0.3} metalness={0.1} />
       </mesh>
+      {/* Top Crossbeam */}
       <mesh position={[0, 1.1, 0]} castShadow>
         <boxGeometry args={[1.95, 0.16, 0.28]} />
-        <meshStandardMaterial color="#991b1b" roughness={0.3} />
+        <meshStandardMaterial color="#b91c1c" roughness={0.25} />
       </mesh>
       <mesh position={[0, 1.25, 0]} castShadow>
         <boxGeometry args={[1.7, 0.1, 0.36]} />
-        <meshStandardMaterial color="#f59e0b" roughness={0.25} metalness={0.7} />
+        <meshStandardMaterial color="#f59e0b" roughness={0.2} metalness={0.8} />
       </mesh>
     </group>
   );
@@ -207,25 +133,31 @@ function SpecialTileProp({ tileId }: { tileId: number }) {
   if (tileId === 0) return <StartToriiGate />;
   if (tileId === 8) return <StoneCavernArch />;
   if (tileId === 16) {
+    // Festival Gift Box
     return (
       <group position={[0, 0.05, 0]}>
         <mesh position={[0, 0.25, 0]} castShadow>
           <boxGeometry args={[0.6, 0.48, 0.6]} />
-          <meshStandardMaterial color="#e11d48" roughness={0.3} />
+          <meshStandardMaterial color="#e11d48" roughness={0.2} metalness={0.1} />
         </mesh>
         <mesh position={[0, 0.25, 0]}>
           <boxGeometry args={[0.62, 0.5, 0.16]} />
-          <meshStandardMaterial color="#fbbf24" metalness={0.7} roughness={0.2} />
+          <meshStandardMaterial color="#fbbf24" metalness={0.85} roughness={0.15} />
+        </mesh>
+        <mesh position={[0, 0.25, 0]}>
+          <boxGeometry args={[0.16, 0.5, 0.62]} />
+          <meshStandardMaterial color="#fbbf24" metalness={0.85} roughness={0.15} />
         </mesh>
       </group>
     );
   }
   if (tileId === 24) {
+    // Police Car
     return (
       <group position={[0, 0.05, 0]} rotation={[0, -0.6, 0]}>
         <mesh position={[0, 0.18, 0]} castShadow>
           <boxGeometry args={[0.85, 0.24, 0.5]} />
-          <meshStandardMaterial color="#0f172a" roughness={0.4} />
+          <meshStandardMaterial color="#0f172a" roughness={0.3} metalness={0.2} />
         </mesh>
         <mesh position={[0.06, 0.34, 0]} castShadow>
           <boxGeometry args={[0.44, 0.2, 0.44]} />
@@ -233,7 +165,7 @@ function SpecialTileProp({ tileId }: { tileId: number }) {
         </mesh>
         <mesh position={[0.06, 0.48, 0]}>
           <boxGeometry args={[0.12, 0.08, 0.26]} />
-          <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={1.8} />
+          <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={2.0} />
         </mesh>
       </group>
     );
@@ -254,20 +186,20 @@ function FloatingCardCube({ type }: { type: 'CHANCE' | 'FATE' }) {
 
   return (
     <mesh ref={meshRef} position={[0, 0.38, 0.35]} castShadow>
-      <boxGeometry args={[0.26, 0.26, 0.26]} />
+      <boxGeometry args={[0.28, 0.28, 0.28]} />
       <meshStandardMaterial
-        color={isChance ? '#f59e0b' : '#6366f1'}
-        emissive={isChance ? '#d97706' : '#4f46e5'}
-        emissiveIntensity={0.6}
-        roughness={0.2}
-        metalness={0.5}
+        color={isChance ? '#f59e0b' : '#8b5cf6'}
+        emissive={isChance ? '#d97706' : '#6d28d9'}
+        emissiveIntensity={0.8}
+        roughness={0.15}
+        metalness={0.4}
       />
     </mesh>
   );
 }
 
 /* =========================================================================
-   SINGLE 3D TILE SLAB COMPONENT
+   SINGLE 3D TILE SLAB COMPONENT (Meta World High-End Ceramic Acrylic Finish)
    ========================================================================= */
 function SingleTile3D({
   tile,
@@ -290,7 +222,7 @@ function SingleTile3D({
   // Smooth hover lift
   useFrame((_, delta) => {
     if (!groupRef.current) return;
-    const targetY = activeHover ? 0.08 : isSelected ? 0.04 : 0;
+    const targetY = activeHover ? 0.09 : isSelected ? 0.05 : 0;
     currentYOffset.current = THREE.MathUtils.damp(
       currentYOffset.current,
       targetY,
@@ -325,23 +257,7 @@ function SingleTile3D({
       : layout.width;
 
   const slabColor = isSelected ? '#fef08a' : activeHover ? '#ffffff' : '#f8fafc';
-  const rimColor = isSelected ? '#eab308' : activeHover ? '#94a3b8' : '#cbd5e1';
-
-  const isRegularProperty =
-    !layout.isCorner &&
-    tile.type !== 'CHANCE' &&
-    tile.type !== 'FATE' &&
-    tile.type !== 'SPECIAL';
-
-  // Construction progression tier:
-  // -1: unowned (empty tile)
-  // 0: land (flag only)
-  // 1: townhouse
-  // 2: apartment
-  // 3: Landmark
-  const houseCount = tile.houseCount || 0;
-  const hasResort = tile.hasResort || false;
-  const hasLandmark = isRegularProperty && tile.ownerId && (hasResort || houseCount >= 3);
+  const rimColor = isSelected ? '#f59e0b' : activeHover ? '#38bdf8' : '#cbd5e1';
 
   return (
     <group
@@ -368,32 +284,32 @@ function SingleTile3D({
         }
       }}
     >
-      {/* 3D Base Slab with tactile beveled edges and distinct slab gap */}
+      {/* 3D Base Slab with high-gloss ceramic finish and tactile beveled edges */}
       <mesh castShadow receiveShadow position={[0, -TILE_THICKNESS / 2, 0]}>
         <boxGeometry args={[localWidth - 0.08, TILE_THICKNESS, localDepth - 0.08]} />
         <meshStandardMaterial
           color={slabColor}
-          roughness={0.25}
-          metalness={0.08}
-          emissive={isSelected ? '#ca8a04' : activeHover ? '#38bdf8' : '#000000'}
-          emissiveIntensity={isSelected ? 0.4 : activeHover ? 0.2 : 0}
+          roughness={0.18}
+          metalness={0.12}
+          emissive={isSelected ? '#ca8a04' : activeHover ? '#0284c7' : '#000000'}
+          emissiveIntensity={isSelected ? 0.35 : activeHover ? 0.15 : 0}
         />
       </mesh>
 
-      {/* Decorative Bevel Trim */}
+      {/* Decorative Metallic Bevel Trim */}
       <mesh position={[0, -TILE_THICKNESS + 0.02, 0]}>
         <boxGeometry args={[localWidth - 0.04, 0.04, localDepth - 0.04]} />
-        <meshStandardMaterial color={rimColor} roughness={0.4} metalness={0.15} />
+        <meshStandardMaterial color={rimColor} roughness={0.3} metalness={0.4} />
       </mesh>
 
       {/* Glowing Owner Color Border Ring when owned */}
       {ownerColor && (
         <mesh position={[0, 0.005, 0]}>
-          <boxGeometry args={[localWidth - 0.06, 0.015, localDepth - 0.06]} />
+          <boxGeometry args={[localWidth - 0.06, 0.018, localDepth - 0.06]} />
           <meshStandardMaterial
             color={ownerColor}
             emissive={ownerColor}
-            emissiveIntensity={0.8}
+            emissiveIntensity={0.9}
             roughness={0.2}
           />
         </mesh>
@@ -401,40 +317,19 @@ function SingleTile3D({
 
       {/* Header color band (facing the island center: local -Z side) */}
       {!layout.isCorner && (
-        <mesh position={[0, 0.014, -localDepth / 2 + 0.32]} receiveShadow>
-          <boxGeometry args={[localWidth - 0.12, 0.015, 0.48]} />
-          <meshStandardMaterial color={bannerColor} roughness={0.2} metalness={0.15} />
+        <mesh position={[0, 0.015, -localDepth / 2 + 0.32]} receiveShadow>
+          <boxGeometry args={[localWidth - 0.12, 0.02, 0.48]} />
+          <meshStandardMaterial color={bannerColor} roughness={0.18} metalness={0.2} />
         </mesh>
       )}
 
-      {/* Special Corner 3D Props (Always active for corners) */}
+      {/* Special Corner 3D Props */}
       {layout.isCorner && <SpecialTileProp tileId={tile.id} />}
 
       {/* Floating 3D Cube for Chance & Fate */}
       {!layout.isCorner && (tile.type === 'CHANCE' || tile.type === 'FATE') && (
         <FloatingCardCube type={tile.type} />
       )}
-
-      {/* ================= PROGRESSIVE CONSTRUCTION VISUALS ================= */}
-      {/* 1. If unowned: Clean empty tile! No buildings or landmarks. */}
-
-      {/* 2. If owned: Owner Flagpole on tile */}
-      {isRegularProperty && tile.ownerId && ownerColor && (
-        <OwnerFlagpole color={ownerColor} />
-      )}
-
-      {/* 3. Tier 1 (Nhà phố) */}
-      {isRegularProperty && tile.ownerId && houseCount === 1 && !hasResort && (
-        <TownhouseModel />
-      )}
-
-      {/* 4. Tier 2 (Chung cư) */}
-      {isRegularProperty && tile.ownerId && houseCount === 2 && !hasResort && (
-        <ApartmentModel />
-      )}
-
-      {/* 5. Tier 3 (Landmark Biểu tượng hoàn thành khi đạt cấp cuối!) */}
-      {hasLandmark && <CityLandmark3D tileId={tile.id} />}
 
       {/* ================= BILLBOARD TEXT (ALWAYS FACING CAMERA) ================= */}
       <Billboard
@@ -449,43 +344,35 @@ function SingleTile3D({
           color={layout.isCorner ? '#ffffff' : '#0f172a'}
           anchorX="center"
           anchorY="middle"
-          maxWidth={localWidth}
-          textAlign="center"
-          outlineWidth={0.02}
-          outlineColor={layout.isCorner ? '#000000' : '#ffffff'}
+          outlineWidth={0.03}
+          outlineColor={layout.isCorner ? '#0f172a' : '#ffffff'}
+          fontWeight="bold"
         >
           {displayName}
         </Text>
-      </Billboard>
 
-      {/* Price tag badge for regular properties */}
-      {!layout.isCorner && priceDisplay && (
-        <Billboard
-          position={[0, 0.18, localDepth / 2 - 0.28]}
-          follow={true}
-          lockX={false}
-          lockY={false}
-          lockZ={false}
-        >
+        {priceDisplay && !layout.isCorner && (
           <Text
-            fontSize={0.18}
-            color="#b45309"
+            position={[0, -0.22, 0]}
+            fontSize={0.15}
+            color="#d97706"
             anchorX="center"
             anchorY="middle"
             outlineWidth={0.02}
             outlineColor="#ffffff"
+            fontWeight="bold"
           >
             {priceDisplay}
           </Text>
-        </Billboard>
-      )}
+        )}
+      </Billboard>
     </group>
   );
 }
 
-/**
- * 32 Board Tiles arranged in perimeter square
- */
+/* =========================================================================
+   BOARD TILES 3D WRAPPER
+   ========================================================================= */
 export function BoardTiles3D({
   tiles = BOARD_TILES,
   hoveredTileId,
@@ -493,22 +380,20 @@ export function BoardTiles3D({
   onTileClick,
   onTileHover,
 }: BoardTiles3DProps) {
-  const layouts = useMemo(
-    () => Array.from({ length: 32 }).map((_, i) => getTileLayoutInfo(i)),
-    []
-  );
-
   return (
-    <group name="board-tiles-3d">
-      {tiles.map((tile, idx) => {
-        const layout = layouts[idx] || getTileLayoutInfo(idx);
+    <group name="meta-world-board-tiles">
+      {tiles.map((tile) => {
+        const layout = getTileLayoutInfo(tile.id);
+        const isHovered = hoveredTileId === tile.id;
+        const isSelected = selectedTileId === tile.id;
+
         return (
           <SingleTile3D
             key={tile.id}
             tile={tile}
             layout={layout}
-            isHovered={hoveredTileId === tile.id}
-            isSelected={selectedTileId === tile.id}
+            isHovered={isHovered}
+            isSelected={isSelected}
             onClick={onTileClick}
             onHover={onTileHover}
           />

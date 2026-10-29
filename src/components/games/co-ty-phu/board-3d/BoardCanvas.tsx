@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
+import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import * as THREE from 'three';
 import { Tile } from '@/lib/game-engine/types';
 import { useGameStore } from '@/lib/game-engine/gameStore';
@@ -15,6 +16,7 @@ import { BoardTiles3D } from './BoardTiles3D';
 import { MascotPawns3D } from './MascotPawns3D';
 import { Buildings3D } from './Buildings3D';
 import { Dice3D } from './Dice3D';
+import { RotateCcw } from 'lucide-react';
 
 export interface BoardCanvasProps {
   tiles?: Tile[];
@@ -32,7 +34,7 @@ export interface BoardCanvasProps {
 
 /**
  * Adaptive Camera Controller: Auto-adjusts FOV and distance for mobile portrait
- * (iPhone, Samsung Z Fold 8 narrow outer screen) vs tablet/desktop square screens.
+ * vs tablet/desktop screens with smooth target tracking when pawns move.
  */
 function AdaptiveCamera() {
   const { camera, size } = useThree();
@@ -47,11 +49,9 @@ function AdaptiveCamera() {
     if (camera instanceof THREE.PerspectiveCamera) {
       const isPortraitOrNarrow = size.width < 768 || size.width / size.height < 1.05;
       if (isPortraitOrNarrow) {
-        // Elevated perspective with wider vertical FOV to frame the entire wooden board on mobile
         camera.fov = 42;
         camera.position.set(14, 22.5, 16);
       } else {
-        // High-end isometric tilt matching the tabletop reference photo
         camera.fov = 32;
         camera.position.set(13, 18, 15);
       }
@@ -79,23 +79,23 @@ function AdaptiveCamera() {
  */
 function BoardCanvasFallback() {
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-b from-stone-200 via-stone-100 to-amber-50 text-slate-800">
+    <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-b from-[#0284c7] via-[#0ea5e9] to-[#38bdf8] text-white">
       <div className="relative flex items-center justify-center">
-        <div className="h-16 w-16 animate-spin rounded-full border-4 border-amber-600 border-t-transparent" />
-        <div className="absolute text-2xl animate-bounce">🎲</div>
+        <div className="h-16 w-16 animate-spin rounded-full border-4 border-amber-400 border-t-transparent shadow-lg" />
+        <div className="absolute text-2xl animate-bounce">🏝️</div>
       </div>
-      <p className="mt-4 font-bold tracking-wide text-amber-950">
-        Đang khởi tạo Sa Bàn 3D Cờ Tỷ Phú...
+      <p className="mt-4 font-black tracking-wide text-amber-300 drop-shadow">
+        Đang khởi tạo Đảo Ngọc 3D Cờ Tỷ Phú...
       </p>
-      <p className="mt-1 text-xs font-medium text-stone-600">
-        Phong cách Isometric Mini World sống động
+      <p className="mt-1 text-xs font-semibold text-sky-100/90">
+        Phong cách Meta World: My City sống động
       </p>
     </div>
   );
 }
 
 /**
- * Main 3D Canvas Viewport for Cờ Tỷ Phú Vietnam (Isometric Mini World Diorama)
+ * Main 3D Canvas Viewport for Cờ Tỷ Phú Vietnam (Meta World Tropical Island)
  */
 export function BoardCanvas({
   tiles = BOARD_TILES,
@@ -111,10 +111,20 @@ export function BoardCanvas({
   showDice = true,
 }: BoardCanvasProps) {
   const [mounted, setMounted] = useState(false);
+  const controlsRef = useRef<OrbitControlsImpl | null>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const handleResetCamera = () => {
+    if (controlsRef.current) {
+      controlsRef.current.reset();
+      controlsRef.current.object.position.set(13, 18, 15);
+      controlsRef.current.target.set(0, 0, 0);
+      controlsRef.current.update();
+    }
+  };
 
   if (!mounted) {
     return (
@@ -126,8 +136,19 @@ export function BoardCanvas({
 
   return (
     <div
-      className={`relative overflow-hidden select-none bg-gradient-to-b from-stone-200 via-stone-100 to-amber-50/70 ${className}`}
+      className={`relative overflow-hidden select-none bg-gradient-to-b from-[#0284c7] via-[#38bdf8] to-[#bae6fd] ${className}`}
     >
+      {/* Quick Camera Reset Button (VIS-09) */}
+      <button
+        onClick={handleResetCamera}
+        title="Đặt lại góc nhìn bàn cờ 3D"
+        aria-label="Đặt lại góc nhìn"
+        className="absolute top-20 right-3 z-30 flex items-center gap-1.5 rounded-full bg-slate-900/75 px-3 py-1.5 text-[11px] font-bold text-white shadow-lg backdrop-blur-md border border-white/20 hover:bg-slate-800 transition-all active:scale-95"
+      >
+        <RotateCcw className="h-3.5 w-3.5 text-amber-400" />
+        <span className="hidden sm:inline">Góc Nhìn Chuẩn</span>
+      </button>
+
       <Canvas
         shadows
         dpr={[1, 1.5]}
@@ -140,23 +161,23 @@ export function BoardCanvas({
           position: [13, 18, 15],
           fov: 32,
           near: 0.1,
-          far: 140,
+          far: 160,
         }}
       >
         <Suspense fallback={null}>
-          {/* Auto-responsive camera for iPhone and Samsung Z Fold */}
+          {/* Auto-responsive camera for mobile & desktop */}
           <AdaptiveCamera />
 
-          {/* Cinematic Studio Lighting, Sun, Soft Shadows, and Table Atmosphere */}
+          {/* Meta World Cinematic Tropical Lighting & Sunny Sky Atmosphere */}
           <Environment3D />
 
-          {/* Luxury Handcrafted Dark Walnut Tabletop Frame & Shadow Receiver */}
+          {/* Meta World Floating Tropical Pearl Island Base & Sparkling Ocean */}
           <BoardTableFrame />
 
-          {/* Dense Isometric Mini World (Snow Peaks, Conifer Forest, Campsite, Stream, Pagoda) */}
+          {/* Tropical Island Paradise Diorama (Giant Floating Pearl, Lagoon, Karsts, Pagoda) */}
           <MiniWorldDiorama3D />
 
-          {/* 32 Perimeter Board Tiles with Torii Gate, Stone Cavern & Miniature Houses */}
+          {/* 32 Perimeter Board Tiles */}
           <BoardTiles3D
             tiles={tiles}
             hoveredTileId={hoveredTileId}
@@ -165,13 +186,13 @@ export function BoardCanvas({
             onTileHover={onTileHover}
           />
 
-          {/* Upgraded 3D Buildings & Resorts with pop-up animation */}
+          {/* 3D Buildings & Resorts */}
           {showBuildings && <Buildings3D tiles={tiles} />}
 
-          {/* 3D Animated Mascots Hopping on Tiles with Pedestal Bases & Active Aura */}
+          {/* 3D Animated Mascots Hopping on Tiles */}
           {showMascots && <MascotPawns3D />}
 
-          {/* 3D Rolling Dice in Central Island Felt Tray */}
+          {/* 3D Rolling Dice in Central Island Arena */}
           {showDice && <Dice3D />}
 
           {/* Custom Children */}
@@ -181,11 +202,12 @@ export function BoardCanvas({
         {/* Orbit Controls with smooth touch damping and polar clamping */}
         {enableOrbit && (
           <OrbitControls
+            ref={controlsRef}
             makeDefault
             enableDamping
             dampingFactor={0.06}
             minDistance={8}
-            maxDistance={32}
+            maxDistance={35}
             minPolarAngle={Math.PI / 6}
             maxPolarAngle={Math.PI / 2.25}
             target={[0, 0, 0]}

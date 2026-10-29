@@ -11,6 +11,7 @@ import {
   getBuildingTier,
   MASCOT_PALETTES,
 } from './board3dHelpers';
+import { CityLandmark3D } from './CityLandmarks3D';
 
 /* =========================================================================
    PROCEDURAL 3D BUILDING MESHES (5 TIERS)
@@ -472,7 +473,13 @@ function SingleBuilding3D({ tile, players }: SingleBuilding3DProps) {
       {tier === 1 && <VillageHouse1Structure flagColor={ownerColor} />}
       {tier === 2 && <VillageHouse2Structure flagColor={ownerColor} />}
       {tier === 3 && <LuxuryVillaStructure flagColor={ownerColor} />}
-      {tier >= 4 && <GrandGoldenResortStructure flagColor={ownerColor} />}
+      {tier >= 4 && (
+        [1, 3, 4, 5, 6, 9, 10, 11, 12, 13, 15, 17, 19, 20, 21, 22, 23, 25, 27, 28, 30, 31].includes(tile.id) ? (
+          <CityLandmark3D tileId={tile.id} />
+        ) : (
+          <GrandGoldenResortStructure flagColor={ownerColor} />
+        )
+      )}
     </group>
   );
 }

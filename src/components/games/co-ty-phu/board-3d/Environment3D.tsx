@@ -11,9 +11,9 @@ interface CloudProps {
 }
 
 /**
- * High-Altitude Distant Fluffy Cloud (High in sky, never covers the board)
+ * Stylized Fluffy Tropical Cloud (High in sky, orbits slowly)
  */
-function HighSkyCloud({ initialPosition, scale = 1, speed = 0.025 }: CloudProps) {
+function FluffyTropicalCloud({ initialPosition, scale = 1, speed = 0.02 }: CloudProps) {
   const groupRef = useRef<THREE.Group>(null);
   const angleRef = useRef(Math.atan2(initialPosition[2], initialPosition[0]));
   const radius = useMemo(
@@ -24,7 +24,7 @@ function HighSkyCloud({ initialPosition, scale = 1, speed = 0.025 }: CloudProps)
 
   useFrame((_, delta) => {
     if (!groupRef.current) return;
-    angleRef.current += speed * delta * 0.08;
+    angleRef.current += speed * delta * 0.06;
     const x = Math.cos(angleRef.current) * radius;
     const z = Math.sin(angleRef.current) * radius;
     groupRef.current.position.set(x, baseHeight, z);
@@ -34,78 +34,129 @@ function HighSkyCloud({ initialPosition, scale = 1, speed = 0.025 }: CloudProps)
   return (
     <group ref={groupRef} position={initialPosition} scale={[scale, scale, scale]}>
       <mesh castShadow={false}>
-        <sphereGeometry args={[1.8, 7, 7]} />
+        <sphereGeometry args={[2.2, 8, 8]} />
         <meshStandardMaterial
           color="#ffffff"
-          roughness={0.9}
-          opacity={0.85}
+          roughness={0.7}
+          opacity={0.88}
           transparent
         />
       </mesh>
-      <mesh position={[-1.3, -0.2, 0.2]} castShadow={false}>
-        <sphereGeometry args={[1.3, 6, 6]} />
-        <meshStandardMaterial color="#f8fafc" roughness={0.9} opacity={0.85} transparent />
+      <mesh position={[-1.6, -0.2, 0.3]} castShadow={false}>
+        <sphereGeometry args={[1.6, 7, 7]} />
+        <meshStandardMaterial color="#f8fafc" roughness={0.7} opacity={0.88} transparent />
       </mesh>
-      <mesh position={[1.4, -0.15, -0.2]} castShadow={false}>
-        <sphereGeometry args={[1.4, 6, 6]} />
-        <meshStandardMaterial color="#f8fafc" roughness={0.9} opacity={0.85} transparent />
+      <mesh position={[1.7, -0.15, -0.3]} castShadow={false}>
+        <sphereGeometry args={[1.7, 7, 7]} />
+        <meshStandardMaterial color="#f8fafc" roughness={0.7} opacity={0.88} transparent />
+      </mesh>
+      <mesh position={[0.4, 0.9, 0.1]} castShadow={false}>
+        <sphereGeometry args={[1.3, 7, 7]} />
+        <meshStandardMaterial color="#ffffff" roughness={0.7} opacity={0.9} transparent />
       </mesh>
     </group>
   );
 }
 
 /**
- * 3D Studio Environment with cinematic key sunlight, soft contact shadows,
- * neutral studio fill, and atmospheric tabletop warmth matching the reference photo.
+ * Distant Hot Air Balloon floating gently in tropical sky (Meta World aesthetic)
+ */
+function MetaAirBalloon({ position, scale = 0.8 }: { position: [number, number, number]; scale?: number }) {
+  const groupRef = useRef<THREE.Group>(null);
+  const startY = position[1];
+
+  useFrame(({ clock }) => {
+    if (!groupRef.current) return;
+    const t = clock.getElapsedTime();
+    groupRef.current.position.y = startY + Math.sin(t * 0.8 + position[0]) * 0.4;
+  });
+
+  return (
+    <group ref={groupRef} position={position} scale={[scale, scale, scale]}>
+      {/* Balloon Envelope */}
+      <mesh castShadow={false} position={[0, 1.4, 0]}>
+        <sphereGeometry args={[1.2, 16, 16]} />
+        <meshStandardMaterial color="#f59e0b" roughness={0.3} metalness={0.1} />
+      </mesh>
+      {/* Accent stripes */}
+      <mesh castShadow={false} position={[0, 1.4, 0]} scale={[1.02, 0.98, 1.02]}>
+        <cylinderGeometry args={[1.2, 1.2, 0.4, 16]} />
+        <meshStandardMaterial color="#ef4444" roughness={0.3} />
+      </mesh>
+      {/* Basket */}
+      <mesh castShadow={false} position={[0, 0.1, 0]}>
+        <boxGeometry args={[0.4, 0.3, 0.4]} />
+        <meshStandardMaterial color="#78350f" roughness={0.8} />
+      </mesh>
+    </group>
+  );
+}
+
+/**
+ * 3D Tropical Island Environment with radiant Meta World studio lighting:
+ * - Golden sunlight with crisp contact shadows
+ * - Lush ocean turquoise bounce
+ * - Deep tropical sky gradient without murky grey fog
  */
 export function Environment3D() {
   const dirLightRef = useRef<THREE.DirectionalLight>(null);
 
   return (
-    <group name="environment-3d">
-      {/* Studio Atmosphere Soft Ambient Fog */}
-      <fog attach="fog" args={['#e7e5e4', 36, 92]} />
+    <group name="meta-world-environment">
+      {/* Clean, distant tropical haze (Never dull grey; vivid light cyan) */}
+      <fog attach="fog" args={['#0284c7', 60, 140]} />
 
-      {/* Warm Studio Tabletop Baseline Ambient Light */}
-      <ambientLight color="#fdf4ff" intensity={0.72} />
+      {/* Radiant baseline ambient light */}
+      <ambientLight color="#ffffff" intensity={0.85} />
 
-      {/* Hemisphere Light: Cool Sky Ambient Bounce & Warm Wood Reflectance */}
+      {/* Hemisphere Light: Turquoise Sky Top & Golden Sand Ground Reflection */}
       <hemisphereLight
-        color="#bae6fd"
-        groundColor="#d97706"
-        intensity={0.65}
+        color="#38bdf8"
+        groundColor="#f59e0b"
+        intensity={0.9}
       />
 
-      {/* Main Studio Key Sun (Matches the shadow angle in reference photo: upper-left to bottom-right) */}
+      {/* Primary Key Sunlight (Cinematic high-angle tropical sun) */}
       <directionalLight
         ref={dirLightRef}
-        position={[-15, 25, -12]}
+        position={[-18, 30, -14]}
         color="#fffbeb"
-        intensity={2.15}
+        intensity={2.8}
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
         shadow-camera-near={1.0}
-        shadow-camera-far={65}
-        shadow-camera-left={-16}
-        shadow-camera-right={16}
-        shadow-camera-top={16}
-        shadow-camera-bottom={-16}
+        shadow-camera-far={80}
+        shadow-camera-left={-20}
+        shadow-camera-right={20}
+        shadow-camera-top={20}
+        shadow-camera-bottom={-20}
         shadow-bias={-0.0003}
       />
 
-      {/* Studio Opposite Fill Light (Softens contrast on dark sides without casting harsh extra shadows) */}
+      {/* Secondary Fill Light: Soft Warm Amber Glow on shaded faces */}
       <directionalLight
-        position={[14, 16, 14]}
+        position={[16, 20, 16]}
         color="#fed7aa"
-        intensity={0.55}
-        castShadow={false}
+        intensity={1.2}
       />
 
-      {/* Distant High Clouds around Horizon Rim */}
-      <HighSkyCloud initialPosition={[-24, 22, -22]} scale={2.4} speed={0.03} />
-      <HighSkyCloud initialPosition={[26, 24, -20]} scale={2.6} speed={0.02} />
-      <HighSkyCloud initialPosition={[-22, 23, 26]} scale={2.2} speed={0.025} />
+      {/* Cyan Ocean Underglow Bounce */}
+      <directionalLight
+        position={[0, -10, 0]}
+        color="#06b6d4"
+        intensity={0.6}
+      />
+
+      {/* High Sky Tropical Fluffy Clouds */}
+      <FluffyTropicalCloud initialPosition={[-24, 22, -18]} scale={1.4} speed={0.02} />
+      <FluffyTropicalCloud initialPosition={[26, 25, 20]} scale={1.6} speed={0.018} />
+      <FluffyTropicalCloud initialPosition={[-18, 20, 24]} scale={1.2} speed={0.022} />
+      <FluffyTropicalCloud initialPosition={[22, 23, -22]} scale={1.3} speed={0.015} />
+
+      {/* Meta World Air Balloons in distant sky */}
+      <MetaAirBalloon position={[-28, 16, -10]} scale={0.7} />
+      <MetaAirBalloon position={[30, 18, 15]} scale={0.6} />
     </group>
   );
 }
