@@ -12,7 +12,18 @@ import {
   rotateVectorByEuler,
   MASCOT_PALETTES,
 } from '@/components/games/co-ty-phu/board-3d/board3dHelpers';
-import { PigMesh, LandingDustRing } from '@/components/games/co-ty-phu/board-3d/MascotPawns3D';
+import {
+  PigMesh,
+  FoxMesh,
+  CatMesh,
+  BuffaloMesh,
+  MascotModel,
+  LandingDustRing,
+} from '@/components/games/co-ty-phu/board-3d/MascotPawns3D';
+import {
+  DieMesh,
+  Dice3D,
+} from '@/components/games/co-ty-phu/board-3d/Dice3D';
 import {
   FlagStructure,
   VillageHouse1Structure,
@@ -276,9 +287,18 @@ describe('Mascots and Buildings 3D Helpers', () => {
       }
     });
 
-    it('should export PigMesh and LandingDustRing 3D components', () => {
+    it('should export all 4 mascot meshes, model dispatcher and landing shockwave', () => {
       expect(typeof PigMesh).toBe('function');
+      expect(typeof FoxMesh).toBe('function');
+      expect(typeof CatMesh).toBe('function');
+      expect(typeof BuffaloMesh).toBe('function');
+      expect(typeof MascotModel).toBe('function');
       expect(typeof LandingDustRing).toBe('function');
+    });
+
+    it('should export DieMesh and Dice3D physics dice components', () => {
+      expect(typeof DieMesh).toBe('function');
+      expect(typeof Dice3D).toBe('function');
     });
   });
 

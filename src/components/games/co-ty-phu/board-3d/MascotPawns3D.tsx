@@ -306,309 +306,469 @@ export function PigMesh({ scale = 1 }: { scale?: number }) {
 }
 
 /**
- * 🦊 FOX (Cáo Tí): Orange body, white chest/muzzle, pointed ears, cool sunglasses & bushy tail
+ * 🦊 FOX (Cáo Lém Lỉnh): Chibi streetwear fox explorer with anime eyes, cool shades, cap & fluffy gradient tail
  */
 export function FoxMesh({ scale = 1 }: { scale?: number }) {
   const palette = MASCOT_PALETTES.FOX;
 
   return (
     <group scale={scale} position={[0, 0.28, 0]}>
-      {/* Orange Body */}
+      {/* Warm Orange Chibi Vinyl Body */}
       <mesh castShadow receiveShadow>
-        <sphereGeometry args={[0.24, 16, 16]} />
-        <meshStandardMaterial color={palette.primary} roughness={0.45} />
+        <sphereGeometry args={[0.25, 24, 20]} />
+        <meshStandardMaterial
+          color={palette.primary}
+          roughness={0.34}
+          metalness={0.06}
+        />
       </mesh>
 
-      {/* Creamy White Chest Bib */}
-      <mesh position={[0, -0.05, 0.15]} rotation={[-0.15, 0, 0]}>
-        <sphereGeometry args={[0.15, 12, 12, 0, Math.PI, 0, Math.PI]} />
-        <meshStandardMaterial color={palette.secondary} roughness={0.6} />
+      {/* Creamy White Chest Bib & Fluff */}
+      <mesh position={[0, -0.06, 0.16]} rotation={[-0.15, 0, 0]}>
+        <sphereGeometry args={[0.15, 16, 16, 0, Math.PI, 0, Math.PI]} />
+        <meshStandardMaterial color={palette.secondary} roughness={0.5} />
       </mesh>
 
-      {/* Pointed Fox Muzzle */}
+      {/* White Cheek Fluff Tufts */}
+      <mesh position={[-0.18, -0.02, 0.14]} rotation={[0, 0.3, -0.4]} castShadow>
+        <coneGeometry args={[0.06, 0.12, 4]} />
+        <meshStandardMaterial color="#ffffff" roughness={0.6} />
+      </mesh>
+      <mesh position={[0.18, -0.02, 0.14]} rotation={[0, -0.3, 0.4]} castShadow>
+        <coneGeometry args={[0.06, 0.12, 4]} />
+        <meshStandardMaterial color="#ffffff" roughness={0.6} />
+      </mesh>
+
+      {/* Tapered 3D Fox Muzzle */}
       <group position={[0, 0.01, 0.22]} rotation={[Math.PI / 2, 0, 0]}>
         <mesh castShadow>
-          <coneGeometry args={[0.08, 0.16, 8]} />
-          <meshStandardMaterial color="#ffffff" roughness={0.5} />
+          <coneGeometry args={[0.085, 0.17, 12]} />
+          <meshStandardMaterial color="#ffffff" roughness={0.4} />
         </mesh>
-        {/* Glossy Black Nose Tip */}
-        <mesh position={[0, 0.09, 0]}>
-          <sphereGeometry args={[0.025, 8, 8]} />
-          <meshStandardMaterial color="#0f172a" roughness={0.1} />
+        {/* Glossy Obsidian Nose Tip */}
+        <mesh position={[0, 0.095, 0]}>
+          <sphereGeometry args={[0.026, 12, 12]} />
+          <meshStandardMaterial color="#0f172a" roughness={0.08} metalness={0.2} />
+        </mesh>
+      </group>
+
+      {/* Dual-Reflection Anime Specular Eyes */}
+      {/* Left Eye */}
+      <group position={[-0.08, 0.075, 0.21]}>
+        <mesh castShadow>
+          <sphereGeometry args={[0.03, 16, 16]} />
+          <meshStandardMaterial color="#0f172a" roughness={0.08} metalness={0.2} />
+        </mesh>
+        <mesh position={[0.007, 0.011, 0.02]}>
+          <sphereGeometry args={[0.01, 8, 8]} />
+          <meshBasicMaterial color="#ffffff" />
+        </mesh>
+        <mesh position={[-0.007, -0.009, 0.018]}>
+          <sphereGeometry args={[0.005, 6, 6]} />
+          <meshBasicMaterial color="#ffffff" />
+        </mesh>
+      </group>
+      {/* Right Eye */}
+      <group position={[0.08, 0.075, 0.21]}>
+        <mesh castShadow>
+          <sphereGeometry args={[0.03, 16, 16]} />
+          <meshStandardMaterial color="#0f172a" roughness={0.08} metalness={0.2} />
+        </mesh>
+        <mesh position={[0.007, 0.011, 0.02]}>
+          <sphereGeometry args={[0.01, 8, 8]} />
+          <meshBasicMaterial color="#ffffff" />
+        </mesh>
+        <mesh position={[-0.007, -0.009, 0.018]}>
+          <sphereGeometry args={[0.005, 6, 6]} />
+          <meshBasicMaterial color="#ffffff" />
         </mesh>
       </group>
 
       {/* Cool Dark Sunglasses */}
-      <group position={[0, 0.1, 0.21]}>
-        {/* Left & Right Lenses */}
-        <mesh position={[-0.07, 0, 0]}>
-          <boxGeometry args={[0.09, 0.055, 0.025]} />
-          <meshStandardMaterial color={palette.accent} roughness={0.1} metalness={0.8} />
+      <group position={[0, 0.095, 0.22]}>
+        {/* Left & Right Iridium Lenses */}
+        <mesh position={[-0.075, 0, 0]} castShadow>
+          <boxGeometry args={[0.085, 0.05, 0.022]} />
+          <meshStandardMaterial color="#0f172a" roughness={0.08} metalness={0.85} />
         </mesh>
-        <mesh position={[0.07, 0, 0]}>
-          <boxGeometry args={[0.09, 0.055, 0.025]} />
-          <meshStandardMaterial color={palette.accent} roughness={0.1} metalness={0.8} />
+        <mesh position={[0.075, 0, 0]} castShadow>
+          <boxGeometry args={[0.085, 0.05, 0.022]} />
+          <meshStandardMaterial color="#0f172a" roughness={0.08} metalness={0.85} />
         </mesh>
-        {/* Golden Bridge */}
-        <mesh position={[0, 0.01, 0]}>
-          <boxGeometry args={[0.06, 0.015, 0.02]} />
-          <meshStandardMaterial color="#fbbf24" metalness={0.9} roughness={0.2} />
+        {/* 24k Gold Center Bridge */}
+        <mesh position={[0, 0.008, 0]}>
+          <boxGeometry args={[0.05, 0.014, 0.018]} />
+          <meshStandardMaterial color="#fbbf24" metalness={0.95} roughness={0.12} />
+        </mesh>
+        {/* Gold Frame Upper Trim Bar */}
+        <mesh position={[0, 0.025, -0.002]}>
+          <boxGeometry args={[0.22, 0.01, 0.014]} />
+          <meshStandardMaterial color="#fbbf24" metalness={0.95} roughness={0.12} />
+        </mesh>
+      </group>
+
+      {/* Streetwear Snapback Explorer Cap */}
+      <group position={[0, 0.17, 0.04]} rotation={[-0.12, 0, 0]}>
+        {/* Cap Crown Dome */}
+        <mesh castShadow>
+          <sphereGeometry args={[0.22, 18, 14, 0, Math.PI * 2, 0, Math.PI * 0.45]} />
+          <meshStandardMaterial color="#0284c7" roughness={0.4} />
+        </mesh>
+        {/* Golden Top Pin Button */}
+        <mesh position={[0, 0.18, 0]}>
+          <cylinderGeometry args={[0.02, 0.025, 0.02, 10]} />
+          <meshStandardMaterial color="#fbbf24" metalness={0.92} roughness={0.15} />
+        </mesh>
+        {/* Flat Visor Brim */}
+        <mesh position={[0, 0.02, 0.18]} rotation={[0.22, 0, 0]} castShadow>
+          <boxGeometry args={[0.2, 0.016, 0.11]} />
+          <meshStandardMaterial color="#0369a1" roughness={0.45} />
         </mesh>
       </group>
 
       {/* Pointed Fox Ears */}
-      <group position={[-0.12, 0.24, 0.02]} rotation={[0.1, -0.2, -0.3]}>
+      <group position={[-0.13, 0.25, -0.02]} rotation={[0.1, -0.15, -0.32]}>
         <mesh castShadow>
-          <coneGeometry args={[0.07, 0.18, 6]} />
-          <meshStandardMaterial color={palette.primary} roughness={0.5} />
+          <coneGeometry args={[0.075, 0.19, 6]} />
+          <meshStandardMaterial color={palette.primary} roughness={0.45} />
         </mesh>
         {/* Dark ear tip */}
-        <mesh position={[0, 0.07, 0]}>
-          <coneGeometry args={[0.035, 0.06, 6]} />
+        <mesh position={[0, 0.075, 0]}>
+          <coneGeometry args={[0.038, 0.065, 6]} />
           <meshStandardMaterial color="#1e293b" roughness={0.8} />
+        </mesh>
+        {/* Peach Inner Ear Lining */}
+        <mesh position={[0, -0.01, 0.02]} rotation={[0.1, 0, 0]}>
+          <coneGeometry args={[0.042, 0.12, 6]} />
+          <meshStandardMaterial color="#fed7aa" roughness={0.6} />
         </mesh>
       </group>
-      <group position={[0.12, 0.24, 0.02]} rotation={[0.1, 0.2, 0.3]}>
+      <group position={[0.13, 0.25, -0.02]} rotation={[0.1, 0.15, 0.32]}>
         <mesh castShadow>
-          <coneGeometry args={[0.07, 0.18, 6]} />
-          <meshStandardMaterial color={palette.primary} roughness={0.5} />
+          <coneGeometry args={[0.075, 0.19, 6]} />
+          <meshStandardMaterial color={palette.primary} roughness={0.45} />
         </mesh>
         {/* Dark ear tip */}
-        <mesh position={[0, 0.07, 0]}>
-          <coneGeometry args={[0.035, 0.06, 6]} />
+        <mesh position={[0, 0.075, 0]}>
+          <coneGeometry args={[0.038, 0.065, 6]} />
           <meshStandardMaterial color="#1e293b" roughness={0.8} />
+        </mesh>
+        {/* Peach Inner Ear Lining */}
+        <mesh position={[0, -0.01, 0.02]} rotation={[0.1, 0, 0]}>
+          <coneGeometry args={[0.042, 0.12, 6]} />
+          <meshStandardMaterial color="#fed7aa" roughness={0.6} />
         </mesh>
       </group>
 
-      {/* Big Fluffy Fox Tail curving upward */}
-      <group position={[0, -0.02, -0.24]} rotation={[-0.6, 0, 0]}>
+      {/* Big Fluffy Fox Tail Curving Upward with White Bushy Tip */}
+      <group position={[0, -0.02, -0.24]} rotation={[-0.55, 0, 0]}>
+        {/* Base Orange Segment */}
         <mesh castShadow>
-          <cylinderGeometry args={[0.03, 0.09, 0.26, 8]} />
+          <cylinderGeometry args={[0.05, 0.11, 0.22, 10]} />
           <meshStandardMaterial color={palette.detail} roughness={0.5} />
         </mesh>
-        {/* White Bushy Tip */}
+        {/* Fluffy Snow-White Tip */}
         <mesh position={[0, 0.15, 0]} castShadow>
-          <coneGeometry args={[0.07, 0.12, 8]} />
-          <meshStandardMaterial color="#ffffff" roughness={0.6} />
+          <coneGeometry args={[0.085, 0.15, 10]} />
+          <meshStandardMaterial color="#ffffff" roughness={0.55} />
         </mesh>
       </group>
 
-      {/* Dark Paws */}
-      <mesh position={[-0.09, -0.21, 0.05]} castShadow>
-        <cylinderGeometry args={[0.035, 0.04, 0.09, 8]} />
-        <meshStandardMaterial color="#451a03" roughness={0.8} />
+      {/* Little Charcoal Paws */}
+      <mesh position={[-0.09, -0.22, 0.06]} castShadow>
+        <cylinderGeometry args={[0.038, 0.045, 0.1, 10]} />
+        <meshStandardMaterial color="#1e293b" roughness={0.7} />
       </mesh>
-      <mesh position={[0.09, -0.21, 0.05]} castShadow>
-        <cylinderGeometry args={[0.035, 0.04, 0.09, 8]} />
-        <meshStandardMaterial color="#451a03" roughness={0.8} />
+      <mesh position={[0.09, -0.22, 0.06]} castShadow>
+        <cylinderGeometry args={[0.038, 0.045, 0.1, 10]} />
+        <meshStandardMaterial color="#1e293b" roughness={0.7} />
       </mesh>
-      <mesh position={[-0.09, -0.21, -0.05]} castShadow>
-        <cylinderGeometry args={[0.035, 0.04, 0.09, 8]} />
-        <meshStandardMaterial color="#451a03" roughness={0.8} />
+      <mesh position={[-0.09, -0.22, -0.06]} castShadow>
+        <cylinderGeometry args={[0.038, 0.045, 0.1, 10]} />
+        <meshStandardMaterial color="#1e293b" roughness={0.7} />
       </mesh>
-      <mesh position={[0.09, -0.21, -0.05]} castShadow>
-        <cylinderGeometry args={[0.035, 0.04, 0.09, 8]} />
-        <meshStandardMaterial color="#451a03" roughness={0.8} />
+      <mesh position={[0.09, -0.22, -0.06]} castShadow>
+        <cylinderGeometry args={[0.038, 0.045, 0.1, 10]} />
+        <meshStandardMaterial color="#1e293b" roughness={0.7} />
       </mesh>
     </group>
   );
 }
 
 /**
- * 🐱 CAT (Mèo Ú): White/chubby body, cute ears, lucky golden medallion & red collar
+ * 🐱 CAT (Mèo Quý Tộc / Maneki-Neko): Lucky porcelain cat with anime eyes, waving paw & golden coin bell
  */
 export function CatMesh({ scale = 1 }: { scale?: number }) {
   const palette = MASCOT_PALETTES.CAT;
 
   return (
     <group scale={scale} position={[0, 0.28, 0]}>
-      {/* Chubby White Fur Body */}
+      {/* Chubby White-Cream Porcelain Body */}
       <mesh castShadow receiveShadow>
-        <sphereGeometry args={[0.25, 16, 16]} />
-        <meshStandardMaterial color={palette.primary} roughness={0.4} />
+        <sphereGeometry args={[0.26, 24, 20]} />
+        <meshPhysicalMaterial
+          color="#fdfbf7"
+          roughness={0.25}
+          metalness={0.05}
+          clearcoat={0.45}
+          clearcoatRoughness={0.08}
+        />
       </mesh>
 
-      {/* Pointed Cat Ears */}
-      <group position={[-0.12, 0.23, 0.02]} rotation={[0.05, -0.15, -0.25]}>
+      {/* Pointed Cat Ears with Fluffy Pink Inner Lining */}
+      <group position={[-0.12, 0.24, 0.02]} rotation={[0.05, -0.15, -0.25]}>
         <mesh castShadow>
-          <coneGeometry args={[0.07, 0.15, 6]} />
-          <meshStandardMaterial color={palette.primary} roughness={0.5} />
+          <coneGeometry args={[0.075, 0.16, 6]} />
+          <meshStandardMaterial color="#fdfbf7" roughness={0.3} />
         </mesh>
-        {/* Pink Inner Ear */}
-        <mesh position={[0, -0.01, 0.02]} rotation={[0, 0, 0]}>
-          <coneGeometry args={[0.04, 0.1, 6]} />
-          <meshStandardMaterial color={palette.secondary} roughness={0.6} />
+        <mesh position={[0, -0.01, 0.02]}>
+          <coneGeometry args={[0.045, 0.11, 6]} />
+          <meshStandardMaterial color="#fda4af" roughness={0.6} />
         </mesh>
       </group>
-      <group position={[0.12, 0.23, 0.02]} rotation={[0.05, 0.15, 0.25]}>
+      <group position={[0.12, 0.24, 0.02]} rotation={[0.05, 0.15, 0.25]}>
         <mesh castShadow>
-          <coneGeometry args={[0.07, 0.15, 6]} />
-          <meshStandardMaterial color={palette.primary} roughness={0.5} />
+          <coneGeometry args={[0.075, 0.16, 6]} />
+          <meshStandardMaterial color="#fdfbf7" roughness={0.3} />
         </mesh>
-        {/* Pink Inner Ear */}
-        <mesh position={[0, -0.01, 0.02]} rotation={[0, 0, 0]}>
-          <coneGeometry args={[0.04, 0.1, 6]} />
-          <meshStandardMaterial color={palette.secondary} roughness={0.6} />
+        <mesh position={[0, -0.01, 0.02]}>
+          <coneGeometry args={[0.045, 0.11, 6]} />
+          <meshStandardMaterial color="#fda4af" roughness={0.6} />
         </mesh>
       </group>
 
-      {/* Emerald Green Anime Eyes */}
-      <mesh position={[-0.08, 0.08, 0.21]}>
-        <sphereGeometry args={[0.035, 8, 8]} />
-        <meshStandardMaterial color="#059669" roughness={0.1} />
-      </mesh>
-      <mesh position={[0.08, 0.08, 0.21]}>
-        <sphereGeometry args={[0.035, 8, 8]} />
-        <meshStandardMaterial color="#059669" roughness={0.1} />
-      </mesh>
-      {/* Eye Highlights */}
-      <mesh position={[-0.07, 0.095, 0.235]}>
-        <sphereGeometry args={[0.012, 6, 6]} />
-        <meshBasicMaterial color="#ffffff" />
-      </mesh>
-      <mesh position={[0.09, 0.095, 0.235]}>
-        <sphereGeometry args={[0.012, 6, 6]} />
-        <meshBasicMaterial color="#ffffff" />
-      </mesh>
+      {/* Dual-Reflection Anime Emerald Green Eyes */}
+      <group position={[-0.08, 0.08, 0.22]}>
+        <mesh castShadow>
+          <sphereGeometry args={[0.033, 16, 16]} />
+          <meshStandardMaterial color="#047857" roughness={0.08} metalness={0.2} />
+        </mesh>
+        <mesh position={[0.008, 0.012, 0.022]}>
+          <sphereGeometry args={[0.011, 8, 8]} />
+          <meshBasicMaterial color="#ffffff" />
+        </mesh>
+        <mesh position={[-0.008, -0.01, 0.02]}>
+          <sphereGeometry args={[0.0055, 6, 6]} />
+          <meshBasicMaterial color="#ffffff" />
+        </mesh>
+      </group>
+      <group position={[0.08, 0.08, 0.22]}>
+        <mesh castShadow>
+          <sphereGeometry args={[0.033, 16, 16]} />
+          <meshStandardMaterial color="#047857" roughness={0.08} metalness={0.2} />
+        </mesh>
+        <mesh position={[0.008, 0.012, 0.022]}>
+          <sphereGeometry args={[0.011, 8, 8]} />
+          <meshBasicMaterial color="#ffffff" />
+        </mesh>
+        <mesh position={[-0.008, -0.01, 0.02]}>
+          <sphereGeometry args={[0.0055, 6, 6]} />
+          <meshBasicMaterial color="#ffffff" />
+        </mesh>
+      </group>
 
-      {/* Tiny Pink Nose */}
-      <mesh position={[0, 0.02, 0.245]}>
-        <sphereGeometry args={[0.018, 6, 6]} />
+      {/* Tiny Pink Heart Nose */}
+      <mesh position={[0, 0.02, 0.255]}>
+        <sphereGeometry args={[0.018, 8, 8]} />
         <meshStandardMaterial color="#fb7185" roughness={0.4} />
       </mesh>
 
-      {/* Rosy Cheeks */}
-      <mesh position={[-0.14, 0.01, 0.19]}>
-        <circleGeometry args={[0.032, 12]} />
-        <meshBasicMaterial color="#fda4af" transparent opacity={0.6} side={THREE.DoubleSide} />
+      {/* Rosy Cheek Blush */}
+      <mesh position={[-0.14, 0.01, 0.2]}>
+        <circleGeometry args={[0.035, 12]} />
+        <meshBasicMaterial color="#fda4af" transparent opacity={0.65} side={THREE.DoubleSide} />
       </mesh>
-      <mesh position={[0.14, 0.01, 0.19]}>
-        <circleGeometry args={[0.032, 12]} />
-        <meshBasicMaterial color="#fda4af" transparent opacity={0.6} side={THREE.DoubleSide} />
-      </mesh>
-
-      {/* Whiskers */}
-      <mesh position={[-0.14, 0.02, 0.21]} rotation={[0, 0, 0.1]}>
-        <boxGeometry args={[0.06, 0.005, 0.005]} />
-        <meshBasicMaterial color="#94a3b8" />
-      </mesh>
-      <mesh position={[-0.14, 0.04, 0.2]} rotation={[0, 0, -0.1]}>
-        <boxGeometry args={[0.06, 0.005, 0.005]} />
-        <meshBasicMaterial color="#94a3b8" />
-      </mesh>
-      <mesh position={[0.14, 0.02, 0.21]} rotation={[0, 0, -0.1]}>
-        <boxGeometry args={[0.06, 0.005, 0.005]} />
-        <meshBasicMaterial color="#94a3b8" />
-      </mesh>
-      <mesh position={[0.14, 0.04, 0.2]} rotation={[0, 0, 0.1]}>
-        <boxGeometry args={[0.06, 0.005, 0.005]} />
-        <meshBasicMaterial color="#94a3b8" />
+      <mesh position={[0.14, 0.01, 0.2]}>
+        <circleGeometry args={[0.035, 12]} />
+        <meshBasicMaterial color="#fda4af" transparent opacity={0.65} side={THREE.DoubleSide} />
       </mesh>
 
-      {/* Red Festive Collar */}
+      {/* Delicate Whisker Filaments */}
+      <mesh position={[-0.14, 0.02, 0.22]} rotation={[0, 0, 0.12]}>
+        <boxGeometry args={[0.07, 0.005, 0.005]} />
+        <meshBasicMaterial color="#94a3b8" />
+      </mesh>
+      <mesh position={[-0.14, 0.04, 0.21]} rotation={[0, 0, -0.1]}>
+        <boxGeometry args={[0.07, 0.005, 0.005]} />
+        <meshBasicMaterial color="#94a3b8" />
+      </mesh>
+      <mesh position={[0.14, 0.02, 0.22]} rotation={[0, 0, -0.12]}>
+        <boxGeometry args={[0.07, 0.005, 0.005]} />
+        <meshBasicMaterial color="#94a3b8" />
+      </mesh>
+      <mesh position={[0.14, 0.04, 0.21]} rotation={[0, 0, 0.1]}>
+        <boxGeometry args={[0.07, 0.005, 0.005]} />
+        <meshBasicMaterial color="#94a3b8" />
+      </mesh>
+
+      {/* Crimson Silk Collar */}
       <mesh position={[0, -0.06, 0.08]} rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[0.18, 0.02, 8, 16]} />
-        <meshStandardMaterial color={palette.detail} roughness={0.4} />
+        <torusGeometry args={[0.19, 0.022, 10, 20]} />
+        <meshStandardMaterial color="#dc2626" roughness={0.35} />
       </mesh>
 
-      {/* Lucky Golden Medallion Coin / Maneki-Neko Bell */}
-      <group position={[0, -0.12, 0.21]}>
+      {/* Lucky Golden Maneki-Neko Bell & Coin */}
+      <group position={[0, -0.12, 0.22]}>
         <mesh castShadow>
-          <cylinderGeometry args={[0.045, 0.045, 0.015, 16]} />
-          <meshStandardMaterial color={palette.accent} roughness={0.15} metalness={0.9} />
+          <sphereGeometry args={[0.04, 12, 12]} />
+          <meshStandardMaterial color="#fbbf24" metalness={0.95} roughness={0.12} />
         </mesh>
-        {/* Embossed Lucky Square Center */}
-        <mesh position={[0, 0, 0.009]}>
-          <boxGeometry args={[0.025, 0.025, 0.005]} />
-          <meshStandardMaterial color="#d97706" metalness={0.8} />
+        {/* Ancient Coin Inlay with Square Center */}
+        <mesh position={[0, -0.04, 0.015]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.032, 0.032, 0.008, 16]} />
+          <meshStandardMaterial color="#f59e0b" metalness={0.95} roughness={0.12} />
         </mesh>
       </group>
 
-      {/* Curled Playful Tail */}
-      <group position={[0, 0.05, -0.23]} rotation={[0.4, 0.3, 0]}>
+      {/* Signature Maneki-Neko Lucky Waving Paw (Right Arm Raised) */}
+      <group position={[0.16, 0.06, 0.16]} rotation={[0.3, 0, 0.45]}>
         <mesh castShadow>
-          <cylinderGeometry args={[0.025, 0.03, 0.22, 8]} />
-          <meshStandardMaterial color={palette.primary} roughness={0.5} />
+          <cylinderGeometry args={[0.04, 0.05, 0.14, 10]} />
+          <meshStandardMaterial color="#fdfbf7" roughness={0.3} />
+        </mesh>
+        <mesh position={[0, 0.08, 0]} castShadow>
+          <sphereGeometry args={[0.045, 10, 10]} />
+          <meshStandardMaterial color="#fdfbf7" roughness={0.3} />
+        </mesh>
+        {/* Mini Gold Ingot / Coin held in paw */}
+        <mesh position={[0, 0.11, 0.02]} rotation={[0.4, 0, 0]}>
+          <boxGeometry args={[0.055, 0.028, 0.015]} />
+          <meshStandardMaterial color="#fbbf24" metalness={0.95} roughness={0.12} />
         </mesh>
       </group>
 
-      {/* 4 White Paws */}
-      <mesh position={[-0.09, -0.21, 0.05]} castShadow>
-        <sphereGeometry args={[0.045, 8, 8]} />
-        <meshStandardMaterial color={palette.primary} roughness={0.5} />
+      {/* Left Resting Paw on Belly */}
+      <group position={[-0.14, -0.04, 0.18]} rotation={[0.2, 0, -0.2]}>
+        <mesh castShadow>
+          <sphereGeometry args={[0.045, 10, 10]} />
+          <meshStandardMaterial color="#fdfbf7" roughness={0.3} />
+        </mesh>
+      </group>
+
+      {/* Playful Curled Tail with Golden Ring */}
+      <group position={[0, 0.04, -0.24]} rotation={[0.45, 0.35, 0]}>
+        <mesh castShadow>
+          <cylinderGeometry args={[0.025, 0.032, 0.24, 10]} />
+          <meshStandardMaterial color="#fdfbf7" roughness={0.35} />
+        </mesh>
+        <mesh position={[0, 0.08, 0]}>
+          <torusGeometry args={[0.03, 0.006, 6, 12]} />
+          <meshStandardMaterial color="#fbbf24" metalness={0.95} roughness={0.15} />
+        </mesh>
+      </group>
+
+      {/* Bottom Paws */}
+      <mesh position={[-0.09, -0.22, 0.05]} castShadow>
+        <sphereGeometry args={[0.045, 10, 10]} />
+        <meshStandardMaterial color="#fdfbf7" roughness={0.3} />
       </mesh>
-      <mesh position={[0.09, -0.21, 0.05]} castShadow>
-        <sphereGeometry args={[0.045, 8, 8]} />
-        <meshStandardMaterial color={palette.primary} roughness={0.5} />
+      <mesh position={[0.09, -0.22, 0.05]} castShadow>
+        <sphereGeometry args={[0.045, 10, 10]} />
+        <meshStandardMaterial color="#fdfbf7" roughness={0.3} />
       </mesh>
-      <mesh position={[-0.09, -0.21, -0.05]} castShadow>
-        <sphereGeometry args={[0.045, 8, 8]} />
-        <meshStandardMaterial color={palette.primary} roughness={0.5} />
+      <mesh position={[-0.09, -0.22, -0.05]} castShadow>
+        <sphereGeometry args={[0.045, 10, 10]} />
+        <meshStandardMaterial color="#fdfbf7" roughness={0.3} />
       </mesh>
-      <mesh position={[0.09, -0.21, -0.05]} castShadow>
-        <sphereGeometry args={[0.045, 8, 8]} />
-        <meshStandardMaterial color={palette.primary} roughness={0.5} />
+      <mesh position={[0.09, -0.22, -0.05]} castShadow>
+        <sphereGeometry args={[0.045, 10, 10]} />
+        <meshStandardMaterial color="#fdfbf7" roughness={0.3} />
       </mesh>
     </group>
   );
 }
 
 /**
- * 🐂 BUFFALO (Trâu Vàng): Golden bronze body, curved black horns & golden nose ring
+ * 🐂 BUFFALO (Trâu Đại Gia): Golden bronze tycoon buffalo with brass-tipped horns, gentleman bow & gold nose ring
  */
 export function BuffaloMesh({ scale = 1 }: { scale?: number }) {
   const palette = MASCOT_PALETTES.BUFFALO;
 
   return (
     <group scale={scale} position={[0, 0.28, 0]}>
-      {/* Golden Bronze Body */}
+      {/* Golden Bronze Chibi Body */}
       <mesh castShadow receiveShadow>
-        <sphereGeometry args={[0.26, 16, 16]} />
-        <meshStandardMaterial color={palette.primary} roughness={0.4} metalness={0.15} />
+        <sphereGeometry args={[0.26, 24, 20]} />
+        <meshStandardMaterial
+          color={palette.primary}
+          roughness={0.36}
+          metalness={0.22}
+        />
       </mesh>
 
-      {/* Muzzle */}
+      {/* Muzzle with 3D Nostrils */}
       <group position={[0, -0.03, 0.22]}>
         <mesh castShadow>
           <boxGeometry args={[0.18, 0.12, 0.1]} />
-          <meshStandardMaterial color={palette.secondary} roughness={0.6} />
+          <meshStandardMaterial color={palette.secondary} roughness={0.55} />
         </mesh>
-        {/* Golden Nose Ring */}
-        <mesh position={[0, -0.06, 0.05]} rotation={[0.4, 0, 0]}>
-          <torusGeometry args={[0.038, 0.01, 8, 16]} />
-          <meshStandardMaterial color={palette.detail} metalness={0.95} roughness={0.15} />
+        {/* Nostril Insets */}
+        <mesh position={[-0.04, -0.01, 0.052]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.014, 0.014, 0.01, 8]} />
+          <meshStandardMaterial color="#78350f" roughness={0.8} />
+        </mesh>
+        <mesh position={[0.04, -0.01, 0.052]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.014, 0.014, 0.01, 8]} />
+          <meshStandardMaterial color="#78350f" roughness={0.8} />
+        </mesh>
+        {/* Gleaming 24k Golden Nose Ring */}
+        <mesh position={[0, -0.06, 0.05]} rotation={[0.35, 0, 0]} castShadow>
+          <torusGeometry args={[0.04, 0.011, 10, 18]} />
+          <meshStandardMaterial color={palette.detail} metalness={0.95} roughness={0.12} />
         </mesh>
       </group>
 
-      {/* Friendly Eyes */}
-      <mesh position={[-0.1, 0.08, 0.21]}>
-        <sphereGeometry args={[0.032, 8, 8]} />
-        <meshStandardMaterial color="#1e293b" roughness={0.1} />
-      </mesh>
-      <mesh position={[0.1, 0.08, 0.21]}>
-        <sphereGeometry args={[0.032, 8, 8]} />
-        <meshStandardMaterial color="#1e293b" roughness={0.1} />
-      </mesh>
-      <mesh position={[-0.09, 0.095, 0.23]}>
-        <sphereGeometry args={[0.01, 6, 6]} />
-        <meshBasicMaterial color="#ffffff" />
-      </mesh>
-      <mesh position={[0.11, 0.095, 0.23]}>
-        <sphereGeometry args={[0.01, 6, 6]} />
-        <meshBasicMaterial color="#ffffff" />
-      </mesh>
+      {/* Kind Anime Eyes with Dual Specular Catchlights */}
+      <group position={[-0.1, 0.08, 0.21]}>
+        <mesh castShadow>
+          <sphereGeometry args={[0.032, 16, 16]} />
+          <meshStandardMaterial color="#1e293b" roughness={0.08} />
+        </mesh>
+        <mesh position={[0.008, 0.011, 0.021]}>
+          <sphereGeometry args={[0.01, 8, 8]} />
+          <meshBasicMaterial color="#ffffff" />
+        </mesh>
+        <mesh position={[-0.008, -0.009, 0.019]}>
+          <sphereGeometry args={[0.005, 6, 6]} />
+          <meshBasicMaterial color="#ffffff" />
+        </mesh>
+      </group>
+      <group position={[0.1, 0.08, 0.21]}>
+        <mesh castShadow>
+          <sphereGeometry args={[0.032, 16, 16]} />
+          <meshStandardMaterial color="#1e293b" roughness={0.08} />
+        </mesh>
+        <mesh position={[0.008, 0.011, 0.021]}>
+          <sphereGeometry args={[0.01, 8, 8]} />
+          <meshBasicMaterial color="#ffffff" />
+        </mesh>
+        <mesh position={[-0.008, -0.009, 0.019]}>
+          <sphereGeometry args={[0.005, 6, 6]} />
+          <meshBasicMaterial color="#ffffff" />
+        </mesh>
+      </group>
 
-      {/* Iconic Curved Horns (Sừng trâu cong ngược) */}
+      {/* Iconic Curved Horns with 24k Golden Tips */}
       <group position={[-0.18, 0.2, 0.02]} rotation={[0.2, -0.3, -0.5]}>
         <mesh castShadow>
-          <torusGeometry args={[0.12, 0.03, 8, 16, Math.PI * 0.7]} />
-          <meshStandardMaterial color={palette.accent} roughness={0.3} metalness={0.3} />
+          <torusGeometry args={[0.12, 0.032, 10, 20, Math.PI * 0.7]} />
+          <meshStandardMaterial color="#1e293b" roughness={0.4} metalness={0.3} />
+        </mesh>
+        {/* Brass Gold Tip Accent */}
+        <mesh position={[-0.09, 0.08, 0]} rotation={[0, 0, 0.5]}>
+          <coneGeometry args={[0.034, 0.08, 8]} />
+          <meshStandardMaterial color="#fbbf24" metalness={0.95} roughness={0.12} />
         </mesh>
       </group>
       <group position={[0.18, 0.2, 0.02]} rotation={[0.2, 0.3, 0.5]}>
         <mesh castShadow>
-          <torusGeometry args={[0.12, 0.03, 8, 16, Math.PI * 0.7]} />
-          <meshStandardMaterial color={palette.accent} roughness={0.3} metalness={0.3} />
+          <torusGeometry args={[0.12, 0.032, 10, 20, Math.PI * 0.7]} />
+          <meshStandardMaterial color="#1e293b" roughness={0.4} metalness={0.3} />
+        </mesh>
+        {/* Brass Gold Tip Accent */}
+        <mesh position={[0.09, 0.08, 0]} rotation={[0, 0, -0.5]}>
+          <coneGeometry args={[0.034, 0.08, 8]} />
+          <meshStandardMaterial color="#fbbf24" metalness={0.95} roughness={0.12} />
         </mesh>
       </group>
 
@@ -626,11 +786,22 @@ export function BuffaloMesh({ scale = 1 }: { scale?: number }) {
         </mesh>
       </group>
 
-      {/* Golden Bell on Red Collar */}
-      <group position={[0, -0.14, 0.18]}>
-        <mesh castShadow>
-          <sphereGeometry args={[0.035, 10, 10]} />
-          <meshStandardMaterial color={palette.detail} metalness={0.9} roughness={0.2} />
+      {/* Red Gentleman Bowtie with Gold Center Stud */}
+      <group position={[0, -0.12, 0.22]}>
+        {/* Left Bow Wing */}
+        <mesh position={[-0.035, 0, 0]} rotation={[0, 0, 0.3 + Math.PI / 2]} castShadow>
+          <coneGeometry args={[0.028, 0.06, 4]} />
+          <meshStandardMaterial color="#dc2626" roughness={0.4} />
+        </mesh>
+        {/* Right Bow Wing */}
+        <mesh position={[0.035, 0, 0]} rotation={[0, 0, -0.3 - Math.PI / 2]} castShadow>
+          <coneGeometry args={[0.028, 0.06, 4]} />
+          <meshStandardMaterial color="#dc2626" roughness={0.4} />
+        </mesh>
+        {/* Center Golden Knot */}
+        <mesh position={[0, 0, 0.005]}>
+          <sphereGeometry args={[0.016, 8, 8]} />
+          <meshStandardMaterial color="#fbbf24" metalness={0.95} roughness={0.15} />
         </mesh>
       </group>
 
@@ -641,27 +812,27 @@ export function BuffaloMesh({ scale = 1 }: { scale?: number }) {
           <meshStandardMaterial color={palette.primary} roughness={0.6} />
         </mesh>
         <mesh position={[0, -0.12, 0]}>
-          <coneGeometry args={[0.035, 0.07, 6]} />
+          <coneGeometry args={[0.038, 0.08, 8]} />
           <meshStandardMaterial color="#1e293b" roughness={0.8} />
         </mesh>
       </group>
 
-      {/* 4 Black Hooves */}
+      {/* 4 Polished Black Hooves */}
       <mesh position={[-0.1, -0.22, 0.06]} castShadow>
-        <cylinderGeometry args={[0.045, 0.05, 0.1, 8]} />
-        <meshStandardMaterial color="#1e293b" roughness={0.7} />
+        <cylinderGeometry args={[0.045, 0.05, 0.1, 10]} />
+        <meshStandardMaterial color="#0f172a" roughness={0.3} metalness={0.25} />
       </mesh>
       <mesh position={[0.1, -0.22, 0.06]} castShadow>
-        <cylinderGeometry args={[0.045, 0.05, 0.1, 8]} />
-        <meshStandardMaterial color="#1e293b" roughness={0.7} />
+        <cylinderGeometry args={[0.045, 0.05, 0.1, 10]} />
+        <meshStandardMaterial color="#0f172a" roughness={0.3} metalness={0.25} />
       </mesh>
       <mesh position={[-0.1, -0.22, -0.06]} castShadow>
-        <cylinderGeometry args={[0.045, 0.05, 0.1, 8]} />
-        <meshStandardMaterial color="#1e293b" roughness={0.7} />
+        <cylinderGeometry args={[0.045, 0.05, 0.1, 10]} />
+        <meshStandardMaterial color="#0f172a" roughness={0.3} metalness={0.25} />
       </mesh>
       <mesh position={[0.1, -0.22, -0.06]} castShadow>
-        <cylinderGeometry args={[0.045, 0.05, 0.1, 8]} />
-        <meshStandardMaterial color="#1e293b" roughness={0.7} />
+        <cylinderGeometry args={[0.045, 0.05, 0.1, 10]} />
+        <meshStandardMaterial color="#0f172a" roughness={0.3} metalness={0.25} />
       </mesh>
     </group>
   );
@@ -961,14 +1132,30 @@ function SingleMascotPawn({
 
   return (
     <group ref={groupRef}>
-      {/* Pedestal Base */}
+      {/* High-Gloss Porcelain Pedestal Base with 24k Gold Rim */}
       <mesh position={[0, 0.03, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.3, 0.32, 0.06, 16]} />
-        <meshStandardMaterial color={palette.primary} roughness={0.3} metalness={0.4} />
+        <cylinderGeometry args={[0.3, 0.32, 0.06, 20]} />
+        <meshPhysicalMaterial
+          color={palette.primary}
+          roughness={0.16}
+          metalness={0.2}
+          clearcoat={1.0}
+          clearcoatRoughness={0.08}
+        />
       </mesh>
-      <mesh position={[0, 0.065, 0]}>
-        <cylinderGeometry args={[0.26, 0.28, 0.02, 16]} />
-        <meshStandardMaterial color="#fbbf24" roughness={0.2} metalness={0.8} />
+      {/* 24k Gold Inlay Ring Trim */}
+      <mesh position={[0, 0.062, 0]}>
+        <cylinderGeometry args={[0.27, 0.29, 0.016, 20]} />
+        <meshStandardMaterial color="#fbbf24" roughness={0.14} metalness={0.94} />
+      </mesh>
+      {/* Upper Porcelain Inset Platform */}
+      <mesh position={[0, 0.072, 0]}>
+        <cylinderGeometry args={[0.25, 0.25, 0.012, 20]} />
+        <meshPhysicalMaterial
+          color="#f8fafc"
+          roughness={0.15}
+          clearcoat={0.9}
+        />
       </mesh>
 
       {/* Mesh container with squash & stretch */}
