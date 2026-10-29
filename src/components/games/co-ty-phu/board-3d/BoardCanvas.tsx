@@ -156,7 +156,7 @@ export function BoardCanvas({
           alpha: true,
           powerPreference: 'high-performance',
           toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.25,
+          toneMappingExposure: 1.15,
         }}
         camera={{
           position: [14.5, 21.5, 17.5],

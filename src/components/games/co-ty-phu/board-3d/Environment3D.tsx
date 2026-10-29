@@ -107,22 +107,22 @@ export function Environment3D() {
       {/* Clean, distant tropical haze */}
       <fog attach="fog" args={['#0284c7', 65, 160]} />
 
-      {/* Radiant baseline ambient light */}
-      <ambientLight color="#ffffff" intensity={0.8} />
+      {/* Radiant baseline ambient light - softened for contrast & deep contact shadows */}
+      <ambientLight color="#ffffff" intensity={0.48} />
 
-      {/* Hemisphere Light: Turquoise Sky Top & Golden Sand Ground Reflection */}
+      {/* Hemisphere Light: Subtle Sky Blue & Soft Ground Reflection */}
       <hemisphereLight
-        color="#38bdf8"
-        groundColor="#fde047"
-        intensity={0.85}
+        color="#bae6fd"
+        groundColor="#fef08a"
+        intensity={0.55}
       />
 
       {/* Primary Key Sunlight (Cinematic high-angle tropical sun) */}
       <directionalLight
         ref={dirLightRef}
         position={[-18, 30, -14]}
-        color="#fffdf2"
-        intensity={2.9}
+        color="#fffbeb"
+        intensity={2.6}
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
@@ -132,28 +132,29 @@ export function Environment3D() {
         shadow-camera-right={22}
         shadow-camera-top={22}
         shadow-camera-bottom={-22}
-        shadow-bias={-0.00015}
+        shadow-bias={-0.0001}
+        shadow-normalBias={0.03}
       />
 
       {/* Secondary Fill Light: Soft Warm Amber Glow on shaded faces */}
       <directionalLight
         position={[16, 20, 16]}
         color="#fed7aa"
-        intensity={1.25}
+        intensity={0.75}
       />
 
       {/* Cinematic Rim Light: Edge highlight separating pawns & buildings from background */}
       <directionalLight
         position={[-14, 14, 20]}
         color="#e0f2fe"
-        intensity={0.85}
+        intensity={0.7}
       />
 
       {/* Cyan Ocean Underglow Bounce */}
       <directionalLight
         position={[0, -10, 0]}
-        color="#06b6d4"
-        intensity={0.65}
+        color="#0891b2"
+        intensity={0.4}
       />
 
       {/* High Sky Tropical Fluffy Clouds */}

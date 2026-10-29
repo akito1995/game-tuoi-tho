@@ -86,12 +86,12 @@
    - **Tile 31 (TP. Hồ Chí Minh - Chợ Bến Thành & Landmark Tower):** Iconic Ben Thanh 3-face clock tower with slanted terracotta shingle roof, arched entryway, Quách Thị Trang paved plaza, and a sleek modern illuminated glass skyscraper tower beside it.
 3. Smooth spawning animation: Popping spring scale ($0 \to 1.15 \to 1.0$) with golden particle sparkles when a building is constructed or upgraded.
 
-- [ ] Step 3.1: Add test cases in `tests/board-3d/mascotsAndBuildings.test.ts` verifying building tier resolution and landmark mapping.
-- [ ] Step 3.2: Implement upgraded procedural models for Tiers 0-3 in `Buildings3D.tsx`.
-- [ ] Step 3.3: Implement high-detail Tháp Rùa and Chợ Bến Thành in `CityLandmarks3D.tsx`.
-- [ ] Step 3.4: Add spawn bounce easing and particle flash.
-- [ ] Step 3.5: Run vitest to ensure all tests pass.
-- [ ] Step 3.6: Commit with message `feat(art-vertical-slice): implement 5-tier buildings and hanoi & hcmc iconic landmarks`.
+- [x] Step 3.1: Add test cases in `tests/board-3d/mascotsAndBuildings.test.ts` verifying building tier resolution and landmark mapping.
+- [x] Step 3.2: Implement upgraded procedural models for Tiers 0-3 in `Buildings3D.tsx`.
+- [x] Step 3.3: Implement high-detail Tháp Rùa and Chợ Bến Thành in `CityLandmarks3D.tsx`.
+- [x] Step 3.4: Add spawn bounce easing and particle flash.
+- [x] Step 3.5: Run vitest to ensure all tests pass.
+- [x] Step 3.6: Commit with message `feat(art-vertical-slice): implement 5-tier buildings and hanoi & hcmc iconic landmarks`.
 
 ---
 
@@ -131,10 +131,10 @@
    - Next.js: `npm run build` passes with zero errors.
    - Verify 60 FPS performance and zero console errors.
 
-- [ ] Step 5.1: Fine-tune lighting and shadow biases in `Environment3D.tsx`.
-- [ ] Step 5.2: Run `vitest run` across all test suites.
-- [ ] Step 5.3: Run `npm run build` to verify production compilation.
-- [ ] Step 5.4: Commit with message `feat(art-vertical-slice): calibrate lighting, tone mapping and verify performance`.
+- [x] Step 5.1: Fine-tune lighting and shadow biases in `Environment3D.tsx`.
+- [x] Step 5.2: Run `vitest run` across all test suites.
+- [x] Step 5.3: Run `npm run build` to verify production compilation.
+- [x] Step 5.4: Commit with message `feat(art-vertical-slice): calibrate lighting, tone mapping and verify performance`.
 
 ---
 
