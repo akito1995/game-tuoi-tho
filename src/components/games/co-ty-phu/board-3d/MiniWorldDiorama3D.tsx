@@ -487,46 +487,212 @@ export function WoodenFootbridge({ position, rotationY = 0 }: { position: [numbe
 }
 
 /**
- * MAIN MINI WORLD DIORAMA COMPONENT: "ĐẢO NGỌC VIỆT NAM"
+ * 10. OPEN METROPOLITAN LAKE BASIN (META WORLD AAA FIDELITY)
+ * Wide, deep emerald-teal water basin with gentle ripples, caustics reflection,
+ * and scattered water lily pads with blooming lotus flowers. Unobstructed view across the board.
+ */
+export function WaterLilyPadCluster({ position, scale = 1 }: { position: [number, number, number]; scale?: number }) {
+  return (
+    <group position={position} scale={[scale, scale, scale]}>
+      {/* Primary Lily Pad with notched sector */}
+      <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0.4]} receiveShadow>
+        <circleGeometry args={[0.38, 24, 0, Math.PI * 1.85]} />
+        <meshStandardMaterial color="#15803d" roughness={0.6} side={THREE.DoubleSide} />
+      </mesh>
+      {/* Secondary Overlapping Lily Pad */}
+      <mesh position={[0.26, 0.022, 0.14]} rotation={[-Math.PI / 2, 0, 2.1]} receiveShadow>
+        <circleGeometry args={[0.28, 20, 0, Math.PI * 1.85]} />
+        <meshStandardMaterial color="#16a34a" roughness={0.6} side={THREE.DoubleSide} />
+      </mesh>
+      {/* Tertiary Smaller Lily Pad */}
+      <mesh position={[-0.22, 0.021, -0.16]} rotation={[-Math.PI / 2, 0, -1.2]} receiveShadow>
+        <circleGeometry args={[0.22, 18, 0, Math.PI * 1.85]} />
+        <meshStandardMaterial color="#15803d" roughness={0.6} side={THREE.DoubleSide} />
+      </mesh>
+      {/* Blooming Lotus Blossom (Pink/White Petals with Golden Pistil) */}
+      <group position={[0.06, 0.035, 0.04]}>
+        {/* Golden Central Pistil */}
+        <mesh position={[0, 0.03, 0]}>
+          <cylinderGeometry args={[0.035, 0.03, 0.04, 12]} />
+          <meshStandardMaterial color="#fbbf24" emissive="#f59e0b" emissiveIntensity={0.6} />
+        </mesh>
+        {/* Inner White/Pink Petals */}
+        {[0, 1, 2, 3, 4, 5].map((i) => {
+          const ang = (i * Math.PI * 2) / 6;
+          return (
+            <mesh
+              key={`petal-in-${i}`}
+              position={[Math.cos(ang) * 0.04, 0.04, Math.sin(ang) * 0.04]}
+              rotation={[0.3, ang, 0]}
+            >
+              <coneGeometry args={[0.025, 0.08, 4]} />
+              <meshStandardMaterial color="#fdf2f8" roughness={0.3} />
+            </mesh>
+          );
+        })}
+        {/* Outer Radiant Pink Petals */}
+        {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => {
+          const ang = (i * Math.PI * 2) / 8 + 0.3;
+          return (
+            <mesh
+              key={`petal-out-${i}`}
+              position={[Math.cos(ang) * 0.075, 0.025, Math.sin(ang) * 0.075]}
+              rotation={[0.55, ang, 0]}
+            >
+              <coneGeometry args={[0.035, 0.1, 4]} />
+              <meshStandardMaterial color="#f472b6" roughness={0.35} />
+            </mesh>
+          );
+        })}
+      </group>
+    </group>
+  );
+}
+
+/**
+ * Metropolitan Lake Basin: The expansive, clear deep-teal water surface
+ */
+export function MetropolitanLakeBasin() {
+  const waterRef = useRef<THREE.Mesh>(null);
+
+  useFrame(({ clock }) => {
+    if (!waterRef.current) return;
+    const t = clock.getElapsedTime();
+    waterRef.current.position.y = 0.015 + Math.sin(t * 1.2) * 0.008;
+  });
+
+  return (
+    <group position={[0, 0, 0]}>
+      {/* Deep Lake Bed (Dark Teal Floor) */}
+      <mesh position={[0, -0.4, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[10.4, 10.4]} />
+        <meshStandardMaterial color="#042f2e" roughness={0.9} />
+      </mesh>
+
+      {/* Primary Shimmering Water Surface (Deep Teal / Emerald Meta World Water) */}
+      <mesh ref={waterRef} position={[0, 0.015, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[10.35, 10.35, 32, 32]} />
+        <meshPhysicalMaterial
+          color="#0f4c5c"
+          emissive="#164e63"
+          emissiveIntensity={0.25}
+          roughness={0.05}
+          metalness={0.25}
+          transmission={0.45}
+          ior={1.333}
+          transparent
+          opacity={0.92}
+          clearcoat={1.0}
+          clearcoatRoughness={0.04}
+        />
+      </mesh>
+
+      {/* Shallow Turquoise Shoreline Gradient Rim */}
+      <mesh position={[0, 0.018, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[4.8, 5.15, 4]} />
+        <meshBasicMaterial color="#06b6d4" transparent opacity={0.35} depthWrite={false} />
+      </mesh>
+
+      {/* Natural Scattered Water Lily Clusters across the open lake */}
+      <WaterLilyPadCluster position={[-2.4, 0, 2.5]} scale={1.1} />
+      <WaterLilyPadCluster position={[2.8, 0, 2.2]} scale={0.95} />
+      <WaterLilyPadCluster position={[2.6, 0, -2.4]} scale={1.05} />
+      <WaterLilyPadCluster position={[-2.8, 0, -2.2]} scale={0.9} />
+      <WaterLilyPadCluster position={[0.4, 0, 3.4]} scale={0.8} />
+      <WaterLilyPadCluster position={[-3.6, 0, 0.6]} scale={0.85} />
+      <WaterLilyPadCluster position={[3.5, 0, -0.5]} scale={0.82} />
+    </group>
+  );
+}
+
+/**
+ * 11. VIADUCT ARCHES FOUNDATION (META WORLD PROMENADE ARCHES)
+ * Massive green-painted stone & steel arches with bridge piers ('W5', '4 6')
+ * that run underneath all 4 sides of the perimeter track over the water basin.
+ */
+export function ViaductArchesFoundation() {
+  const sides = [
+    { pos: [0, -0.22, 5.18] as [number, number, number], rotY: 0 },
+    { pos: [0, -0.22, -5.18] as [number, number, number], rotY: Math.PI },
+    { pos: [5.18, -0.22, 0] as [number, number, number], rotY: -Math.PI / 2 },
+    { pos: [-5.18, -0.22, 0] as [number, number, number], rotY: Math.PI / 2 },
+  ];
+
+  return (
+    <group name="viaduct-arches-promenade">
+      {sides.map((side, sIdx) => (
+        <group key={`viaduct-side-${sIdx}`} position={side.pos} rotation={[0, side.rotY, 0]}>
+          {/* Continuous Viaduct Stone Fascia Beam */}
+          <mesh position={[0, 0.18, 0]} castShadow receiveShadow>
+            <boxGeometry args={[10.4, 0.1, 0.35]} />
+            <meshStandardMaterial color="#1e3a2f" roughness={0.7} metalness={0.2} />
+          </mesh>
+
+          {/* 7 Arched Openings and Sturdy Bridge Piers along this side */}
+          {[-4.2, -2.8, -1.4, 0, 1.4, 2.8, 4.2].map((x, pIdx) => (
+            <group key={`pier-${sIdx}-${pIdx}`} position={[x, 0, 0]}>
+              {/* Massive Bridge Pier */}
+              <mesh position={[0, 0, 0]} castShadow receiveShadow>
+                <boxGeometry args={[0.38, 0.44, 0.32]} />
+                <meshStandardMaterial color="#1e3a2f" roughness={0.75} metalness={0.2} />
+              </mesh>
+              {/* Pier Concrete Footing Inset */}
+              <mesh position={[0, -0.18, 0]} castShadow receiveShadow>
+                <boxGeometry args={[0.44, 0.12, 0.38]} />
+                <meshStandardMaterial color="#334155" roughness={0.85} />
+              </mesh>
+              {/* Arch Rib Molding spanning to next pier */}
+              {pIdx < 6 && (
+                <group position={[0.7, 0.08, 0]}>
+                  {/* Outer Arched Span */}
+                  <mesh position={[0, 0.02, 0]} castShadow>
+                    <boxGeometry args={[1.02, 0.06, 0.28]} />
+                    <meshStandardMaterial color="#14532d" roughness={0.65} metalness={0.25} />
+                  </mesh>
+                  {/* Subtle Recessed Water Opening Portal */}
+                  <mesh position={[0, -0.1, 0]}>
+                    <boxGeometry args={[0.96, 0.2, 0.22]} />
+                    <meshStandardMaterial color="#022c22" roughness={0.9} />
+                  </mesh>
+                </group>
+              )}
+            </group>
+          ))}
+        </group>
+      ))}
+    </group>
+  );
+}
+
+/**
+ * MAIN MINI WORLD DIORAMA COMPONENT: "ĐẢO NGỌC VIỆT NAM" (META WORLD METROPOLIS)
  */
 export function MiniWorldDiorama3D() {
   return (
     <group name="meta-world-pearl-island-diorama">
-      {/* Base Tropical Island Landscape Terrain */}
-      <mesh position={[0, 0.01, 0]} receiveShadow>
-        <boxGeometry args={[10.6, 0.06, 10.6]} />
-        <meshStandardMaterial color="#15803d" roughness={0.85} />
-      </mesh>
+      {/* 1. Open Metropolitan Lake Basin with Glistening Water & Lily Pads */}
+      <MetropolitanLakeBasin />
 
-      {/* Central Turquoise Lagoon Basin & Beach */}
-      <CentralLagoon />
+      {/* 2. Elevated Viaduct Arches Foundation supporting the promenade */}
+      <ViaductArchesFoundation />
 
-      {/* Halong Karst Rocks rising from lagoon */}
-      <HalongKarstPillars position={[1.4, 0.04, -0.6]} />
+      {/* 3. Halong Bay Karst Rocks sculpted gracefully at edge */}
+      <HalongKarstPillars position={[2.6, 0.04, -3.2]} />
 
-      {/* The Legendary Giant Floating Pearl in Center */}
-      <GiantFloatingPearl />
+      {/* 4. Elegant Miniature Pagoda on the northern scenic bank */}
+      <ChuaMotCotDiorama position={[-2.8, 0.04, -3.2]} />
 
-      {/* Miniature Chùa Một Cột in North-East Islet */}
-      <ChuaMotCotDiorama position={[2.8, 0.06, -2.8]} />
+      {/* 5. Traditional Wooden Footbridge connecting scenic paths */}
+      <WoodenFootbridge position={[-1.8, 0.04, -3.2]} rotationY={0} />
 
-      {/* Wooden Footbridge connecting Central Arena to Pagoda */}
-      <WoodenFootbridge position={[1.8, 0.06, -1.8]} rotationY={-Math.PI / 4} />
+      {/* 6. Sculpted Tropical Coconut Palms around the perimeter edges */}
+      <TropicalPalm position={[-3.8, 0.04, -2.4]} scale={0.78} leanAngle={0.15} />
+      <TropicalPalm position={[3.8, 0.04, -2.2]} scale={0.75} leanAngle={-0.12} />
+      <TropicalPalm position={[3.6, 0.04, 2.4]} scale={0.82} leanAngle={0.18} />
+      <TropicalPalm position={[-3.6, 0.04, 2.6]} scale={0.78} leanAngle={-0.16} />
 
-      {/* Architectural Island Knolls (Never obstructs board tiles) */}
-      <ResortPoolKnoll position={[-3.2, 0.04, -2.6]} />
-      <TikiBeachBarKnoll position={[-3.3, 0.04, 1.8]} />
-      <LighthouseKnoll position={[3.2, 0.04, 1.8]} />
-
-      {/* Tropical Coconut Palms around the Island */}
-      <TropicalPalm position={[-2.4, 0.06, -2.2]} scale={0.85} leanAngle={0.18} />
-      <TropicalPalm position={[-3.2, 0.06, 0.0]} scale={0.78} leanAngle={-0.14} />
-      <TropicalPalm position={[3.1, 0.06, -1.6]} scale={0.82} leanAngle={0.12} />
-      <TropicalPalm position={[2.2, 0.06, 2.8]} scale={0.88} leanAngle={-0.2} />
-      <TropicalPalm position={[-2.0, 0.06, 3.0]} scale={0.82} leanAngle={0.16} />
-
-      {/* Miniature Vietnamese Sampan with Conical Hat */}
-      <group position={[1.2, 0.08, 2.3]} rotation={[0, 0.35, 0]}>
+      {/* 7. Miniature Vietnamese Sampan with Conical Hat gliding on lake */}
+      <group position={[1.4, 0.035, 1.8]} rotation={[0, 0.45, 0]}>
         <mesh castShadow>
           <boxGeometry args={[0.55, 0.08, 0.18]} />
           <meshStandardMaterial color="#78350f" roughness={0.7} />

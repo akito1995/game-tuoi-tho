@@ -838,21 +838,337 @@ export function BuffaloMesh({ scale = 1 }: { scale?: number }) {
   );
 }
 
+/* =========================================================================
+   3D HERO ANIME STREETWEAR AVATARS (META WORLD: MY CITY AAA FIDELITY)
+   ========================================================================= */
+
 /**
- * Dispatcher for rendering the right mascot mesh
+ * 👦 ANIME BOY AVATAR (Player A / Nam Streetwear):
+ * - Stylized anime proportions (Hero scale)
+ * - Oversized white streetwear hoodie with kangaroo pocket & drawstrings
+ * - Black athletic basketball shorts with side white stripe
+ * - High-top athletic sneakers with cyan accents & white rubber sole
+ * - Styled black anime spiky hair & dual-reflection expressive eyes
+ * - Floating Cyan Diamond Indicator overhead (like in reference image)
  */
-export function MascotModel({ mascot, scale = 1 }: { mascot: MascotType; scale?: number }) {
+export function AnimeBoyAvatar({ scale = 1 }: { scale?: number }) {
+  const diamondRef = useRef<THREE.Mesh>(null);
+
+  useFrame(({ clock }) => {
+    if (!diamondRef.current) return;
+    const t = clock.getElapsedTime();
+    diamondRef.current.rotation.y = t * 2.2;
+    diamondRef.current.position.y = 0.98 + Math.sin(t * 3.5) * 0.04;
+  });
+
+  return (
+    <group scale={scale} position={[0, 0.08, 0]}>
+      {/* 1. Floating Cyan Diamond Player A Indicator */}
+      <mesh ref={diamondRef} position={[0, 0.98, 0]} castShadow>
+        <octahedronGeometry args={[0.075, 0]} />
+        <meshStandardMaterial
+          color="#38bdf8"
+          emissive="#0284c7"
+          emissiveIntensity={2.2}
+          roughness={0.1}
+          metalness={0.8}
+        />
+      </mesh>
+
+      {/* 2. Head & Anime Hair */}
+      <group position={[0, 0.64, 0]}>
+        {/* Head Mesh (Anime Skin Tone) */}
+        <mesh castShadow>
+          <sphereGeometry args={[0.13, 20, 20]} />
+          <meshStandardMaterial color="#fde047" roughness={0.4} />
+        </mesh>
+        {/* Styled Swept Black Anime Hair */}
+        <mesh position={[0, 0.04, -0.02]} castShadow>
+          <sphereGeometry args={[0.14, 18, 18]} />
+          <meshStandardMaterial color="#0f172a" roughness={0.25} />
+        </mesh>
+        {/* Front Bangs & Side Locks */}
+        {[-0.08, -0.03, 0.03, 0.08].map((hx, i) => (
+          <mesh key={`bang-${i}`} position={[hx, 0.08, 0.08]} rotation={[0.4, 0, (i - 1.5) * 0.15]} castShadow>
+            <coneGeometry args={[0.032, 0.09, 4]} />
+            <meshStandardMaterial color="#0f172a" roughness={0.25} />
+          </mesh>
+        ))}
+        {/* Anime Eyes with Dual Gleams */}
+        {[-0.045, 0.045].map((ex, i) => (
+          <group key={`boy-eye-${i}`} position={[ex, -0.01, 0.115]}>
+            {/* Pupil */}
+            <mesh>
+              <sphereGeometry args={[0.022, 12, 12]} />
+              <meshBasicMaterial color="#0284c7" />
+            </mesh>
+            {/* Top-Left Gleam */}
+            <mesh position={[-0.006, 0.007, 0.015]}>
+              <sphereGeometry args={[0.008, 6, 6]} />
+              <meshBasicMaterial color="#ffffff" />
+            </mesh>
+          </group>
+        ))}
+      </group>
+
+      {/* 3. Oversized White Streetwear Hoodie */}
+      <group position={[0, 0.38, 0]}>
+        {/* Main Torso Block */}
+        <mesh castShadow receiveShadow>
+          <boxGeometry args={[0.26, 0.28, 0.18]} />
+          <meshStandardMaterial color="#f8fafc" roughness={0.35} />
+        </mesh>
+        {/* Front Kangaroo Pouch Pocket */}
+        <mesh position={[0, -0.04, 0.095]} castShadow>
+          <boxGeometry args={[0.18, 0.1, 0.03]} />
+          <meshStandardMaterial color="#f1f5f9" roughness={0.4} />
+        </mesh>
+        {/* Drawstrings Hanging Down */}
+        {[-0.035, 0.035].map((dx, i) => (
+          <mesh key={`cord-${i}`} position={[dx, 0.04, 0.105]}>
+            <cylinderGeometry args={[0.004, 0.004, 0.11, 6]} />
+            <meshBasicMaterial color="#cbd5e1" />
+          </mesh>
+        ))}
+        {/* Hood Bunched Behind Neck */}
+        <mesh position={[0, 0.12, -0.08]} castShadow>
+          <sphereGeometry args={[0.09, 12, 12]} />
+          <meshStandardMaterial color="#e2e8f0" roughness={0.45} />
+        </mesh>
+      </group>
+
+      {/* 4. Arms & Hands */}
+      {[-0.16, 0.16].map((ax, i) => (
+        <group key={`arm-${i}`} position={[ax, 0.36, 0]}>
+          {/* Upper Sleeve */}
+          <mesh position={[0, -0.05, 0]} rotation={[0, 0, (i === 0 ? 1 : -1) * 0.18]} castShadow>
+            <cylinderGeometry args={[0.045, 0.042, 0.16, 10]} />
+            <meshStandardMaterial color="#f8fafc" roughness={0.35} />
+          </mesh>
+          {/* Anime Hand */}
+          <mesh position={[0, -0.15, 0]}>
+            <sphereGeometry args={[0.03, 8, 8]} />
+            <meshStandardMaterial color="#fde047" roughness={0.4} />
+          </mesh>
+        </group>
+      ))}
+
+      {/* 5. Black Athletic Shorts & Legs */}
+      <group position={[0, 0.18, 0]}>
+        {/* Shorts Base */}
+        <mesh position={[0, 0.01, 0]} castShadow>
+          <boxGeometry args={[0.22, 0.11, 0.16]} />
+          <meshStandardMaterial color="#0f172a" roughness={0.5} />
+        </mesh>
+        {/* Left & Right Legs & Sneakers */}
+        {[-0.065, 0.065].map((lx, i) => (
+          <group key={`leg-${i}`} position={[lx, -0.08, 0]}>
+            {/* Bare Knee */}
+            <mesh position={[0, 0.02, 0]} castShadow>
+              <cylinderGeometry args={[0.028, 0.028, 0.08, 8]} />
+              <meshStandardMaterial color="#fde047" roughness={0.4} />
+            </mesh>
+            {/* White Athletic Crew Sock */}
+            <mesh position={[0, -0.02, 0]}>
+              <cylinderGeometry args={[0.032, 0.032, 0.04, 8]} />
+              <meshBasicMaterial color="#ffffff" />
+            </mesh>
+            {/* High-Top Streetwear Sneaker */}
+            <group position={[0, -0.07, 0.025]}>
+              {/* Sole */}
+              <mesh position={[0, 0, 0]} castShadow>
+                <boxGeometry args={[0.075, 0.03, 0.14]} />
+                <meshStandardMaterial color="#ffffff" roughness={0.2} />
+              </mesh>
+              {/* Shoe Upper with Cyan Accent */}
+              <mesh position={[0, 0.03, -0.01]} castShadow>
+                <boxGeometry args={[0.07, 0.045, 0.11]} />
+                <meshStandardMaterial color="#0284c7" roughness={0.3} />
+              </mesh>
+            </group>
+          </group>
+        ))}
+      </group>
+    </group>
+  );
+}
+
+/**
+ * 👧 ANIME GIRL AVATAR (Player B / Nữ Trendy):
+ * - Stylized anime proportions (Hero scale)
+ * - Black streetwear bucket hat with flared downward brim
+ * - Long flowing auburn/chestnut hair falling past shoulders
+ * - Oversized dark street graphic t-shirt with rolled sleeves
+ * - Loose olive-green cargo pants with 3D utility side pockets
+ * - Chunky platform white sneakers with thick sole
+ * - Floating Green Down-Arrow Indicator overhead (like in reference image)
+ */
+export function AnimeGirlAvatar({ scale = 1 }: { scale?: number }) {
+  const arrowRef = useRef<THREE.Mesh>(null);
+
+  useFrame(({ clock }) => {
+    if (!arrowRef.current) return;
+    const t = clock.getElapsedTime();
+    arrowRef.current.position.y = 1.04 + Math.sin(t * 3.5) * 0.04;
+    arrowRef.current.rotation.y = t * 2.0;
+  });
+
+  return (
+    <group scale={scale} position={[0, 0.08, 0]}>
+      {/* 1. Floating Green Down-Arrow Player B Indicator */}
+      <mesh ref={arrowRef} position={[0, 1.04, 0]} rotation={[Math.PI, 0, 0]} castShadow>
+        <coneGeometry args={[0.075, 0.14, 4]} />
+        <meshStandardMaterial
+          color="#22c55e"
+          emissive="#16a34a"
+          emissiveIntensity={2.2}
+          roughness={0.1}
+        />
+      </mesh>
+
+      {/* 2. Head, Long Auburn Hair & Black Bucket Hat */}
+      <group position={[0, 0.65, 0]}>
+        {/* Head Mesh */}
+        <mesh castShadow>
+          <sphereGeometry args={[0.125, 20, 20]} />
+          <meshStandardMaterial color="#fef08a" roughness={0.4} />
+        </mesh>
+        {/* Long Auburn Hair flowing down shoulders */}
+        <mesh position={[0, -0.06, -0.04]} castShadow>
+          <boxGeometry args={[0.22, 0.28, 0.12]} />
+          <meshStandardMaterial color="#78350f" roughness={0.35} />
+        </mesh>
+        {/* Side Hair Strands */}
+        {[-0.1, 0.1].map((sx, i) => (
+          <mesh key={`strand-${i}`} position={[sx, -0.08, 0.03]} castShadow>
+            <cylinderGeometry args={[0.02, 0.015, 0.22, 6]} />
+            <meshStandardMaterial color="#78350f" roughness={0.35} />
+          </mesh>
+        ))}
+        {/* Black Streetwear Bucket Hat Crown */}
+        <mesh position={[0, 0.08, 0]} castShadow>
+          <cylinderGeometry args={[0.13, 0.14, 0.08, 16]} />
+          <meshStandardMaterial color="#0f172a" roughness={0.5} />
+        </mesh>
+        {/* Bucket Hat Downward Angled Brim */}
+        <mesh position={[0, 0.04, 0]} castShadow>
+          <cylinderGeometry args={[0.14, 0.19, 0.02, 16]} />
+          <meshStandardMaterial color="#0f172a" roughness={0.5} />
+        </mesh>
+        {/* Anime Eyes with Pretty Eyelashes & Highlights */}
+        {[-0.045, 0.045].map((ex, i) => (
+          <group key={`girl-eye-${i}`} position={[ex, -0.01, 0.11]}>
+            <mesh>
+              <sphereGeometry args={[0.02, 10, 10]} />
+              <meshBasicMaterial color="#9333ea" />
+            </mesh>
+            <mesh position={[-0.005, 0.006, 0.013]}>
+              <sphereGeometry args={[0.007, 6, 6]} />
+              <meshBasicMaterial color="#ffffff" />
+            </mesh>
+          </group>
+        ))}
+        {/* Rosy Cheek Blush */}
+        {[-0.08, 0.08].map((bx, i) => (
+          <mesh key={`blush-${i}`} position={[bx, -0.03, 0.1]}>
+            <circleGeometry args={[0.022, 8]} />
+            <meshBasicMaterial color="#fb7185" transparent opacity={0.6} />
+          </mesh>
+        ))}
+      </group>
+
+      {/* 3. Dark Streetwear Graphic T-Shirt */}
+      <group position={[0, 0.39, 0]}>
+        <mesh castShadow receiveShadow>
+          <boxGeometry args={[0.24, 0.26, 0.16]} />
+          <meshStandardMaterial color="#334155" roughness={0.4} />
+        </mesh>
+        {/* Front Graphic Logo Badge */}
+        <mesh position={[0, 0.02, 0.085]}>
+          <planeGeometry args={[0.09, 0.09]} />
+          <meshBasicMaterial color="#f43f5e" />
+        </mesh>
+      </group>
+
+      {/* 4. Arms */}
+      {[-0.15, 0.15].map((ax, i) => (
+        <group key={`garm-${i}`} position={[ax, 0.37, 0]}>
+          <mesh position={[0, -0.04, 0]} castShadow>
+            <cylinderGeometry args={[0.035, 0.032, 0.14, 8]} />
+            <meshStandardMaterial color="#334155" roughness={0.4} />
+          </mesh>
+          <mesh position={[0, -0.13, 0]}>
+            <sphereGeometry args={[0.026, 8, 8]} />
+            <meshStandardMaterial color="#fef08a" roughness={0.4} />
+          </mesh>
+        </group>
+      ))}
+
+      {/* 5. Loose Olive-Green Cargo Pants with 3D Utility Pockets */}
+      <group position={[0, 0.18, 0]}>
+        {/* Waist & Hips */}
+        <mesh position={[0, 0.02, 0]} castShadow>
+          <boxGeometry args={[0.23, 0.12, 0.17]} />
+          <meshStandardMaterial color="#365314" roughness={0.65} />
+        </mesh>
+        {/* Left & Right Cargo Legs */}
+        {[-0.07, 0.07].map((cx, i) => (
+          <group key={`cleg-${i}`} position={[cx, -0.08, 0]}>
+            <mesh position={[0, 0, 0]} castShadow>
+              <cylinderGeometry args={[0.046, 0.052, 0.16, 10]} />
+              <meshStandardMaterial color="#365314" roughness={0.65} />
+            </mesh>
+            {/* 3D Side Utility Flap Pocket */}
+            <mesh position={[(i === 0 ? -1 : 1) * 0.048, 0, 0]} castShadow>
+              <boxGeometry args={[0.025, 0.065, 0.06]} />
+              <meshStandardMaterial color="#1a2e05" roughness={0.7} />
+            </mesh>
+            {/* Chunky White Platform Streetwear Sneaker */}
+            <group position={[0, -0.09, 0.02]}>
+              <mesh position={[0, 0, 0]} castShadow>
+                <boxGeometry args={[0.082, 0.042, 0.15]} />
+                <meshStandardMaterial color="#ffffff" roughness={0.25} />
+              </mesh>
+            </group>
+          </group>
+        ))}
+      </group>
+    </group>
+  );
+}
+
+/**
+ * Dispatcher for rendering the right mascot / hero avatar mesh
+ */
+export function MascotModel({
+  mascot,
+  playerIndex = 0,
+  scale = 1,
+}: {
+  mascot: MascotType;
+  playerIndex?: number;
+  scale?: number;
+}) {
+  // Player 0 is always the Hero Anime Boy in white hoodie (Player A from reference image)
+  if (playerIndex === 0) {
+    return <AnimeBoyAvatar scale={scale} />;
+  }
+  // Player 1 is always the Hero Anime Girl in bucket hat & cargo pants (Player B from reference image)
+  if (playerIndex === 1) {
+    return <AnimeGirlAvatar scale={scale} />;
+  }
+  // Fallbacks for multiplayer 3 & 4
   switch (mascot) {
     case 'PIG':
-      return <PigMesh scale={scale} />;
+      return <AnimeBoyAvatar scale={scale} />;
     case 'FOX':
-      return <FoxMesh scale={scale} />;
+      return <AnimeGirlAvatar scale={scale} />;
     case 'CAT':
       return <CatMesh scale={scale} />;
     case 'BUFFALO':
       return <BuffaloMesh scale={scale} />;
     default:
-      return <PigMesh scale={scale} />;
+      return <AnimeBoyAvatar scale={scale} />;
   }
 }
 
@@ -1160,7 +1476,7 @@ function SingleMascotPawn({
 
       {/* Mesh container with squash & stretch */}
       <group ref={meshHolderRef} position={[0, 0.06, 0]}>
-        <MascotModel mascot={player.mascot} />
+        <MascotModel mascot={player.mascot} playerIndex={playerIndex} />
       </group>
 
       {/* Landing Dust Shockwave Ring on hop touchdown */}

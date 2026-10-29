@@ -678,6 +678,116 @@ export function GrandGoldenResortStructure({ flagColor }: { flagColor: string })
   );
 }
 
+/**
+ * 5. META WORLD CURVED LUXURY HOTEL WITH VERTICAL NEON "HOTEL" SIGN
+ * Aerodynamic red curved skyscraper tower, wrap-around floor balconies,
+ * panoramic cyan glass windows, and a prominent vertical illuminated "HOTEL" sign.
+ */
+export function MetaWorldCurvedHotel({ flagColor }: { flagColor: string }) {
+  return (
+    <group position={[0, 0, 0]}>
+      {/* Concrete Terrace Plaza Base with Curbs */}
+      <mesh position={[0, 0.03, 0]} castShadow receiveShadow>
+        <boxGeometry args={[0.74, 0.06, 0.52]} />
+        <meshStandardMaterial color="#e2e8f0" roughness={0.4} />
+      </mesh>
+
+      {/* Aerodynamic Curved Skyscraper Body (Red & Silver Cladding) */}
+      <mesh position={[0, 0.38, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.26, 0.3, 0.7, 18]} />
+        <meshStandardMaterial color="#dc2626" roughness={0.25} metalness={0.2} />
+      </mesh>
+
+      {/* Wrap-Around Panoramic Curved Balcony Bands */}
+      {[0.16, 0.32, 0.48, 0.64].map((by, i) => (
+        <group key={`balcony-${i}`} position={[0, by, 0]}>
+          <mesh castShadow>
+            <cylinderGeometry args={[0.29, 0.29, 0.024, 18]} />
+            <meshStandardMaterial color="#ffffff" roughness={0.2} />
+          </mesh>
+          <mesh position={[0, 0.02, 0.14]}>
+            <boxGeometry args={[0.28, 0.02, 0.01]} />
+            <meshStandardMaterial color="#38bdf8" roughness={0.05} metalness={0.4} transparent opacity={0.8} />
+          </mesh>
+        </group>
+      ))}
+
+      {/* Rooftop Helipad & Sky Lounge */}
+      <group position={[0, 0.74, 0]}>
+        <mesh castShadow>
+          <cylinderGeometry args={[0.22, 0.25, 0.04, 16]} />
+          <meshStandardMaterial color="#334155" roughness={0.5} />
+        </mesh>
+        {/* Yellow Helipad Ring */}
+        <mesh position={[0, 0.022, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.12, 0.15, 16]} />
+          <meshBasicMaterial color="#facc15" side={THREE.DoubleSide} />
+        </mesh>
+        {/* Helipad 'H' Indicator */}
+        <mesh position={[0, 0.023, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[0.08, 0.08]} />
+          <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
+        </mesh>
+      </group>
+
+      {/* PROMINENT VERTICAL NEON "HOTEL" SIGN FIN */}
+      <group position={[0.28, 0.38, 0.12]}>
+        {/* Vertical Sign Fin */}
+        <mesh castShadow>
+          <boxGeometry args={[0.05, 0.46, 0.14]} />
+          <meshStandardMaterial color="#0f172a" roughness={0.4} />
+        </mesh>
+        {/* Glowing Red Neon Border */}
+        <mesh position={[0.028, 0, 0]}>
+          <boxGeometry args={[0.008, 0.44, 0.12]} />
+          <meshStandardMaterial
+            color="#ef4444"
+            emissive="#f43f5e"
+            emissiveIntensity={2.5}
+            roughness={0.1}
+          />
+        </mesh>
+        {/* Vertical Illuminated Pips (Representing H - O - T - E - L) */}
+        {[-0.16, -0.08, 0, 0.08, 0.16].map((py, i) => (
+          <mesh key={`neon-letter-${i}`} position={[0.034, py, 0]}>
+            <boxGeometry args={[0.006, 0.045, 0.07]} />
+            <meshBasicMaterial color="#ffffff" />
+          </mesh>
+        ))}
+      </group>
+
+      {/* Front Entrance Planter Box & Palm Tree */}
+      <group position={[-0.24, 0.06, 0.16]}>
+        <mesh castShadow receiveShadow>
+          <boxGeometry args={[0.16, 0.06, 0.12]} />
+          <meshStandardMaterial color="#475569" roughness={0.6} />
+        </mesh>
+        <mesh position={[0, 0.032, 0]}>
+          <planeGeometry args={[0.14, 0.1]} />
+          <meshStandardMaterial color="#16a34a" roughness={0.8} />
+        </mesh>
+        {/* Palm Tree Trunk & Fronds */}
+        <mesh position={[0, 0.12, 0]} castShadow>
+          <cylinderGeometry args={[0.015, 0.02, 0.16, 6]} />
+          <meshStandardMaterial color="#78350f" />
+        </mesh>
+        {[0, 1.5, 3.0, 4.5].map((ang, i) => (
+          <mesh key={`frond-${i}`} position={[0, 0.2, 0]} rotation={[0.4, ang, 0]} castShadow>
+            <coneGeometry args={[0.06, 0.16, 4]} />
+            <meshStandardMaterial color="#22c55e" roughness={0.5} />
+          </mesh>
+        ))}
+      </group>
+
+      {/* Owner Color Ribbon */}
+      <mesh position={[0, 0.72, 0.22]}>
+        <boxGeometry args={[0.16, 0.02, 0.01]} />
+        <meshBasicMaterial color={flagColor} />
+      </mesh>
+    </group>
+  );
+}
+
 /* =========================================================================
    INDIVIDUAL ANIMATED 3D BUILDING
    Spring bounce scaling pop-up animation on appearance and upgrade
@@ -791,8 +901,8 @@ function SingleBuilding3D({ tile, players }: SingleBuilding3DProps) {
       <BuildingUpgradeSparkles active={sparkleActive} />
       {tier === 0 && <FlagStructure color={ownerColor} />}
       {tier === 1 && <VillageHouse1Structure flagColor={ownerColor} />}
-      {tier === 2 && <VillageHouse2Structure flagColor={ownerColor} />}
-      {tier === 3 && <LuxuryVillaStructure flagColor={ownerColor} />}
+      {tier === 2 && <LuxuryVillaStructure flagColor={ownerColor} />}
+      {tier === 3 && <MetaWorldCurvedHotel flagColor={ownerColor} />}
       {tier >= 4 && (
         [1, 3, 4, 5, 6, 9, 10, 11, 12, 13, 15, 17, 19, 20, 21, 22, 23, 25, 27, 28, 30, 31].includes(tile.id) ? (
           <CityLandmark3D tileId={tile.id} />

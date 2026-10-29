@@ -195,6 +195,233 @@ export function CruisingYacht({ initialRadius = 16, speed = 0.1 }: { initialRadi
   );
 }
 
+/* =========================================================================
+   SURROUNDING METROPOLITAN HARBOR & CIVIC DIORAMA (META WORLD ARCHITECTURE)
+   ========================================================================= */
+
+/**
+ * 1. DOCKED LUXURY MEGA YACHT & HARBOR PIER (Bottom-Left Corner of Board)
+ */
+export function DockedMegaYachtHarbor({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position} rotation={[0, Math.PI / 4, 0]}>
+      {/* Wooden Boardwalk Pier */}
+      <mesh position={[-0.8, 0.08, 0]} castShadow receiveShadow>
+        <boxGeometry args={[0.9, 0.12, 3.2]} />
+        <meshStandardMaterial color="#78350f" roughness={0.7} />
+      </mesh>
+      {/* Mooring Bollards */}
+      {[-1.2, -0.4, 0.4, 1.2].map((z, i) => (
+        <mesh key={`bollard-${i}`} position={[-0.42, 0.18, z]} castShadow>
+          <cylinderGeometry args={[0.04, 0.05, 0.14, 8]} />
+          <meshStandardMaterial color="#1e293b" metalness={0.8} />
+        </mesh>
+      ))}
+      {/* Gangway Boarding Ramp */}
+      <mesh position={[-0.2, 0.22, 0.3]} rotation={[0, 0, -0.15]} castShadow>
+        <boxGeometry args={[0.6, 0.04, 0.28]} />
+        <meshStandardMaterial color="#b45309" roughness={0.6} />
+      </mesh>
+
+      {/* Luxury White Mega Cruise Yacht (3 Tiers) */}
+      <group position={[0.6, 0.16, 0]}>
+        {/* Sleek White Hull */}
+        <mesh position={[0, 0.2, 0]} castShadow receiveShadow>
+          <boxGeometry args={[1.1, 0.42, 2.8]} />
+          <meshStandardMaterial color="#ffffff" roughness={0.15} metalness={0.12} />
+        </mesh>
+        {/* Angled Bow */}
+        <mesh position={[0, 0.22, 1.6]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+          <coneGeometry args={[0.55, 0.9, 4]} />
+          <meshStandardMaterial color="#ffffff" roughness={0.15} />
+        </mesh>
+        {/* Tier 2 Cabin with Panoramic Tinted Glass */}
+        <mesh position={[0, 0.52, -0.1]} castShadow>
+          <boxGeometry args={[0.85, 0.28, 1.8]} />
+          <meshStandardMaterial color="#ffffff" roughness={0.2} />
+        </mesh>
+        <mesh position={[0, 0.52, -0.05]}>
+          <boxGeometry args={[0.88, 0.18, 1.7]} />
+          <meshStandardMaterial color="#0284c7" roughness={0.05} metalness={0.4} transparent opacity={0.8} />
+        </mesh>
+        {/* Tier 3 Bridge / Sun Deck */}
+        <mesh position={[0, 0.76, -0.3]} castShadow>
+          <boxGeometry args={[0.65, 0.2, 1.1]} />
+          <meshStandardMaterial color="#ffffff" roughness={0.2} />
+        </mesh>
+        {/* Radar Mast & Satellite Domes */}
+        <mesh position={[0, 0.94, -0.4]} castShadow>
+          <cylinderGeometry args={[0.02, 0.03, 0.2, 8]} />
+          <meshStandardMaterial color="#334155" metalness={0.8} />
+        </mesh>
+        <mesh position={[-0.14, 0.9, -0.4]}>
+          <sphereGeometry args={[0.06, 8, 8]} />
+          <meshStandardMaterial color="#ffffff" />
+        </mesh>
+        <mesh position={[0.14, 0.9, -0.4]}>
+          <sphereGeometry args={[0.06, 8, 8]} />
+          <meshStandardMaterial color="#ffffff" />
+        </mesh>
+        {/* Teak Sun Loungers on Aft Deck */}
+        <mesh position={[0, 0.44, -1.1]}>
+          <boxGeometry args={[0.8, 0.02, 0.4]} />
+          <meshStandardMaterial color="#d97706" roughness={0.65} />
+        </mesh>
+      </group>
+    </group>
+  );
+}
+
+/**
+ * 2. GRAND EUROPEAN MUNICIPAL OPERA PALACE & CLOCK TOWER (Bottom-Right Corner)
+ */
+export function EuropeanMunicipalPalace({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position} rotation={[0, -Math.PI / 4, 0]}>
+      {/* Stone Foundation Stairs */}
+      <mesh position={[0, 0.06, 0]} castShadow receiveShadow>
+        <boxGeometry args={[2.2, 0.12, 1.8]} />
+        <meshStandardMaterial color="#e2e8f0" roughness={0.5} />
+      </mesh>
+      {/* Main Classical Facade with Pilasters */}
+      <mesh position={[0, 0.38, 0]} castShadow receiveShadow>
+        <boxGeometry args={[1.9, 0.52, 1.5]} />
+        <meshStandardMaterial color="#fef08a" roughness={0.65} />
+      </mesh>
+      {/* Grand Classical Portico Columns */}
+      {[-0.6, -0.2, 0.2, 0.6].map((x, i) => (
+        <mesh key={`col-${i}`} position={[x, 0.38, 0.8]} castShadow>
+          <cylinderGeometry args={[0.04, 0.045, 0.52, 10]} />
+          <meshStandardMaterial color="#ffffff" roughness={0.3} />
+        </mesh>
+      ))}
+      {/* Pediment Triangular Gable */}
+      <mesh position={[0, 0.72, 0.78]} rotation={[0, 0, 0]} castShadow>
+        <coneGeometry args={[0.85, 0.22, 4]} />
+        <meshStandardMaterial color="#ffffff" roughness={0.4} />
+      </mesh>
+      {/* Clock Tower Spire */}
+      <group position={[0, 0.64, -0.1]}>
+        <mesh position={[0, 0.35, 0]} castShadow>
+          <boxGeometry args={[0.75, 0.7, 0.75]} />
+          <meshStandardMaterial color="#fef08a" roughness={0.6} />
+        </mesh>
+        {/* Glowing Clock Faces */}
+        <mesh position={[0, 0.45, 0.38]}>
+          <circleGeometry args={[0.16, 16]} />
+          <meshBasicMaterial color="#ffffff" />
+        </mesh>
+        <mesh position={[0, 0.45, 0.385]}>
+          <ringGeometry args={[0.15, 0.17, 16]} />
+          <meshStandardMaterial color="#f59e0b" metalness={0.9} />
+        </mesh>
+        {/* Teal Copper Patina Mansard Dome Roof */}
+        <mesh position={[0, 0.95, 0]} castShadow>
+          <coneGeometry args={[0.55, 0.6, 8]} />
+          <meshStandardMaterial color="#0d9488" roughness={0.4} metalness={0.2} />
+        </mesh>
+        {/* Golden Finial Needle */}
+        <mesh position={[0, 1.3, 0]}>
+          <cylinderGeometry args={[0.012, 0.02, 0.2, 6]} />
+          <meshStandardMaterial color="#fbbf24" metalness={0.95} />
+        </mesh>
+      </group>
+    </group>
+  );
+}
+
+/**
+ * 3. LUMINOUS TRIUMPHAL ARCH WITH PEGASUS MONUMENT (Top-Right Corner)
+ */
+export function TriumphalArchMonument({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position} rotation={[0, -Math.PI / 4, 0]}>
+      {/* Stone Plaza Base */}
+      <mesh position={[0, 0.05, 0]} castShadow receiveShadow>
+        <boxGeometry args={[1.8, 0.1, 1.2]} />
+        <meshStandardMaterial color="#cbd5e1" roughness={0.6} />
+      </mesh>
+      {/* Left Arch Pylon */}
+      <mesh position={[-0.45, 0.55, 0]} castShadow receiveShadow>
+        <boxGeometry args={[0.42, 0.9, 0.85]} />
+        <meshStandardMaterial color="#94a3b8" roughness={0.5} />
+      </mesh>
+      {/* Right Arch Pylon */}
+      <mesh position={[0.45, 0.55, 0]} castShadow receiveShadow>
+        <boxGeometry args={[0.42, 0.9, 0.85]} />
+        <meshStandardMaterial color="#94a3b8" roughness={0.5} />
+      </mesh>
+      {/* Arch Entablature & Crown Slab */}
+      <mesh position={[0, 1.15, 0]} castShadow receiveShadow>
+        <boxGeometry args={[1.5, 0.35, 0.95]} />
+        <meshStandardMaterial color="#e2e8f0" roughness={0.4} />
+      </mesh>
+      {/* Ethereal Glowing Blue Energy Beam inside Archway */}
+      <mesh position={[0, 0.5, 0]}>
+        <boxGeometry args={[0.46, 0.75, 0.7]} />
+        <meshStandardMaterial
+          color="#38bdf8"
+          emissive="#0284c7"
+          emissiveIntensity={1.8}
+          transparent
+          opacity={0.35}
+        />
+      </mesh>
+      {/* Golden Winged Pegasus Monument on Top */}
+      <group position={[0, 1.45, 0]}>
+        <mesh castShadow>
+          <boxGeometry args={[0.3, 0.18, 0.24]} />
+          <meshStandardMaterial color="#fbbf24" metalness={0.95} roughness={0.12} />
+        </mesh>
+        {/* Outstretched Wings */}
+        <mesh position={[-0.2, 0.12, 0]} rotation={[0, 0, 0.5]}>
+          <coneGeometry args={[0.1, 0.32, 4]} />
+          <meshStandardMaterial color="#fef08a" metalness={0.95} />
+        </mesh>
+        <mesh position={[0.2, 0.12, 0]} rotation={[0, 0, -0.5]}>
+          <coneGeometry args={[0.1, 0.32, 4]} />
+          <meshStandardMaterial color="#fef08a" metalness={0.95} />
+        </mesh>
+      </group>
+    </group>
+  );
+}
+
+/**
+ * 4. GRAND METROPOLITAN STATION PLAZA (Top-Center)
+ */
+export function MetropolitanStationPlaza({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position} rotation={[0, Math.PI, 0]}>
+      {/* Plaza Platform */}
+      <mesh position={[0, 0.06, 0]} castShadow receiveShadow>
+        <boxGeometry args={[2.8, 0.12, 1.4]} />
+        <meshStandardMaterial color="#e2e8f0" roughness={0.5} />
+      </mesh>
+      {/* Main Station Entrance Building */}
+      <mesh position={[0, 0.42, -0.2]} castShadow receiveShadow>
+        <boxGeometry args={[2.2, 0.6, 0.9]} />
+        <meshStandardMaterial color="#f8fafc" roughness={0.4} />
+      </mesh>
+      {/* Red Canopy Marquee ("M" Subway Entrance) */}
+      <mesh position={[0, 0.45, 0.35]} castShadow>
+        <boxGeometry args={[1.2, 0.08, 0.45]} />
+        <meshStandardMaterial color="#dc2626" roughness={0.3} />
+      </mesh>
+      {/* Glowing Star/Diamond Logo Sign */}
+      <mesh position={[0, 0.62, 0.36]}>
+        <octahedronGeometry args={[0.1, 0]} />
+        <meshStandardMaterial color="#fbbf24" emissive="#f59e0b" emissiveIntensity={2.0} />
+      </mesh>
+      {/* Glass Atrium Dome */}
+      <mesh position={[0, 0.82, -0.2]}>
+        <sphereGeometry args={[0.45, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshStandardMaterial color="#38bdf8" roughness={0.1} transparent opacity={0.7} metalness={0.3} />
+      </mesh>
+    </group>
+  );
+}
+
 export function BoardTableFrame({
   outerSize = FRAME_DIMENSIONS.outerSize,
   innerSize = FRAME_DIMENSIONS.innerSize,
@@ -366,6 +593,19 @@ export function BoardTableFrame({
       <BeachPalmTree position={[halfOuter + 0.75, 0.04, -halfOuter - 0.7]} scale={0.88} />
       <BeachPalmTree position={[-halfOuter - 0.8, 0.04, halfOuter + 0.75]} scale={0.8} />
       <BeachPalmTree position={[halfOuter + 0.8, 0.04, halfOuter + 0.7]} scale={0.85} />
+
+      {/* ================= 6. SURROUNDING METROPOLITAN CIVIC ARCHITECTURE ================= */}
+      {/* Mega Yacht Docked at Harbor Pier (Bottom-Left) */}
+      <DockedMegaYachtHarbor position={[-halfOuter - 1.8, -0.32, halfOuter + 0.8]} />
+
+      {/* European Municipal Opera Palace & Clock Tower (Bottom-Right) */}
+      <EuropeanMunicipalPalace position={[halfOuter + 1.8, -0.28, halfOuter + 0.8]} />
+
+      {/* Luminous Triumphal Arch Monument (Top-Right) */}
+      <TriumphalArchMonument position={[halfOuter + 1.6, -0.28, -halfOuter - 1.2]} />
+
+      {/* Grand Metropolitan Station Plaza (Top-Center) */}
+      <MetropolitanStationPlaza position={[0, -0.28, -halfOuter - 1.8]} />
     </group>
   );
 }

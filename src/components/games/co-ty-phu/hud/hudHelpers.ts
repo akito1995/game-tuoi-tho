@@ -19,6 +19,23 @@ export function formatShortMoney(amount: number): string {
 }
 
 /**
+ * Format money in Meta World: My City arcade style (e.g. 76M740K, 165M836K)
+ */
+export function formatMetaWorldMoney(amount: number): string {
+  if (isNaN(amount) || amount === null || amount === undefined) return '0đ';
+  if (amount >= 1_000_000) {
+    const m = Math.floor(amount / 1_000_000);
+    const rem = amount % 1_000_000;
+    const k = Math.floor(rem / 1_000);
+    return `${m}M${k > 0 ? `${k}K` : ''}`;
+  }
+  if (amount >= 1_000) {
+    return `${Math.floor(amount / 1_000)}K`;
+  }
+  return `${amount}đ`;
+}
+
+/**
  * Calculates a player's total net worth:
  * Cash on hand + purchase price of owned properties + house/villa/resort construction costs.
  */

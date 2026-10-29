@@ -982,6 +982,172 @@ export function OwnerSpotlightRing({
 }
 
 /* =========================================================================
+   META WORLD HOLOGRAM LANDMARK CONSTRUCTION & MYSTIC PORTAL VFX
+   ========================================================================= */
+
+/**
+ * Swirling Jade & Cyan Mystic Wormhole Portal on Tile Ground (Meta World Special Portal)
+ */
+export function MysticWormholePortal({ color = '#10b981' }: { color?: string }) {
+  const portalRef = useRef<THREE.Group>(null);
+  const ring1Ref = useRef<THREE.Mesh>(null);
+  const ring2Ref = useRef<THREE.Mesh>(null);
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    if (ring1Ref.current) ring1Ref.current.rotation.z = t * 1.8;
+    if (ring2Ref.current) ring2Ref.current.rotation.z = -t * 2.4;
+  });
+
+  return (
+    <group ref={portalRef} position={[0, 0.018, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      {/* Outer Hexagonal Inset Ring */}
+      <mesh>
+        <ringGeometry args={[0.32, 0.42, 6]} />
+        <meshBasicMaterial color="#334155" />
+      </mesh>
+      {/* Outer Rotating Energy Vortex */}
+      <mesh ref={ring1Ref}>
+        <ringGeometry args={[0.26, 0.38, 24]} />
+        <meshStandardMaterial
+          color={color}
+          emissive={color}
+          emissiveIntensity={2.0}
+          transparent
+          opacity={0.85}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+      {/* Inner Fast-Spinning Core Ring */}
+      <mesh ref={ring2Ref}>
+        <ringGeometry args={[0.12, 0.24, 16]} />
+        <meshStandardMaterial
+          color="#38bdf8"
+          emissive="#0284c7"
+          emissiveIntensity={2.5}
+          transparent
+          opacity={0.9}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+      {/* Center Black Hole Singularity */}
+      <mesh>
+        <circleGeometry args={[0.11, 16]} />
+        <meshBasicMaterial color="#020617" />
+      </mesh>
+    </group>
+  );
+}
+
+/**
+ * 3D Holographic Landmark Construction Beam & Blueprint Wireframe (Meta World "Constructing Landmark")
+ */
+export function HologramLandmarkConstructionVFX({ position = [0, 0, 0] }: { position?: [number, number, number] }) {
+  const groupRef = useRef<THREE.Group>(null);
+  const boxRef = useRef<THREE.Group>(null);
+  const beamRef = useRef<THREE.Mesh>(null);
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    if (boxRef.current) {
+      boxRef.current.rotation.y = t * 0.8;
+      boxRef.current.position.y = 0.55 + Math.sin(t * 2.5) * 0.06;
+    }
+    if (beamRef.current) {
+      const mat = beamRef.current.material as THREE.MeshBasicMaterial;
+      if (mat) {
+        mat.opacity = 0.35 + Math.sin(t * 3.5) * 0.12;
+      }
+    }
+  });
+
+  return (
+    <group ref={groupRef} position={position}>
+      {/* 1. Vertical Skyward Cyan Laser Pillar */}
+      <mesh ref={beamRef} position={[0, 2.5, 0]}>
+        <cylinderGeometry args={[0.22, 0.42, 5.0, 16, 1, true]} />
+        <meshBasicMaterial
+          color="#22d3ee"
+          transparent
+          opacity={0.4}
+          side={THREE.DoubleSide}
+          depthWrite={false}
+        />
+      </mesh>
+
+      {/* 2. Concentric Ground Hologram Grid Emitters */}
+      <group position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh>
+          <ringGeometry args={[0.4, 0.46, 32]} />
+          <meshBasicMaterial color="#38bdf8" transparent opacity={0.8} side={THREE.DoubleSide} />
+        </mesh>
+        <mesh>
+          <ringGeometry args={[0.55, 0.58, 32]} />
+          <meshBasicMaterial color="#06b6d4" transparent opacity={0.6} side={THREE.DoubleSide} />
+        </mesh>
+      </group>
+
+      {/* 3. Floating 3D Holographic Wireframe Bounding Box */}
+      <group ref={boxRef} position={[0, 0.55, 0]}>
+        {/* Outer Cyan Wireframe Cube */}
+        <mesh>
+          <boxGeometry args={[0.62, 0.62, 0.62]} />
+          <meshBasicMaterial color="#38bdf8" wireframe={true} />
+        </mesh>
+        {/* Inner Translucent Blueprint Miniature Skyscraper */}
+        <mesh position={[0, -0.05, 0]}>
+          <boxGeometry args={[0.42, 0.5, 0.42]} />
+          <meshStandardMaterial
+            color="#06b6d4"
+            emissive="#0891b2"
+            emissiveIntensity={1.8}
+            transparent
+            opacity={0.55}
+            roughness={0.1}
+          />
+        </mesh>
+        {/* Roof Antenna */}
+        <mesh position={[0, 0.28, 0]}>
+          <cylinderGeometry args={[0.015, 0.02, 0.18, 8]} />
+          <meshStandardMaterial color="#bae6fd" emissive="#38bdf8" emissiveIntensity={2.2} />
+        </mesh>
+      </group>
+
+      {/* 4. Cinematic 3D Floating "Constructing Landmark" Banner */}
+      <Billboard position={[0, 1.45, 0]} follow>
+        <mesh position={[0, 0, -0.01]}>
+          <planeGeometry args={[1.75, 0.32]} />
+          <meshBasicMaterial color="#020617" transparent opacity={0.88} />
+        </mesh>
+        <mesh position={[0, 0, -0.015]}>
+          <planeGeometry args={[1.8, 0.36]} />
+          <meshBasicMaterial color="#06b6d4" />
+        </mesh>
+        <Text
+          fontSize={0.11}
+          color="#67e8f9"
+          fontWeight="bold"
+          anchorX="center"
+          anchorY="middle"
+        >
+          Constructing Landmark
+        </Text>
+      </Billboard>
+
+      {/* 5. Inverted Blue Diamond Indicator Hovering Overhead */}
+      <mesh position={[0, 1.82, 0]} rotation={[Math.PI, 0, 0]}>
+        <coneGeometry args={[0.1, 0.18, 4]} />
+        <meshStandardMaterial
+          color="#38bdf8"
+          emissive="#0284c7"
+          emissiveIntensity={2.0}
+        />
+      </mesh>
+    </group>
+  );
+}
+
+/* =========================================================================
    SINGLE 3D TILE SLAB COMPONENT (Tactile Porcelain Ceramic & Acrylic Finish)
    ========================================================================= */
 export function SingleTile3D({
@@ -1306,6 +1472,16 @@ export function SingleTile3D({
 
       {/* Bespoke 3D Art for Special Corner Tiles (START, JAIL, FESTIVAL, POLICE) */}
       {layout.isCorner && <SpecialTileProp tileId={tile.id} />}
+
+      {/* Swirling Jade & Cyan Mystic Wormhole Portal on Festival & Special Tiles */}
+      {(tile.id === 16 || tile.type === 'SPECIAL') && (
+        <MysticWormholePortal color="#10b981" />
+      )}
+
+      {/* 3D Holographic Landmark Construction VFX on Selected Property or Active Landmark */}
+      {isSelected && tile.type === 'PROPERTY' && (
+        <HologramLandmarkConstructionVFX />
+      )}
 
       {/* Floating 3D Prop: Golden Treasure Chest for Chance, Spinning Lucky Wheel for Fate */}
       {!layout.isCorner && tile.type === 'CHANCE' && (
