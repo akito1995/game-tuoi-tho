@@ -5,6 +5,7 @@ import { Dices, ArrowRight, Sparkles, Lock, Key, Zap } from 'lucide-react';
 import { useGameStore } from '@/lib/game-engine/gameStore';
 import { soundManager } from '@/lib/audio/soundManager';
 import { canPlayerRoll, canPlayerEndTurn, formatMoney } from './hudHelpers';
+import { TacticalSkillBar } from './TacticalSkillBar';
 
 export interface DiceControlPanelProps {
   className?: string;
@@ -109,9 +110,11 @@ export function DiceControlPanel({ className = '' }: DiceControlPanelProps) {
   const sum = (dice[0] || 1) + (dice[1] || 1);
 
   return (
-    <div
-      className={`relative z-20 flex flex-col items-center gap-3.5 rounded-3xl glass-hud p-4 backdrop-blur-2xl shadow-2xl ring-1 ring-white/20 ${className}`}
-    >
+    <div className="flex flex-col items-end">
+      <TacticalSkillBar />
+      <div
+        className={`relative z-20 flex flex-col items-center gap-3.5 rounded-3xl glass-hud p-4 backdrop-blur-2xl shadow-2xl ring-1 ring-white/20 ${className}`}
+      >
       {/* Dice Face Visuals & Double Indicator */}
       <div className="flex items-center gap-3">
         <DieFace value={dice[0]} />
@@ -206,6 +209,7 @@ export function DiceControlPanel({ className = '' }: DiceControlPanelProps) {
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 }

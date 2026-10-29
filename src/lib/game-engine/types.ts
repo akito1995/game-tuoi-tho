@@ -44,6 +44,12 @@ export interface Tile {
   description?: string;
 }
 
+export interface TacticalCardInventory {
+  evenOdd?: number;
+  rentShield?: number;
+  doubleStep?: number;
+}
+
 export interface Player {
   id: string;
   name: string;
@@ -57,6 +63,9 @@ export interface Player {
   isBot: boolean;
   jailFreeCards?: number;
   isSpectator?: boolean;
+  hasActiveShield?: boolean;
+  tacticalCards?: TacticalCardInventory;
+  activeDiceModifier?: 'EVEN' | 'ODD' | null;
 }
 
 export type CardActionType =
@@ -64,7 +73,8 @@ export type CardActionType =
   | 'CASH_LOSS'
   | 'TELEPORT'
   | 'JAIL_FREE'
-  | 'PAY_EACH_PLAYER';
+  | 'PAY_EACH_PLAYER'
+  | 'LUCKY_WHEEL';
 
 export type CardCategoryType =
   | 'FORTUNE'
@@ -92,6 +102,8 @@ export type GamePhase =
   | 'ACTION'
   | 'ACTION_REQUIRED'
   | 'CARD_DRAWN'
+  | 'FESTIVAL_GAME'
+  | 'LUCKY_WHEEL'
   | 'TURN_END'
   | 'GAME_OVER';
 
@@ -101,6 +113,20 @@ export interface GameSettings {
   jailBailPrice: number;
   maxJailTurns: number;
   maxJackpotFund?: number;
+}
+
+export interface BauCuaResult {
+  dice: [number, number, number];
+  betMascot: number;
+  matches: number;
+  winnings: number;
+  isJackpot: boolean;
+}
+
+export interface LuckyWheelResult {
+  prizeIndex: number;
+  title: string;
+  rewardText: string;
 }
 
 export interface GameState {
@@ -122,4 +148,6 @@ export interface GameState {
     creditorPlayerId: string | null; // null means bank
     amount: number;
   } | null;
+  bauCuaResult?: BauCuaResult | null;
+  luckyWheelResult?: LuckyWheelResult | null;
 }

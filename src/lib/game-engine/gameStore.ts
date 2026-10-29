@@ -8,6 +8,9 @@ import {
   GamePhase,
   ColorGroupType,
   MascotType,
+  BauCuaResult,
+  LuckyWheelResult,
+  TacticalCardInventory,
 } from './types';
 import { BOARD_TILES } from './boardData';
 import { CHANCE_CARDS, FATE_CARDS } from './chanceCards';
@@ -47,6 +50,12 @@ export interface GameStore extends GameState {
   endTurn: () => void;
   resetGame: () => void;
   setGamePhase: (phase: GamePhase) => void;
+  playBauCua: (betMascot: number, betAmount: number) => BauCuaResult;
+  spinLuckyWheel: () => LuckyWheelResult;
+  useEvenOddCard: (modifier: 'EVEN' | 'ODD') => void;
+  useRentShield: () => void;
+  useDoubleStep: () => void;
+  dismissMiniGame: () => void;
 }
 
 /**
@@ -216,6 +225,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
         bankrupt: false,
         isBot,
         jailFreeCards: 0,
+        hasActiveShield: false,
+        activeDiceModifier: null,
+        tacticalCards: {
+          evenOdd: 2,
+          rentShield: 1,
+          doubleStep: 1,
+        },
       });
     }
 
@@ -1180,6 +1196,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   dismissCard: () => {
     const state = get();
+    if (state.currentCard?.type === 'LUCKY_WHEEL') {
+      set({ currentCard: null, gamePhase: 'LUCKY_WHEEL' });
+      return;
+    }
     const activePlayer = state.players[state.activePlayerIndex];
     let nextPhase: GamePhase = 'TURN_END';
 
@@ -1265,5 +1285,217 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   setGamePhase: (phase) => {
     set({ gamePhase: phase });
+  },
+  playBauCua: (betMascot: number, betAmount: number): BauCuaResult => {
+    const state = get();
+    const activePlayer = { ...state.players[state.activePlayerIndex] };
+    const logs = [...state.eventLogs];
+
+    // Roll 3 dice (0 to 5 for the 6 mascots)
+    const d1 = Math.floor(Math.random() * 6);
+    const d2 = Math.floor(Math.random() * 6);
+    const d3 = Math.floor(Math.random() * 6);
+    const dice: [number, number, number] = [d1, d2, d3];
+
+    const matches = dice.filter((d) => d === betMascot).length;
+    let winnings = 0;
+    let isJackpot = false;
+    let newJackpot = state.jackpotFund;
+
+    const mascotNames = ['Nai', 'Bầu', 'Gà', 'Cá', 'Cua', 'Tôm'];
+
+    if (matches === 3) {
+      isJackpot = true;
+      winnings = betAmount * 3 + state.jackpotFund;
+      newJackpot = 20000;
+      activePlayer.money += winnings;
+      logs.push(
+        🎉 TAM HOA BÃO LỚN!  đổ trúng 3 con , ẴM TRỌN QUỸ HEO ĐẤT và nhận +đ!
+      );
+    } else if (matches > 0) {
+      winnings = betAmount * matches;
+      activePlayer.money += winnings;
+      logs.push(
+        🎲  trúng  con  tại Hội Chợ Bầu Cua, nhận +đ!
+      );
+    } else {
+      winnings = 20000; // Festival consolation
+      activePlayer.money += winnings;
+      logs.push(
+        🎁  nhận quà lưu niệm Lễ Hội Dân Gian +20.000đ!
+      );
+    }
+
+    const updatedPlayers = state.players.map((p, idx) =>
+      idx === state.activePlayerIndex ? activePlayer : p
+    );
+
+    const result: BauCuaResult = {
+      dice,
+      betMascot,
+      matches,
+      winnings,
+      isJackpot,
+    };
+
+    set({
+      players: updatedPlayers,
+      jackpotFund: newJackpot,
+      bauCuaResult: result,
+      eventLogs: logs,
+    });
+
+    return result;
+  },
+
+  spinLuckyWheel: (): LuckyWheelResult => {
+    const state = get();
+    const activePlayer = { ...state.players[state.activePlayerIndex] };
+    const logs = [...state.eventLogs];
+
+    // 8 prizes
+    const prizeIndex = Math.floor(Math.random() * 8);
+    let title = '';
+    let rewardText = '';
+    let newJackpot = state.jackpotFund;
+
+    if (!activePlayer.tacticalCards) {
+      activePlayer.tacticalCards = { evenOdd: 0, rentShield: 0, doubleStep: 0 };
+    }
+
+    switch (prizeIndex) {
+      case 0: // Jackpot
+        title = 'HEO ĐẤT JACKPOT';
+        rewardText = +đ;
+        activePlayer.money += state.jackpotFund;
+        newJackpot = 20000;
+        logs.push(🐷  QUAY TRÚNG HEO ĐẤT JACKPOT! Ẵm trọn !);
+        break;
+      case 1: // Cash 150k
+        title = 'THƯỞNG NÓNG';
+        rewardText = '+150.000đ tiền mặt';
+        activePlayer.money += 150000;
+        logs.push(💰  quay trúng Thưởng Nóng +150.000đ!);
+        break;
+      case 2: // Shield
+        title = 'KHIÊN BẢO HỘ';
+        rewardText = '+1 Thẻ Khiên Chắn tiền thuê';
+        activePlayer.tacticalCards.rentShield = (activePlayer.tacticalCards.rentShield || 0) + 1;
+        logs.push(🛡️  quay trúng 1 Thẻ Khiên Bảo Hộ!);
+        break;
+      case 3: // Even/Odd
+        title = 'XÚC XẮC CHẴN/LẺ';
+        rewardText = '+2 Thẻ Xúc Xắc Chẵn/Lẻ';
+        activePlayer.tacticalCards.evenOdd = (activePlayer.tacticalCards.evenOdd || 0) + 2;
+        logs.push(✨  quay trúng 2 Thẻ Xúc Xắc Chẵn/Lẻ!);
+        break;
+      case 4: // Teleport Phu Quoc
+        title = 'BAY ĐẾN PHÚ QUỐC';
+        rewardText = 'Dịch chuyển đến Đảo Ngọc Phú Quốc';
+        activePlayer.position = 10;
+        logs.push(✈️  quay trúng chuyến bay thẳng ra Phú Quốc!);
+        break;
+      case 5: // Double Step
+        title = 'TĂNG TỐC +2 BƯỚC';
+        rewardText = '+2 Thẻ Tăng Tốc';
+        activePlayer.tacticalCards.doubleStep = (activePlayer.tacticalCards.doubleStep || 0) + 2;
+        logs.push(⚡  quay trúng 2 Thẻ Tăng Tốc!);
+        break;
+      case 6: // Lucky Money 80k
+        title = 'LÌ XÌ MAY MẮN';
+        rewardText = '+80.000đ lì xì';
+        activePlayer.money += 80000;
+        logs.push(🧧  quay trúng Lì Xì May Mắn +80.000đ!);
+        break;
+      case 7: // Extra Roll
+        title = 'ĐỔ TIẾP LẬP TỨC';
+        rewardText = 'Tặng thêm 1 lượt đổ tự do';
+        logs.push(🎲  quay trúng thêm 1 Lượt Đổ Tự Do!);
+        break;
+    }
+
+    const updatedPlayers = state.players.map((p, idx) =>
+      idx === state.activePlayerIndex ? activePlayer : p
+    );
+
+    const result: LuckyWheelResult = {
+      prizeIndex,
+      title,
+      rewardText,
+    };
+
+    set({
+      players: updatedPlayers,
+      jackpotFund: newJackpot,
+      luckyWheelResult: result,
+      eventLogs: logs,
+    });
+
+    return result;
+  },
+
+  useEvenOddCard: (modifier: 'EVEN' | 'ODD') => {
+    const state = get();
+    const activePlayer = { ...state.players[state.activePlayerIndex] };
+    if (!activePlayer.tacticalCards?.evenOdd || activePlayer.tacticalCards.evenOdd <= 0) return;
+
+    activePlayer.tacticalCards.evenOdd -= 1;
+    activePlayer.activeDiceModifier = modifier;
+
+    const logs = [
+      ...state.eventLogs,
+      ✨  kích hoạt Thẻ Xúc Xắc !,
+    ];
+
+    set({
+      players: state.players.map((p, idx) => (idx === state.activePlayerIndex ? activePlayer : p)),
+      eventLogs: logs,
+    });
+  },
+
+  useRentShield: () => {
+    const state = get();
+    const activePlayer = { ...state.players[state.activePlayerIndex] };
+    if (!activePlayer.tacticalCards?.rentShield || activePlayer.tacticalCards.rentShield <= 0) return;
+
+    activePlayer.tacticalCards.rentShield -= 1;
+    activePlayer.hasActiveShield = true;
+
+    const logs = [
+      ...state.eventLogs,
+      🛡️  kích hoạt Khiên Bảo Hộ! Sẽ được miễn phí trả tiền thuê lần tới!,
+    ];
+
+    set({
+      players: state.players.map((p, idx) => (idx === state.activePlayerIndex ? activePlayer : p)),
+      eventLogs: logs,
+    });
+  },
+
+  useDoubleStep: () => {
+    const state = get();
+    const activePlayer = { ...state.players[state.activePlayerIndex] };
+    if (!activePlayer.tacticalCards?.doubleStep || activePlayer.tacticalCards.doubleStep <= 0) return;
+
+    activePlayer.tacticalCards.doubleStep -= 1;
+    activePlayer.position = (activePlayer.position + 2) % 32;
+
+    const logs = [
+      ...state.eventLogs,
+      ⚡  kích hoạt Thẻ Tăng Tốc, tiến thêm +2 bước tới ô [] !,
+    ];
+
+    set({
+      players: state.players.map((p, idx) => (idx === state.activePlayerIndex ? activePlayer : p)),
+      eventLogs: logs,
+    });
+  },
+
+  dismissMiniGame: () => {
+    set({
+      gamePhase: 'TURN_END',
+      bauCuaResult: null,
+      luckyWheelResult: null,
+    });
   },
 }));

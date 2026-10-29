@@ -102,6 +102,12 @@ export const CHANCE_CARDS: ChanceCard[] = [
     type: 'CASH_GAIN',
     amount: 220000,
   },
+  {
+    id: 'chance_wheel',
+    title: 'Vé Vòng Quay May Mắn',
+    description: 'Bốc được vé vàng tham gia Vòng Quay May Mắn Đảo Ngọc! Cơ hội ẵm trọn Heo Đất và thẻ bảo bối.',
+    type: 'LUCKY_WHEEL',
+  },
 ];
 
 /**
@@ -205,5 +211,11 @@ export const FATE_CARDS: FateCard[] = [
     description: 'Nghỉ ngơi lấy lại tinh thần, quay lại vạch Xuất Phát cổng làng và nhận 200.000đ!',
     type: 'TELEPORT',
     targetTileId: 0,
+  },
+  {
+    id: 'fate_wheel',
+    title: 'Vòng Quay Cơ Duyên',
+    description: 'Thần May Mắn trao tặng bạn 1 lượt quay Vòng Quay May Mắn thử thách vận đỏ!',
+    type: 'LUCKY_WHEEL',
   },
 ];

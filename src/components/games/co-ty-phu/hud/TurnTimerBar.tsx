@@ -28,7 +28,7 @@ export function TurnTimerBar({ turnTimeLimitSeconds = 60 }: TurnTimerBarProps) {
 
   // 60-Second Countdown Timer for Human Players (BUG-05: auto-expire and advance turn if modal or action stalled)
   useEffect(() => {
-    if (isBot || gamePhase === 'GAME_OVER') {
+    if (isBot || gamePhase === 'GAME_OVER' || gamePhase === 'FESTIVAL_GAME' || gamePhase === 'LUCKY_WHEEL') {
       return;
     }
 

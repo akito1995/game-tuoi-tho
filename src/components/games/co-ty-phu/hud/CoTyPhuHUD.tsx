@@ -6,6 +6,8 @@ import { PlayerListBar } from './PlayerListBar';
 import { DiceControlPanel } from './DiceControlPanel';
 import { EventLogTicker } from './EventLogTicker';
 import { PropertyActionModal } from './PropertyActionModal';
+import { BauCuaMiniGameModal } from './BauCuaMiniGameModal';
+import { LuckyWheelModal } from './LuckyWheelModal';
 import { ChanceCardModal } from './ChanceCardModal';
 import { RulesGuideModal } from './RulesGuideModal';
 import { GameOverModal } from './GameOverModal';
@@ -82,6 +84,8 @@ export function CoTyPhuHUD({
 
         <PropertyActionModal />
         <ChanceCardModal />
+        <BauCuaMiniGameModal />
+        <LuckyWheelModal />
         <RulesGuideModal
           isOpen={isRulesOpen}
           onClose={() => setIsRulesOpen(false)}
