@@ -61,11 +61,11 @@
    - Ground contact dust ring: Expanding translucent shockwave ring (`ringGeometry`) that pulses on landing.
    - Sound integration: Synchronize step sound with hop impact.
 
-- [ ] Step 2.1: Add unit tests in `tests/board-3d/mascotsAndBuildings.test.ts` for mascot scale and squash-stretch interpolation helper.
-- [ ] Step 2.2: Implement updated `PigMesh` and squash-and-stretch hopping physics in `MascotPawns3D.tsx`.
-- [ ] Step 2.3: Add landing dust particle shockwave ring.
-- [ ] Step 2.4: Run vitest and check 100% pass.
-- [ ] Step 2.5: Commit with message `feat(art-vertical-slice): polish heo phuot chibi model with squash-and-stretch physics`.
+- [x] Step 2.1: Add unit tests in `tests/board-3d/mascotsAndBuildings.test.ts` for mascot scale and squash-stretch interpolation helper.
+- [x] Step 2.2: Implement updated `PigMesh` and squash-and-stretch hopping physics in `MascotPawns3D.tsx`.
+- [x] Step 2.3: Add landing dust particle shockwave ring.
+- [x] Step 2.4: Run vitest and check 100% pass.
+- [x] Step 2.5: Commit with message `feat(art-vertical-slice): polish heo phuot chibi model with squash-and-stretch physics`.
 
 ---
 
