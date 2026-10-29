@@ -13,7 +13,7 @@ export function TacticalSkillBar() {
   const useDoubleStep = useGameStore((s) => s.useDoubleStep);
 
   const activePlayer = players[activePlayerIndex];
-  const isHumanTurn = activePlayer && !activePlayer.isBot && gamePhase === 'WAITING';
+  const isHumanTurn = activePlayer && !activePlayer.isBot && (gamePhase === 'WAITING' || gamePhase === 'AWAIT_ROLL');
 
   const [showEvenOddSelect, setShowEvenOddSelect] = useState(false);
 

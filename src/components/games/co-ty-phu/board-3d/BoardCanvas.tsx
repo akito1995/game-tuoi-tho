@@ -49,11 +49,11 @@ function AdaptiveCamera() {
     if (camera instanceof THREE.PerspectiveCamera) {
       const isPortraitOrNarrow = size.width < 768 || size.width / size.height < 1.05;
       if (isPortraitOrNarrow) {
-        camera.fov = 42;
-        camera.position.set(14, 22.5, 16);
+        camera.fov = 44;
+        camera.position.set(15.5, 24.5, 18.5);
       } else {
-        camera.fov = 32;
-        camera.position.set(13, 18, 15);
+        camera.fov = 34;
+        camera.position.set(14.5, 21.5, 17.5);
       }
       camera.updateProjectionMatrix();
     }
@@ -62,7 +62,7 @@ function AdaptiveCamera() {
   const threeState = useThree();
   useFrame((_, delta) => {
     if (!camera) return;
-    const isMoving = gamePhase === 'MOVING' || gamePhase === 'ROLLING';
+    const isMoving = gamePhase === 'MOVING' || gamePhase === 'ROLLING' || gamePhase === 'TOKEN_MOVING' || gamePhase === 'DICE_ROLLING';
     const pawnTilePos = activePlayer ? getTile3DPosition(activePlayer.position) : [0, 0, 0];
     const targetX = isMoving ? pawnTilePos[0] * 0.2 : 0;
     const targetZ = isMoving ? pawnTilePos[2] * 0.2 : 0;
@@ -123,7 +123,7 @@ export function BoardCanvas({
   const handleResetCamera = () => {
     if (controlsRef.current) {
       controlsRef.current.reset();
-      controlsRef.current.object.position.set(13, 18, 15);
+      controlsRef.current.object.position.set(14.5, 21.5, 17.5);
       controlsRef.current.target.set(0, 0, 0);
       controlsRef.current.update();
     }
@@ -159,8 +159,8 @@ export function BoardCanvas({
           toneMappingExposure: 1.25,
         }}
         camera={{
-          position: [13, 18, 15],
-          fov: 32,
+          position: [14.5, 21.5, 17.5],
+          fov: 34,
           near: 0.1,
           far: 180,
         }}

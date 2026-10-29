@@ -51,20 +51,34 @@ export function PropertyActionModal({
 
   const tile = tiles[currentTileId];
 
+  const [isDismissed, setIsDismissed] = useState(false);
+
+  useEffect(() => {
+    setIsDismissed(false);
+  }, [activePlayerIndex, activePlayer?.position]);
+
+  useEffect(() => {
+    const onReopen = () => setIsDismissed(false);
+    window.addEventListener('reopen-property-modal', onReopen);
+    return () => window.removeEventListener('reopen-property-modal', onReopen);
+  }, []);
+
   // Is modal open?
   const isUnowned = tile && !tile.ownerId;
   const isOwn = tile && activePlayer && tile.ownerId === activePlayer.id;
 
+  const isDecisionPhase =
+    gamePhase === 'ACTION_REQUIRED' ||
+    gamePhase === 'ACTION' ||
+    gamePhase === 'AWAIT_DECISION';
+
   const isOpen =
     tile &&
+    !isDismissed &&
     (tile.type === 'PROPERTY' || tile.type === 'TRANSPORT' || tile.type === 'UTILITY') &&
     (tileIdOverride !== undefined && tileIdOverride !== null
       ? true
-      : isUnowned
-      ? gamePhase === 'ACTION_REQUIRED'
-      : isOwn
-      ? gamePhase === 'ACTION'
-      : false);
+      : (isUnowned || isOwn) && isDecisionPhase);
 
   // Current tier of property: -1 (unowned), 0 (land), 1 (townhouse), 2 (apartment), 3 (landmark)
   const currentTier = useMemo(() => {
@@ -161,9 +175,16 @@ export function PropertyActionModal({
     onClose?.();
   };
 
+  const handleClose = () => {
+    soundManager.playClickSound();
+    setIsDismissed(true);
+    onClose?.();
+  };
+
   const handleSkip = () => {
     soundManager.playClickSound();
-    if (gamePhase === 'ACTION_REQUIRED' || gamePhase === 'ACTION') {
+    setIsDismissed(true);
+    if (gamePhase === 'ACTION_REQUIRED' || gamePhase === 'ACTION' || gamePhase === 'AWAIT_DECISION') {
       setGamePhase('TURN_END');
     }
     onClose?.();
@@ -185,15 +206,15 @@ export function PropertyActionModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 select-none pointer-events-auto">
-      {/* Dim backdrop with blur */}
+    <div className="fixed top-0 right-0 bottom-0 z-50 flex pointer-events-auto w-full max-w-md animate-in slide-in-from-right duration-300 select-none">
+      {/* Transparent backdrop for outside tap (board remains completely visible) */}
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity"
-        onClick={handleSkip}
+        className="fixed inset-0 bg-black/20"
+        onClick={handleClose}
       />
 
-      {/* Meta World Luxury Glassmorphic Dialog */}
-      <div className="relative z-10 w-full max-w-xl overflow-hidden rounded-3xl border-2 border-amber-400/80 bg-slate-950/95 shadow-2xl shadow-black/90 text-white animate-in fade-in zoom-in-95 duration-200 ring-1 ring-white/20">
+      {/* Meta World Luxury Slide-Over Panel */}
+      <div className="relative z-10 flex flex-col h-full w-full overflow-y-auto border-l-2 border-amber-400/80 bg-slate-950/95 shadow-2xl shadow-black/90 text-white ring-1 ring-white/20">
         {/* ================= HEADER BAR ================= */}
         <div className="relative flex items-center justify-between bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 px-6 py-4 border-b border-white/10 shadow-lg">
           {/* Location Pin & Title */}

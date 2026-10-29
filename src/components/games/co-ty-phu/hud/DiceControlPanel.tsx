@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Dices, ArrowRight, Sparkles, Lock, Key, Zap } from 'lucide-react';
+import { Dices, ArrowRight, Sparkles, Lock, Key, Zap, Building } from 'lucide-react';
 import { useGameStore } from '@/lib/game-engine/gameStore';
 import { soundManager } from '@/lib/audio/soundManager';
 import { canPlayerRoll, canPlayerEndTurn, formatMoney } from './hudHelpers';
@@ -99,13 +99,13 @@ export function DiceControlPanel({ className = '' }: DiceControlPanelProps) {
   };
 
   const handlePayBail = () => {
-    if (!inJail || !canAffordBail || gamePhase !== 'WAITING') return;
+    if (!inJail || !canAffordBail || (gamePhase !== 'WAITING' && gamePhase !== 'AWAIT_ROLL')) return;
     soundManager.playCoinSound();
     payJailBail();
   };
 
   const handleUseJailCard = () => {
-    if (!inJail || jailFreeCards <= 0 || gamePhase !== 'WAITING') return;
+    if (!inJail || jailFreeCards <= 0 || (gamePhase !== 'WAITING' && gamePhase !== 'AWAIT_ROLL')) return;
     soundManager.playClickSound();
     useJailFreeCard();
   };
@@ -149,7 +149,7 @@ export function DiceControlPanel({ className = '' }: DiceControlPanelProps) {
           <div className="flex gap-2">
             <button
               onClick={handlePayBail}
-              disabled={!canAffordBail || gamePhase !== 'WAITING'}
+              disabled={!canAffordBail || (gamePhase !== 'WAITING' && gamePhase !== 'AWAIT_ROLL')}
               className="flex-1 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 px-3 py-2 text-xs font-black uppercase tracking-wider shadow-md active:scale-95 transition-all disabled:opacity-40"
             >
               Nộp phạt {formatMoney(jailBailPrice)}
@@ -158,7 +158,7 @@ export function DiceControlPanel({ className = '' }: DiceControlPanelProps) {
             {jailFreeCards > 0 && (
               <button
                 onClick={handleUseJailCard}
-                disabled={gamePhase !== 'WAITING'}
+                disabled={(gamePhase !== 'WAITING' && gamePhase !== 'AWAIT_ROLL')}
                 className="flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 px-3 py-2 text-xs font-black uppercase tracking-wider shadow-md active:scale-95 transition-all disabled:opacity-40"
               >
                 <Key className="h-3.5 w-3.5 fill-current" />
@@ -167,6 +167,17 @@ export function DiceControlPanel({ className = '' }: DiceControlPanelProps) {
             )}
           </div>
         </div>
+      )}
+
+            {/* Reopen Property Decision Drawer if currently in decision phase */}
+      {canEnd && (gamePhase === 'AWAIT_DECISION' || gamePhase === 'ACTION_REQUIRED' || gamePhase === 'ACTION') && (
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('reopen-property-modal'))}
+          className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-slate-950 px-4 py-2.5 text-xs font-black uppercase tracking-wider shadow-lg ring-2 ring-yellow-200/50 active:scale-95 transition-all mb-1 animate-pulse"
+        >
+          <Building className="h-4 w-4" />
+          <span>Mở Bảng Mua / Nâng Cấp Đất</span>
+        </button>
       )}
 
       {/* Primary 3D Meta World Action Buttons */}

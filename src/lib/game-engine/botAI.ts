@@ -284,7 +284,7 @@ export async function executeBotTurn(
     }
 
     // 1. Jail handling
-    if (player.inJail && state.gamePhase === 'WAITING') {
+    if (player.inJail && (state.gamePhase === 'WAITING' || state.gamePhase === 'AWAIT_ROLL')) {
       const jailDecision = evaluateJailDecision(player);
       if (jailDecision === 'USE_CARD' && useJailFreeCard) {
         useJailFreeCard();
@@ -301,7 +301,7 @@ export async function executeBotTurn(
     }
 
     // 2. Rolling dice
-    if (state.gamePhase === 'WAITING' && rollDice) {
+    if ((state.gamePhase === 'WAITING' || state.gamePhase === 'AWAIT_ROLL') && rollDice) {
       await delay(800);
       const diceResult = rollDice(options?.diceOverride);
       actionSummary.push(
@@ -311,11 +311,23 @@ export async function executeBotTurn(
       state = getState();
     }
 
-    // 3. Post-roll Action handling (allows tumbling dice animation & pawn movement to play comfortably)
-    await delay(2200);
+    // 3. Post-roll Action handling (waits until sequential animation phases finish)
+    const animPhases: GamePhase[] = [
+      'DICE_ROLLING',
+      'DICE_RESULT',
+      'TOKEN_MOVING',
+      'PASS_GO_BONUS',
+      'LANDING_REVEAL',
+      'RESOLVE_TILE',
+    ];
+    let waitTicks = 0;
+    while (animPhases.includes(getState().gamePhase) && waitTicks < 40) {
+      await delay(200);
+      waitTicks++;
+    }
     state = getState();
 
-    if (state.gamePhase === 'ACTION_REQUIRED') {
+    if (state.gamePhase === 'ACTION_REQUIRED' || state.gamePhase === 'AWAIT_DECISION') {
       await delay(1200);
       const activeP = state.players[state.activePlayerIndex];
       const landedTile = state.tiles[activeP.position];
@@ -347,7 +359,7 @@ export async function executeBotTurn(
     }
 
     // 4. Upgrade evaluation: Bot ONLY upgrades if it landed on its OWN property, max 1 level per turn
-    if (state.gamePhase === 'ACTION' || state.gamePhase === 'ACTION_REQUIRED') {
+    if (state.gamePhase === 'ACTION' || state.gamePhase === 'ACTION_REQUIRED' || state.gamePhase === 'AWAIT_DECISION') {
       const activeP = state.players[state.activePlayerIndex];
       const landedTile = state.tiles[activeP.position];
       if (

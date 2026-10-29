@@ -43,7 +43,7 @@ export function MascotDialogueBanner() {
 
       const timer = setTimeout(() => {
         setIsVisible(false);
-      }, 5800);
+      }, 2500);
 
       return () => clearTimeout(timer);
     });
@@ -57,7 +57,7 @@ export function MascotDialogueBanner() {
   const mascotVisual = MASCOT_EMOJIS[currentDialogue.characterId] || MASCOT_EMOJIS.CHAR_01;
 
   return (
-    <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 pointer-events-none w-[92%] max-w-lg animate-in fade-in slide-in-from-top-4 duration-300">
+    <div className="fixed top-24 left-4 z-40 pointer-events-none w-[88%] max-w-sm animate-in fade-in slide-in-from-left-4 duration-300">
       <div
         className={`relative flex items-center gap-3.5 rounded-2xl border-2 ${mascotVisual.border} bg-slate-950/90 p-3 shadow-2xl ${mascotVisual.glow} backdrop-blur-xl`}
       >

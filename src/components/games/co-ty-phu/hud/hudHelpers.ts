@@ -293,7 +293,7 @@ export function getLeaderboard(
  */
 export function canPlayerRoll(activePlayer: Player | undefined, gamePhase: GamePhase): boolean {
   if (!activePlayer || activePlayer.isBot || activePlayer.bankrupt) return false;
-  return gamePhase === 'WAITING';
+  return gamePhase === 'WAITING' || gamePhase === 'AWAIT_ROLL';
 }
 
 /**
@@ -304,7 +304,7 @@ export function canPlayerEndTurn(
   gamePhase: GamePhase
 ): boolean {
   if (!activePlayer || activePlayer.isBot) return false;
-  return gamePhase === 'TURN_END' || gamePhase === 'ACTION';
+  return gamePhase === 'TURN_END' || gamePhase === 'ACTION' || gamePhase === 'AWAIT_DECISION';
 }
 
 /**

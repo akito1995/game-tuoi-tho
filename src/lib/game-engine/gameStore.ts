@@ -170,6 +170,386 @@ function processBankruptcy(
   };
 }
 
+
+export interface TurnOutcome {
+  d1: number;
+  d2: number;
+  sum: number;
+  isDouble: boolean;
+  newDoubleStreak: number;
+  stayedInJail: boolean;
+  speedingToJail: boolean;
+  passedGo: boolean;
+  oldPos: number;
+  newPos: number;
+  updatedPlayers: Player[];
+  updatedTiles: Tile[];
+  updatedJackpot: number;
+  currentCard: ChanceCard | null;
+  nextPhase: GamePhase;
+  logs: string[];
+  winner: Player | null;
+  gameOver: boolean;
+}
+
+export function calculateTurnOutcome(
+  state: GameState & { settings: GameSettings },
+  inputD1: number,
+  inputD2: number,
+  diceOverride?: [number, number]
+): TurnOutcome {
+  let d1 = inputD1;
+  let d2 = inputD2;
+  let activePlayer = { ...state.players[state.activePlayerIndex] };
+
+  if (diceOverride === undefined && activePlayer.activeDiceModifier) {
+    const mod = activePlayer.activeDiceModifier;
+    if (mod === 'EVEN' && (d1 + d2) % 2 !== 0) {
+      d2 = (d2 % 6) + 1;
+    } else if (mod === 'ODD' && (d1 + d2) % 2 === 0) {
+      d2 = (d2 % 6) + 1;
+    }
+    activePlayer.activeDiceModifier = undefined;
+  }
+
+  const sum = d1 + d2;
+  let isDouble = d1 === d2;
+  let newDoubleStreak = isDouble ? state.doubleStreak + 1 : 0;
+  let currentJackpot = state.jackpotFund;
+  const logs = [...state.eventLogs];
+
+  logs.push(
+    `${activePlayer.name} đổ xúc xắc: [${d1}, ${d2}] (Tổng: ${sum})${
+      isDouble ? ' - ĐỔI ĐÔI!' : ''
+    }`
+  );
+
+  let stayedInJail = false;
+  let speedingToJail = false;
+  let passedGo = false;
+  let oldPos = activePlayer.position;
+  let newPos = oldPos;
+  let tiles = [...state.tiles];
+  let currentCard: ChanceCard | null = null;
+  let nextPhase: GamePhase = 'TURN_END';
+  let winner: Player | null = state.winner;
+  let gameOver = false;
+
+  // 1. Jail handling
+  if (activePlayer.inJail) {
+    if (isDouble) {
+      logs.push(`${activePlayer.name} đổ đôi thành công và được thả tự do!`);
+      activePlayer.inJail = false;
+      activePlayer.jailTurns = 0;
+      newDoubleStreak = 0;
+    } else {
+      const remainingTurns = activePlayer.jailTurns - 1;
+      if (remainingTurns <= 0) {
+        if (activePlayer.money >= state.settings.jailBailPrice) {
+          activePlayer.money -= state.settings.jailBailPrice;
+          currentJackpot += state.settings.jailBailPrice;
+          activePlayer.inJail = false;
+          activePlayer.jailTurns = 0;
+          logs.push(
+            `${activePlayer.name} hết thời hạn tạm giam, nộp phạt ${state.settings.jailBailPrice.toLocaleString(
+              'vi-VN'
+            )}đ vào Quỹ Heo Đất để ra tù.`
+          );
+        } else {
+          logs.push(`${activePlayer.name} không đủ tiền nộp phạt tại trại giam và bị phá sản!`);
+          const bk = processBankruptcy(state.players, state.tiles, state.activePlayerIndex, null);
+          return {
+            d1, d2, sum, isDouble: false, newDoubleStreak: 0,
+            stayedInJail: true, speedingToJail: false, passedGo: false,
+            oldPos, newPos, updatedPlayers: bk.players, updatedTiles: bk.tiles,
+            updatedJackpot: currentJackpot, currentCard: null,
+            nextPhase: bk.gameOver ? 'GAME_OVER' : 'TURN_END',
+            logs, winner: bk.winner, gameOver: bk.gameOver,
+          };
+        }
+      } else {
+        activePlayer.jailTurns = remainingTurns;
+        logs.push(
+          `${activePlayer.name} không đổ được đôi, tiếp tục ở lại trại giam (còn ${remainingTurns} lượt).`
+        );
+        const updatedPlayers = [...state.players];
+        updatedPlayers[state.activePlayerIndex] = activePlayer;
+        return {
+          d1, d2, sum, isDouble: false, newDoubleStreak: 0,
+          stayedInJail: true, speedingToJail: false, passedGo: false,
+          oldPos, newPos, updatedPlayers, updatedTiles: tiles,
+          updatedJackpot: currentJackpot, currentCard: null,
+          nextPhase: 'TURN_END', logs, winner, gameOver,
+        };
+      }
+    }
+  }
+
+  // 2. Double bonus & speed check
+  if (isDouble && !activePlayer.inJail) {
+    logs.push(`${activePlayer.name} đổ xúc xắc đôi [${d1}, ${d2}]! Được đổ thêm lượt nữa!`);
+    if (newDoubleStreak >= 3) {
+      logs.push(`${activePlayer.name} đổ đôi 3 lần liên tiếp! Bị phạt đi bão và tống thẳng vào Trại Giam!`);
+      activePlayer.position = 8;
+      activePlayer.inJail = true;
+      activePlayer.jailTurns = state.settings.maxJailTurns;
+      const updatedPlayers = [...state.players];
+      updatedPlayers[state.activePlayerIndex] = activePlayer;
+      return {
+        d1, d2, sum, isDouble: false, newDoubleStreak: 0,
+        stayedInJail: false, speedingToJail: true, passedGo: false,
+        oldPos, newPos: 8, updatedPlayers, updatedTiles: tiles,
+        updatedJackpot: currentJackpot, currentCard: null,
+        nextPhase: 'TURN_END', logs, winner, gameOver,
+      };
+    }
+  }
+
+  // 3. Movement & Passing Go
+  const rawPos = oldPos + sum;
+  newPos = rawPos % 32;
+
+  if (rawPos >= 32) {
+    passedGo = true;
+    activePlayer.money += state.settings.passGoReward;
+    logs.push(
+      `${activePlayer.name} vượt qua hoặc dừng tại Xuất Phát (Cổng Làng), nhận ${state.settings.passGoReward.toLocaleString(
+        'vi-VN'
+      )}đ.`
+    );
+  }
+
+  activePlayer.position = newPos;
+
+  // 4. Tile Landing
+  const landedTile = tiles[newPos];
+  logs.push(`${activePlayer.name} dừng chân tại ô [${newPos}] ${landedTile.name}.`);
+
+  if (landedTile.type === 'GO_TO_JAIL') {
+    logs.push(`${activePlayer.name} bị bắt đi bão! Áp giải thẳng về Trại Giam! Huỷ lượt đổ tiếp.`);
+    activePlayer.position = 8;
+    activePlayer.inJail = true;
+    activePlayer.jailTurns = state.settings.maxJailTurns;
+    isDouble = false;
+    newDoubleStreak = 0;
+    nextPhase = 'TURN_END';
+  } else if (landedTile.type === 'FESTIVAL') {
+    logs.push(
+      `🏮 ${activePlayer.name} tham gia Lễ Hội Dân Gian tại Sới Bầu Cua Đảo Ngọc và nhận thưởng Quỹ Heo Đất ${currentJackpot.toLocaleString('vi-VN')}đ!`
+    );
+    activePlayer.money += currentJackpot;
+    currentJackpot = 20000;
+    nextPhase = 'FESTIVAL_GAME';
+  } else if (landedTile.type === 'CHANCE' || landedTile.type === 'FATE') {
+    const deck = landedTile.type === 'CHANCE' ? CHANCE_CARDS : FATE_CARDS;
+    const drawn = deck[Math.floor(Math.random() * deck.length)];
+    currentCard = drawn;
+    nextPhase = 'CARD_DRAWN';
+    logs.push(
+      `${activePlayer.name} rút thẻ ${
+        landedTile.type === 'CHANCE' ? 'Cơ Hội' : 'Khí Vận'
+      }: "${drawn.title}".`
+    );
+
+    if (drawn.type === 'CASH_GAIN' && drawn.amount) {
+      activePlayer.money += drawn.amount;
+    } else if (drawn.type === 'CASH_LOSS' && drawn.amount) {
+      if (activePlayer.money < drawn.amount) {
+        logs.push(`${activePlayer.name} không đủ tiền nộp phạt và bị phá sản!`);
+        currentJackpot += activePlayer.money;
+        const bk = processBankruptcy(state.players, tiles, state.activePlayerIndex, null);
+        return {
+          d1, d2, sum, isDouble: false, newDoubleStreak: 0,
+          stayedInJail: false, speedingToJail: false, passedGo,
+          oldPos, newPos, updatedPlayers: bk.players, updatedTiles: bk.tiles,
+          updatedJackpot: currentJackpot, currentCard,
+          nextPhase: bk.gameOver ? 'GAME_OVER' : 'TURN_END',
+          logs, winner: bk.winner, gameOver: bk.gameOver,
+        };
+      } else {
+        activePlayer.money -= drawn.amount;
+        currentJackpot = Math.min(300000, currentJackpot + drawn.amount);
+      }
+    } else if (drawn.type === 'TELEPORT' && drawn.targetTileId !== undefined) {
+      const oldP = activePlayer.position;
+      const target = drawn.targetTileId;
+      if (oldP > target && target !== 8) {
+        activePlayer.money += state.settings.passGoReward;
+        logs.push(
+          `${activePlayer.name} vượt qua Cổng Làng nhận ${state.settings.passGoReward.toLocaleString(
+            'vi-VN'
+          )}đ.`
+        );
+      }
+      activePlayer.position = target;
+      if (target === 16) {
+        activePlayer.money += currentJackpot;
+        currentJackpot = 20000;
+      } else if (target === 8) {
+        activePlayer.inJail = true;
+        activePlayer.jailTurns = state.settings.maxJailTurns;
+      } else {
+        const destTile = tiles[target];
+        if (destTile) {
+          logs.push(`${activePlayer.name} bay thẳng tới ô [${target}] ${destTile.name}.`);
+          if (destTile.ownerId && destTile.ownerId !== activePlayer.id) {
+            const rent = calculateRent(destTile, tiles);
+            if (activePlayer.hasActiveShield) {
+              activePlayer.hasActiveShield = false;
+              logs.push(`🛡️ ${activePlayer.name} kích hoạt Khiên Bảo Hộ! Miễn phí tiền thuê ${rent.toLocaleString('vi-VN')}đ.`);
+            } else {
+              logs.push(`${activePlayer.name} phải trả tiền thuê ${rent.toLocaleString('vi-VN')}đ cho chủ sở hữu.`);
+              if (activePlayer.money >= rent) {
+                activePlayer.money -= rent;
+                const ownerIdx = state.players.findIndex((p) => p.id === destTile.ownerId);
+                if (ownerIdx !== -1) {
+                  state.players[ownerIdx].money += rent;
+                }
+              } else {
+                logs.push(`${activePlayer.name} không đủ tiền trả thuê và bị phá sản!`);
+                const bk = processBankruptcy(state.players, tiles, state.activePlayerIndex, destTile.ownerId);
+                return {
+                  d1, d2, sum, isDouble: false, newDoubleStreak: 0,
+                  stayedInJail: false, speedingToJail: false, passedGo,
+                  oldPos, newPos: target, updatedPlayers: bk.players, updatedTiles: bk.tiles,
+                  updatedJackpot: currentJackpot, currentCard,
+                  nextPhase: bk.gameOver ? 'GAME_OVER' : 'TURN_END',
+                  logs, winner: bk.winner, gameOver: bk.gameOver,
+                };
+              }
+            }
+          }
+        }
+      }
+    } else if (drawn.type === 'JAIL_FREE') {
+      activePlayer.jailFreeCards = (activePlayer.jailFreeCards || 0) + 1;
+    } else if (drawn.type === 'PAY_EACH_PLAYER' && drawn.amount) {
+      const others = state.players.filter(
+        (p, idx) => idx !== state.activePlayerIndex && !p.bankrupt
+      );
+      const totalDebt = drawn.amount * others.length;
+      if (activePlayer.money < totalDebt) {
+        logs.push(`${activePlayer.name} không đủ tiền trả cho người chơi khác và bị phá sản!`);
+        const bk = processBankruptcy(state.players, tiles, state.activePlayerIndex, null);
+        return {
+          d1, d2, sum, isDouble: false, newDoubleStreak: 0,
+          stayedInJail: false, speedingToJail: false, passedGo,
+          oldPos, newPos, updatedPlayers: bk.players, updatedTiles: bk.tiles,
+          updatedJackpot: currentJackpot, currentCard,
+          nextPhase: bk.gameOver ? 'GAME_OVER' : 'TURN_END',
+          logs, winner: bk.winner, gameOver: bk.gameOver,
+        };
+      } else {
+        activePlayer.money -= totalDebt;
+        const updatedPlayers = state.players.map((p, idx) => {
+          if (idx === state.activePlayerIndex) return activePlayer;
+          if (!p.bankrupt) return { ...p, money: p.money + drawn.amount! };
+          return p;
+        });
+        return {
+          d1, d2, sum, isDouble, newDoubleStreak,
+          stayedInJail: false, speedingToJail: false, passedGo,
+          oldPos, newPos, updatedPlayers, updatedTiles: tiles,
+          updatedJackpot: currentJackpot, currentCard,
+          nextPhase, logs, winner, gameOver,
+        };
+      }
+    }
+  } else if (
+    landedTile.type === 'PROPERTY' ||
+    landedTile.type === 'TRANSPORT' ||
+    landedTile.type === 'UTILITY'
+  ) {
+    if (!landedTile.ownerId) {
+      nextPhase = 'ACTION_REQUIRED';
+      logs.push(
+        `Ô ${landedTile.name} chưa có chủ sở hữu. Giá bán: ${(
+          landedTile.price || 0
+        ).toLocaleString('vi-VN')}đ.`
+      );
+    } else if (landedTile.ownerId === activePlayer.id) {
+      nextPhase = 'ACTION';
+    } else {
+      const rent = calculateRent(landedTile, tiles);
+      if (activePlayer.hasActiveShield) {
+        activePlayer.hasActiveShield = false;
+        logs.push(
+          `🛡️ ${activePlayer.name} kích hoạt Khiên Bảo Hộ! Miễn phí hoàn toàn tiền thuê ${rent.toLocaleString(
+            'vi-VN'
+          )}đ.`
+        );
+        nextPhase = isDouble && newDoubleStreak < 3 ? 'WAITING' : 'TURN_END';
+        const updatedPlayers = state.players.map((p, idx) =>
+          idx === state.activePlayerIndex ? activePlayer : p
+        );
+        return {
+          d1, d2, sum, isDouble, newDoubleStreak,
+          stayedInJail: false, speedingToJail: false, passedGo,
+          oldPos, newPos, updatedPlayers, updatedTiles: tiles,
+          updatedJackpot: currentJackpot, currentCard,
+          nextPhase, logs, winner, gameOver,
+        };
+      }
+
+      logs.push(
+        `${activePlayer.name} phải trả tiền thuê ${rent.toLocaleString(
+          'vi-VN'
+        )}đ cho chủ nhà.`
+      );
+
+      if (activePlayer.money >= rent) {
+        activePlayer.money -= rent;
+        const ownerIndex = state.players.findIndex(
+          (p) => p.id === landedTile.ownerId
+        );
+        const updatedPlayers = state.players.map((p, idx) => {
+          if (idx === state.activePlayerIndex) return activePlayer;
+          if (idx === ownerIndex) return { ...p, money: p.money + rent };
+          return p;
+        });
+
+        nextPhase = isDouble && newDoubleStreak < 3 ? 'WAITING' : 'TURN_END';
+        return {
+          d1, d2, sum, isDouble, newDoubleStreak,
+          stayedInJail: false, speedingToJail: false, passedGo,
+          oldPos, newPos, updatedPlayers, updatedTiles: tiles,
+          updatedJackpot: currentJackpot, currentCard,
+          nextPhase, logs, winner, gameOver,
+        };
+      } else {
+        logs.push(`${activePlayer.name} không đủ tiền trả thuê và bị phá sản!`);
+        const bk = processBankruptcy(
+          state.players.map((p, idx) =>
+            idx === state.activePlayerIndex ? activePlayer : p
+          ),
+          tiles,
+          state.activePlayerIndex,
+          landedTile.ownerId
+        );
+        return {
+          d1, d2, sum, isDouble: false, newDoubleStreak: 0,
+          stayedInJail: false, speedingToJail: false, passedGo,
+          oldPos, newPos, updatedPlayers: bk.players, updatedTiles: bk.tiles,
+          updatedJackpot: currentJackpot, currentCard,
+          nextPhase: bk.gameOver ? 'GAME_OVER' : 'TURN_END',
+          logs, winner: bk.winner, gameOver: bk.gameOver,
+        };
+      }
+    }
+  }
+
+  const updatedPlayers = [...state.players];
+  updatedPlayers[state.activePlayerIndex] = activePlayer;
+
+  return {
+    d1, d2, sum, isDouble, newDoubleStreak,
+    stayedInJail, speedingToJail, passedGo,
+    oldPos, newPos, updatedPlayers, updatedTiles: tiles,
+    updatedJackpot: currentJackpot, currentCard,
+    nextPhase, logs, winner, gameOver,
+  };
+}
+
 export const useGameStore = create<GameStore>((set, get) => ({
   settings: DEFAULT_SETTINGS,
   players: [],
@@ -264,420 +644,115 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     let d1 = diceOverride !== undefined ? diceOverride[0] : Math.floor(Math.random() * 6) + 1;
     let d2 = diceOverride !== undefined ? diceOverride[1] : Math.floor(Math.random() * 6) + 1;
-    
-    // Apply even/odd dice modifier if active and not manual override
-    let activePlayer = { ...state.players[state.activePlayerIndex] };
-    if (diceOverride === undefined && activePlayer.activeDiceModifier) {
-      const mod = activePlayer.activeDiceModifier;
-      if (mod === 'EVEN' && (d1 + d2) % 2 !== 0) {
-        d2 = (d2 % 6) + 1;
-      } else if (mod === 'ODD' && (d1 + d2) % 2 === 0) {
-        d2 = (d2 % 6) + 1;
-      }
-      activePlayer.activeDiceModifier = undefined;
-    }
-    
-    const sum = d1 + d2;
-    let isDouble = d1 === d2;
-    let newDoubleStreak = isDouble ? state.doubleStreak + 1 : 0;
-    let currentJackpot = state.jackpotFund;
-    const logs = [...state.eventLogs];
 
-    logs.push(
-      `${activePlayer.name} đổ xúc xắc: [${d1}, ${d2}] (Tổng: ${sum})${
-        isDouble ? ' - ĐỔI ĐÔI!' : ''
-      }`
-    );
+    const outcome = calculateTurnOutcome(state as any, d1, d2, diceOverride);
+    const activePlayer = state.players[state.activePlayerIndex];
+    const rollSessionId = `roll_${activePlayer.id}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
 
-    // 1. Jail handling
-    if (activePlayer.inJail) {
-      if (isDouble) {
-        logs.push(`${activePlayer.name} đổ đôi thành công và được thả tự do!`);
-        activePlayer.inJail = false;
-        activePlayer.jailTurns = 0;
-        newDoubleStreak = 0;
-      } else {
-        const remainingTurns = activePlayer.jailTurns - 1;
-        if (remainingTurns <= 0) {
-          // Max jail turns reached, must pay bail
-          if (activePlayer.money >= state.settings.jailBailPrice) {
-            activePlayer.money -= state.settings.jailBailPrice;
-            currentJackpot += state.settings.jailBailPrice;
-            activePlayer.inJail = false;
-            activePlayer.jailTurns = 0;
-            logs.push(
-              `${activePlayer.name} hết thời hạn tạm giam, nộp phạt ${state.settings.jailBailPrice.toLocaleString(
-                'vi-VN'
-              )}đ vào Quỹ Heo Đất để ra tù.`
-            );
-          } else {
-            // Cannot pay bail
-            logs.push(
-              `${activePlayer.name} không đủ tiền nộp phạt tại trại giam và bị phá sản!`
-            );
-            const bk = processBankruptcy(
-              state.players,
-              state.tiles,
-              state.activePlayerIndex,
-              null
-            );
-            set({
-              players: bk.players,
-              tiles: bk.tiles,
-              dice: [d1, d2],
-              isDouble: false,
-              doubleStreak: 0,
-              consecutiveDoubles: 0,
-              winner: bk.winner,
-              gamePhase: bk.gameOver ? 'GAME_OVER' : 'TURN_END',
-              eventLogs: logs,
-            });
-            return [d1, d2];
-          }
-        } else {
-          // Stay in jail
-          activePlayer.jailTurns = remainingTurns;
-          logs.push(
-            `${activePlayer.name} không đổ được đôi, tiếp tục ở lại trại giam (còn ${remainingTurns} lượt).`
-          );
-          const updatedPlayers = [...state.players];
-          updatedPlayers[state.activePlayerIndex] = activePlayer;
-          set({
-            players: updatedPlayers,
-            dice: [d1, d2],
-            isDouble: false,
-            doubleStreak: 0,
-            consecutiveDoubles: 0,
-            gamePhase: 'TURN_END',
-            eventLogs: logs,
-          });
-          return [d1, d2];
-        }
-      }
+    const isTestMode = typeof window === 'undefined' || process.env.NODE_ENV === 'test';
+
+    if (isTestMode) {
+      set({
+        players: outcome.updatedPlayers,
+        tiles: outcome.updatedTiles,
+        dice: [outcome.d1, outcome.d2],
+        isDouble: outcome.isDouble,
+        doubleStreak: outcome.newDoubleStreak,
+        consecutiveDoubles: outcome.newDoubleStreak,
+        jackpotFund: outcome.updatedJackpot,
+        currentCard: outcome.currentCard,
+        gamePhase: outcome.nextPhase,
+        winner: outcome.winner,
+        eventLogs: outcome.logs,
+        rollSessionId,
+        activeRollerId: activePlayer.id,
+        targetTileIndex: outcome.newPos,
+      });
+      return [outcome.d1, outcome.d2];
     }
 
-    // 2. Double bonus & speed check
-    if (isDouble && !activePlayer.inJail) {
-      logs.push(`${activePlayer.name} đổ xúc xắc đôi [${d1}, ${d2}]! Được đổ thêm lượt nữa!`);
-
-      if (newDoubleStreak >= 3) {
-        logs.push(
-          `${activePlayer.name} đổ đôi 3 lần liên tiếp! Bị phạt đi bão và tống thẳng vào Trại Giam!`
-        );
-        activePlayer.position = 8;
-        activePlayer.inJail = true;
-        activePlayer.jailTurns = state.settings.maxJailTurns;
-
-        const updatedPlayers = [...state.players];
-        updatedPlayers[state.activePlayerIndex] = activePlayer;
-
-        set({
-          players: updatedPlayers,
-          dice: [d1, d2],
-          isDouble: false,
-          doubleStreak: 0,
-          consecutiveDoubles: 0,
-          gamePhase: 'TURN_END',
-          eventLogs: logs,
-        });
-        return [d1, d2];
-      }
-    }
-
-    // 3. Movement & Passing Go
-    const oldPos = activePlayer.position;
-    const rawPos = oldPos + sum;
-    const newPos = rawPos % 32;
-
-    if (rawPos >= 32) {
-      activePlayer.money += state.settings.passGoReward;
-      logs.push(
-        `${activePlayer.name} vượt qua hoặc dừng tại Xuất Phát (Cổng Làng), nhận ${state.settings.passGoReward.toLocaleString(
-          'vi-VN'
-        )}đ.`
-      );
-    }
-
-    activePlayer.position = newPos;
-
-    // 4. Tile Landing
-    let tiles = [...state.tiles];
-    let currentCard: ChanceCard | null = null;
-    let nextPhase: GamePhase = 'TURN_END';
-
-    const landedTile = tiles[newPos];
-    logs.push(`${activePlayer.name} dừng chân tại ô [${newPos}] ${landedTile.name}.`);
-
-    if (landedTile.type === 'GO_TO_JAIL') {
-      logs.push(`${activePlayer.name} bị bắt đi bão! Áp giải thẳng về Trại Giam! Huỷ lượt đổ tiếp.`);
-      activePlayer.position = 8;
-      activePlayer.inJail = true;
-      activePlayer.jailTurns = state.settings.maxJailTurns;
-      isDouble = false;
-      newDoubleStreak = 0;
-      nextPhase = 'TURN_END';
-    } else if (landedTile.type === 'FESTIVAL') {
-      logs.push(
-        `🏮 ${activePlayer.name} tham gia Lễ Hội Dân Gian tại Sới Bầu Cua Đảo Ngọc và nhận thưởng Quỹ Heo Đất ${currentJackpot.toLocaleString('vi-VN')}đ!`
-      );
-      activePlayer.money += currentJackpot;
-      currentJackpot = 20000;
-      nextPhase = 'FESTIVAL_GAME';
-    } else if (landedTile.type === 'CHANCE' || landedTile.type === 'FATE') {
-      const deck = landedTile.type === 'CHANCE' ? CHANCE_CARDS : FATE_CARDS;
-      const drawn = deck[Math.floor(Math.random() * deck.length)];
-      currentCard = drawn;
-      nextPhase = 'CARD_DRAWN';
-      logs.push(
-        `${activePlayer.name} rút thẻ ${
-          landedTile.type === 'CHANCE' ? 'Cơ Hội' : 'Khí Vận'
-        }: "${drawn.title}".`
-      );
-
-      // Execute card effect immediately
-      if (drawn.type === 'CASH_GAIN' && drawn.amount) {
-        activePlayer.money += drawn.amount;
-      } else if (drawn.type === 'CASH_LOSS' && drawn.amount) {
-        if (activePlayer.money < drawn.amount) {
-          logs.push(`${activePlayer.name} không đủ tiền nộp phạt và bị phá sản!`);
-          currentJackpot += activePlayer.money;
-          const bk = processBankruptcy(state.players, tiles, state.activePlayerIndex, null);
-          set({
-            players: bk.players,
-            tiles: bk.tiles,
-            dice: [d1, d2],
-            isDouble: false,
-            doubleStreak: 0,
-            consecutiveDoubles: 0,
-            jackpotFund: currentJackpot,
-            winner: bk.winner,
-            gamePhase: bk.gameOver ? 'GAME_OVER' : 'TURN_END',
-            eventLogs: logs,
-          });
-          return [d1, d2];
-        } else {
-          activePlayer.money -= drawn.amount;
-          currentJackpot = Math.min(300000, currentJackpot + drawn.amount); // Route penalty into jackpot
-        }
-      } else if (drawn.type === 'TELEPORT' && drawn.targetTileId !== undefined) {
-        const oldP = activePlayer.position;
-        const target = drawn.targetTileId;
-        if (oldP > target && target !== 8) {
-          activePlayer.money += state.settings.passGoReward;
-          logs.push(
-            `${activePlayer.name} vượt qua Cổng Làng nhận ${state.settings.passGoReward.toLocaleString(
-              'vi-VN'
-            )}đ.`
-          );
-        }
-        activePlayer.position = target;
-        if (target === 16) {
-          activePlayer.money += currentJackpot;
-          currentJackpot = 20000;
-        } else if (target === 8) {
-          activePlayer.inJail = true;
-          activePlayer.jailTurns = state.settings.maxJailTurns;
-        } else {
-          // BUG-03: Process landed tile on teleport destination
-          const destTile = tiles[target];
-          if (destTile) {
-            logs.push(`${activePlayer.name} bay thẳng tới ô [${target}] ${destTile.name}.`);
-            if (destTile.ownerId && destTile.ownerId !== activePlayer.id) {
-              const rent = calculateRent(destTile, tiles);
-              if (activePlayer.hasActiveShield) {
-                activePlayer.hasActiveShield = false;
-                logs.push(`🛡️ ${activePlayer.name} kích hoạt Khiên Bảo Hộ! Miễn phí tiền thuê ${rent.toLocaleString('vi-VN')}đ.`);
-              } else {
-                logs.push(`${activePlayer.name} phải trả tiền thuê ${rent.toLocaleString('vi-VN')}đ cho chủ sở hữu.`);
-                if (activePlayer.money >= rent) {
-                activePlayer.money -= rent;
-                const ownerIdx = state.players.findIndex((p) => p.id === destTile.ownerId);
-                if (ownerIdx !== -1) {
-                  state.players[ownerIdx].money += rent;
-                }
-              } else {
-                logs.push(`${activePlayer.name} không đủ tiền trả thuê và bị phá sản!`);
-                const bk = processBankruptcy(state.players, tiles, state.activePlayerIndex, destTile.ownerId);
-                set({
-                  players: bk.players,
-                  tiles: bk.tiles,
-                  dice: [d1, d2],
-                  isDouble: false,
-                  doubleStreak: 0,
-                  consecutiveDoubles: 0,
-                  jackpotFund: currentJackpot,
-                  winner: bk.winner,
-                  gamePhase: bk.gameOver ? 'GAME_OVER' : 'TURN_END',
-                  eventLogs: logs,
-                });
-                return [d1, d2];
-              }
-              }
-            }
-          }
-        }
-      } else if (drawn.type === 'JAIL_FREE') {
-        activePlayer.jailFreeCards = (activePlayer.jailFreeCards || 0) + 1;
-      } else if (drawn.type === 'PAY_EACH_PLAYER' && drawn.amount) {
-        const others = state.players.filter(
-          (p, idx) => idx !== state.activePlayerIndex && !p.bankrupt
-        );
-        const totalDebt = drawn.amount * others.length;
-        if (activePlayer.money < totalDebt) {
-          logs.push(`${activePlayer.name} không đủ tiền trả cho người chơi khác và bị phá sản!`);
-          const bk = processBankruptcy(state.players, tiles, state.activePlayerIndex, null);
-          set({
-            players: bk.players,
-            tiles: bk.tiles,
-            dice: [d1, d2],
-            isDouble: false,
-            doubleStreak: 0,
-            consecutiveDoubles: 0,
-            jackpotFund: currentJackpot,
-            winner: bk.winner,
-            gamePhase: bk.gameOver ? 'GAME_OVER' : 'TURN_END',
-            eventLogs: logs,
-          });
-          return [d1, d2];
-        } else {
-          activePlayer.money -= totalDebt;
-          const updatedPlayers = state.players.map((p, idx) => {
-            if (idx === state.activePlayerIndex) return activePlayer;
-            if (!p.bankrupt) return { ...p, money: p.money + drawn.amount! };
-            return p;
-          });
-          set({
-            players: updatedPlayers,
-            tiles,
-            dice: [d1, d2],
-            isDouble,
-            doubleStreak: newDoubleStreak,
-            consecutiveDoubles: newDoubleStreak,
-            jackpotFund: currentJackpot,
-            currentCard,
-            gamePhase: nextPhase,
-            eventLogs: logs,
-          });
-          return [d1, d2];
-        }
-      }
-    } else if (
-      landedTile.type === 'PROPERTY' ||
-      landedTile.type === 'TRANSPORT' ||
-      landedTile.type === 'UTILITY'
-    ) {
-      if (!landedTile.ownerId) {
-        nextPhase = 'ACTION_REQUIRED';
-        logs.push(
-          `Ô ${landedTile.name} chưa có chủ sở hữu. Giá bán: ${(
-            landedTile.price || 0
-          ).toLocaleString('vi-VN')}đ.`
-        );
-      } else if (landedTile.ownerId === activePlayer.id) {
-        nextPhase = 'ACTION';
-      } else {
-        const rent = calculateRent(landedTile, tiles);
-        if (activePlayer.hasActiveShield) {
-          activePlayer.hasActiveShield = false;
-          logs.push(
-            `🛡️ ${activePlayer.name} kích hoạt Khiên Bảo Hộ! Miễn phí hoàn toàn tiền thuê ${rent.toLocaleString(
-              'vi-VN'
-            )}đ.`
-          );
-          nextPhase = isDouble && newDoubleStreak < 3 ? 'WAITING' : 'TURN_END';
-          const updatedPlayers = state.players.map((p, idx) =>
-            idx === state.activePlayerIndex ? activePlayer : p
-          );
-          set({
-            players: updatedPlayers,
-            tiles,
-            dice: [d1, d2],
-            isDouble,
-            doubleStreak: newDoubleStreak,
-            consecutiveDoubles: newDoubleStreak,
-            jackpotFund: currentJackpot,
-            currentCard,
-            gamePhase: nextPhase,
-            eventLogs: logs,
-          });
-          return [d1, d2];
-        }
-
-        logs.push(
-          `${activePlayer.name} phải trả tiền thuê ${rent.toLocaleString(
-            'vi-VN'
-          )}đ cho chủ nhà.`
-        );
-
-        if (activePlayer.money >= rent) {
-          activePlayer.money -= rent;
-          const ownerIndex = state.players.findIndex(
-            (p) => p.id === landedTile.ownerId
-          );
-          const updatedPlayers = state.players.map((p, idx) => {
-            if (idx === state.activePlayerIndex) return activePlayer;
-            if (idx === ownerIndex) return { ...p, money: p.money + rent };
-            return p;
-          });
-
-          set({
-            players: updatedPlayers,
-            tiles,
-            dice: [d1, d2],
-            isDouble,
-            doubleStreak: newDoubleStreak,
-            consecutiveDoubles: newDoubleStreak,
-            jackpotFund: currentJackpot,
-            currentCard,
-            gamePhase: nextPhase,
-            eventLogs: logs,
-          });
-          return [d1, d2];
-        } else {
-          logs.push(`${activePlayer.name} không đủ tiền trả thuê và bị phá sản!`);
-          const bk = processBankruptcy(
-            state.players.map((p, idx) =>
-              idx === state.activePlayerIndex ? activePlayer : p
-            ),
-            tiles,
-            state.activePlayerIndex,
-            landedTile.ownerId
-          );
-
-          set({
-            players: bk.players,
-            tiles: bk.tiles,
-            dice: [d1, d2],
-            isDouble: false,
-            doubleStreak: 0,
-            consecutiveDoubles: 0,
-            jackpotFund: currentJackpot,
-            winner: bk.winner,
-            gamePhase: bk.gameOver ? 'GAME_OVER' : 'TURN_END',
-            eventLogs: logs,
-          });
-          return [d1, d2];
-        }
-      }
-    }
-
-    const updatedPlayers = [...state.players];
-    updatedPlayers[state.activePlayerIndex] = activePlayer;
-
+    // In browser: Run cinematic state machine
     set({
-      players: updatedPlayers,
-      tiles,
-      dice: [d1, d2],
-      isDouble,
-      doubleStreak: newDoubleStreak,
-      consecutiveDoubles: newDoubleStreak,
-      jackpotFund: currentJackpot,
-      currentCard,
-      gamePhase: nextPhase,
-      eventLogs: logs,
+      dice: [outcome.d1, outcome.d2],
+      isDouble: outcome.isDouble,
+      doubleStreak: outcome.newDoubleStreak,
+      consecutiveDoubles: outcome.newDoubleStreak,
+      rollSessionId,
+      activeRollerId: activePlayer.id,
+      targetTileIndex: outcome.newPos,
+      gamePhase: 'DICE_ROLLING',
     });
 
-    return [d1, d2];
+    (async () => {
+      const speed = get().isFastForward ? 0.5 : 1.0;
+      const wait = (ms: number) => new Promise((res) => setTimeout(res, ms * speed));
+
+      // Phase 1: DICE_ROLLING (dice tumble)
+      await wait(1200);
+
+      // Phase 2: DICE_RESULT (number declared, destination highlighted)
+      set({ gamePhase: 'DICE_RESULT' });
+      await wait(600);
+
+      if (outcome.stayedInJail || outcome.speedingToJail) {
+        set({
+          players: outcome.updatedPlayers,
+          tiles: outcome.updatedTiles,
+          jackpotFund: outcome.updatedJackpot,
+          gamePhase: outcome.nextPhase,
+          eventLogs: outcome.logs,
+        });
+        return;
+      }
+
+      // Phase 3: TOKEN_MOVING (pawn hops tile by tile)
+      const movingPlayers = [...get().players];
+      movingPlayers[state.activePlayerIndex] = {
+        ...movingPlayers[state.activePlayerIndex],
+        position: outcome.newPos,
+      };
+      set({
+        gamePhase: 'TOKEN_MOVING',
+        players: movingPlayers,
+      });
+
+      const hopDuration = Math.max(650, outcome.sum * 280);
+      await wait(hopDuration);
+
+      // Phase 4: PASS_GO_BONUS (if passed Go)
+      if (outcome.passedGo) {
+        set({ gamePhase: 'PASS_GO_BONUS' });
+        await wait(600);
+      }
+
+      // Phase 5: LANDING_REVEAL (camera focus on landed tile)
+      set({ gamePhase: 'LANDING_REVEAL' });
+      await wait(700);
+
+      // Phase 6: RESOLVE_TILE (apply rent, chance card, festival fund, or bankruptcy)
+      set({
+        gamePhase: 'RESOLVE_TILE',
+        jackpotFund: outcome.updatedJackpot,
+        currentCard: outcome.currentCard,
+        eventLogs: outcome.logs,
+      });
+      await wait(600);
+
+      // Phase 7: Final Phase (AWAIT_DECISION / TURN_END / etc.)
+      const finalPhase =
+        outcome.nextPhase === 'ACTION_REQUIRED' || outcome.nextPhase === 'ACTION'
+          ? 'AWAIT_DECISION'
+          : outcome.nextPhase;
+
+      set({
+        players: outcome.updatedPlayers,
+        tiles: outcome.updatedTiles,
+        winner: outcome.winner,
+        gamePhase: finalPhase,
+      });
+    })();
+
+    return [outcome.d1, outcome.d2];
   },
 
   buyProperty: (tileId) => {
@@ -1273,6 +1348,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
       set({
         gamePhase: 'WAITING',
         isDouble: false,
+        rollSessionId: null,
+        activeRollerId: null,
+        targetTileIndex: null,
         eventLogs: [
           ...state.eventLogs,
           `${activePlayer.name} tiếp tục lượt đổ xúc xắc vì đổ đôi!`,
@@ -1315,6 +1393,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
       isDouble: false,
       currentRound: nextRound,
       currentCard: null,
+      rollSessionId: null,
+      activeRollerId: null,
+      targetTileIndex: null,
       gamePhase: 'WAITING',
       eventLogs: [...state.eventLogs, `Đến lượt của ${players[nextIndex].name}.`],
     });

@@ -8,6 +8,7 @@ import { useGameStore } from '@/lib/game-engine/gameStore';
 import { Player, MascotType } from '@/lib/game-engine/types';
 import { getTile3DPosition } from './tilePositions';
 import { voiceManager } from '@/lib/audio/voiceManager';
+import { soundManager } from '@/lib/audio/soundManager';
 import {
   getPlayerTileOffset,
   calculatePathTiles,
@@ -610,7 +611,7 @@ function SingleMascotPawn({
     progress: 1.0, // 1.0 = resting
     isHopping: false,
     hopDelay: 0, // Delay before hopping begins (allows 3D dice roll and Big Dice overlay to show first)
-    hopSpeed: 3.8, // Hops per second
+    hopSpeed: 3.2, // Hops per second
     lastTarget: player.position,
     facingAngle: 0,
   });
@@ -624,7 +625,7 @@ function SingleMascotPawn({
       s.pathStep = 0;
       s.progress = 0;
       s.isHopping = fullPath.length > 1;
-      s.hopDelay = fullPath.length > 1 ? 1.1 : 0; // 1.1s window for big dice reveal & doubles celebration
+      s.hopDelay = 0; // Hop immediately on TOKEN_MOVING phase
       s.lastTarget = player.position;
     }
   }, [player.position]);
@@ -667,6 +668,7 @@ function SingleMascotPawn({
         s.pathStep++;
         s.currentTile = toTile;
         s.progress = 0;
+        soundManager.playHopSound();
 
         if (s.pathStep >= s.path.length - 1) {
           // Reached destination!

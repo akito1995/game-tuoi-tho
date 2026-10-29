@@ -97,10 +97,18 @@ export type FateCard = ChanceCard;
 
 export type GamePhase =
   | 'WAITING'
+  | 'AWAIT_ROLL'
   | 'ROLLING'
+  | 'DICE_ROLLING'
+  | 'DICE_RESULT'
   | 'MOVING'
+  | 'TOKEN_MOVING'
+  | 'PASS_GO_BONUS'
+  | 'LANDING_REVEAL'
+  | 'RESOLVE_TILE'
   | 'ACTION'
   | 'ACTION_REQUIRED'
+  | 'AWAIT_DECISION'
   | 'CARD_DRAWN'
   | 'FESTIVAL_GAME'
   | 'LUCKY_WHEEL'
@@ -143,6 +151,10 @@ export interface GameState {
   winner: Player | null;
   eventLogs: string[];
   currentRound?: number;
+  rollSessionId?: string | null;
+  activeRollerId?: string | null;
+  targetTileIndex?: number | null;
+  isFastForward?: boolean;
   pendingDebt?: {
     debtorPlayerId: string;
     creditorPlayerId: string | null; // null means bank
