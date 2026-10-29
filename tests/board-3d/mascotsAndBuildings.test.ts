@@ -3,6 +3,7 @@ import {
   getPlayerTileOffset,
   calculatePathTiles,
   calculateHopPosition,
+  calculateHopSquashStretch,
   getTileBuildingPosition,
   getBuildingTier,
   getDiceFaceNormal,
@@ -10,6 +11,7 @@ import {
   rotateVectorByEuler,
   MASCOT_PALETTES,
 } from '@/components/games/co-ty-phu/board-3d/board3dHelpers';
+import { PigMesh, LandingDustRing } from '@/components/games/co-ty-phu/board-3d/MascotPawns3D';
 import { TILE_SURFACE_Y, TILE_CENTER_OFFSET } from '@/components/games/co-ty-phu/board-3d/tilePositions';
 
 describe('Mascots and Buildings 3D Helpers', () => {
@@ -110,6 +112,65 @@ describe('Mascots and Buildings 3D Helpers', () => {
     });
   });
 
+  describe('Kinematic Squash and Stretch (calculateHopSquashStretch)', () => {
+    it('should stretch vertically at mid-air peak progress 0.5 (scaleY > 1.0, scaleX < 1.0)', () => {
+      const mid = calculateHopSquashStretch(0.5);
+      expect(mid.scaleY).toBeGreaterThan(1.0);
+      expect(mid.scaleX).toBeLessThan(1.0);
+      expect(mid.scaleZ).toBeLessThan(1.0);
+      expect(mid.scaleY).toBeCloseTo(1.25, 2);
+      expect(mid.scaleX).toBeCloseTo(0.89, 2);
+    });
+
+    it('should squash vertically at touchdown impact progress 0.95 (scaleY < 1.0, scaleX > 1.0)', () => {
+      const touchdown = calculateHopSquashStretch(0.95);
+      expect(touchdown.scaleY).toBeLessThan(1.0);
+      expect(touchdown.scaleX).toBeGreaterThan(1.0);
+      expect(touchdown.scaleZ).toBeGreaterThan(1.0);
+      expect(touchdown.scaleY).toBeCloseTo(0.75, 2);
+      expect(touchdown.scaleX).toBeCloseTo(1.15, 2);
+    });
+
+    it('should squash during takeoff anticipation (progress 0.075)', () => {
+      const takeoff = calculateHopSquashStretch(0.075);
+      expect(takeoff.scaleY).toBeLessThan(1.0);
+      expect(takeoff.scaleX).toBeGreaterThan(1.0);
+      expect(takeoff.scaleY).toBeCloseTo(0.85, 2);
+    });
+
+    it('should maintain defined, finite, and volume-preserving dimensions at p = 0 and p = 1', () => {
+      const at0 = calculateHopSquashStretch(0);
+      const at1 = calculateHopSquashStretch(1);
+
+      // Check values are defined and finite
+      expect(Number.isFinite(at0.scaleX)).toBe(true);
+      expect(Number.isFinite(at0.scaleY)).toBe(true);
+      expect(Number.isFinite(at0.scaleZ)).toBe(true);
+
+      expect(Number.isFinite(at1.scaleX)).toBe(true);
+      expect(Number.isFinite(at1.scaleY)).toBe(true);
+      expect(Number.isFinite(at1.scaleZ)).toBe(true);
+
+      // Volume preservation: scaleX * scaleY * scaleZ ≈ 1.0 ± 0.15
+      const vol0 = at0.scaleX * at0.scaleY * at0.scaleZ;
+      const vol1 = at1.scaleX * at1.scaleY * at1.scaleZ;
+
+      expect(Math.abs(vol0 - 1.0)).toBeLessThan(0.15);
+      expect(Math.abs(vol1 - 1.0)).toBeLessThan(0.15);
+    });
+
+    it('should safely clamp out-of-range progress < 0 or > 1 without NaN or infinity', () => {
+      const under = calculateHopSquashStretch(-0.5);
+      const over = calculateHopSquashStretch(2.0);
+
+      const at0 = calculateHopSquashStretch(0);
+      const at1 = calculateHopSquashStretch(1);
+
+      expect(under).toEqual(at0);
+      expect(over).toEqual(at1);
+    });
+  });
+
   describe('Building Tile Positions and Tiers', () => {
     it('should place buildings on inner board edge facing towards island center', () => {
       // South tile (e.g. tile 3): z is decreased inwards
@@ -188,7 +249,7 @@ describe('Mascots and Buildings 3D Helpers', () => {
     });
   });
 
-  describe('Mascot Palettes', () => {
+  describe('Mascot Palettes and Models', () => {
     it('should define distinct color palettes for all 4 mascots', () => {
       const mascots = ['PIG', 'FOX', 'CAT', 'BUFFALO'] as const;
       for (const m of mascots) {
@@ -198,6 +259,11 @@ describe('Mascots and Buildings 3D Helpers', () => {
         expect(palette.secondary).toMatch(/^#[0-9a-fA-F]{6}$/);
         expect(palette.name).toBeTruthy();
       }
+    });
+
+    it('should export PigMesh and LandingDustRing 3D components', () => {
+      expect(typeof PigMesh).toBe('function');
+      expect(typeof LandingDustRing).toBe('function');
     });
   });
 });

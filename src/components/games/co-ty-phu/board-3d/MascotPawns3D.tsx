@@ -12,6 +12,7 @@ import { soundManager } from '@/lib/audio/soundManager';
 import {
   getPlayerTileOffset,
   calculatePathTiles,
+  calculateHopSquashStretch,
   MASCOT_PALETTES,
 } from './board3dHelpers';
 
@@ -21,127 +22,284 @@ import {
    ========================================================================= */
 
 /**
- * 🐷 PIG (Heo Phượt): Pink round body, cute snout, traveler backpack & helmet
+ * 🐷 PIG (Heo Phượt): Chibi vinyl toy aesthetic with explorer cap, brass goggles & backpack
  */
 export function PigMesh({ scale = 1 }: { scale?: number }) {
   const palette = MASCOT_PALETTES.PIG;
 
   return (
     <group scale={scale} position={[0, 0.28, 0]}>
-      {/* Chubby Pink Body */}
+      {/* Chubby Vinyl Toy Body with Smooth Specular Sheen */}
       <mesh castShadow receiveShadow>
-        <sphereGeometry args={[0.26, 16, 16]} />
-        <meshStandardMaterial color={palette.primary} roughness={0.45} />
+        <sphereGeometry args={[0.26, 24, 20]} />
+        <meshStandardMaterial
+          color="#f472b6"
+          roughness={0.35}
+          metalness={0.06}
+        />
       </mesh>
 
-      {/* Pale Pink Snout */}
-      <group position={[0, -0.02, 0.24]}>
-        <mesh castShadow>
-          <cylinderGeometry args={[0.09, 0.09, 0.06, 14]} />
-          <meshStandardMaterial color={palette.secondary} roughness={0.5} />
+      {/* Cute 3D Snout with Nostril Recessed Insets & Subtle Specular Highlight */}
+      <group position={[0, -0.02, 0.23]}>
+        {/* Main Snout Base */}
+        <mesh castShadow rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.092, 0.095, 0.06, 20]} />
+          <meshStandardMaterial
+            color={palette.secondary}
+            roughness={0.32}
+            metalness={0.05}
+          />
         </mesh>
-        {/* Nostrils */}
-        <mesh position={[-0.03, 0.005, 0.032]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.015, 0.015, 0.02, 8]} />
-          <meshStandardMaterial color="#831843" roughness={0.8} />
+        {/* Subtle Snout Top Specular Highlight Rim */}
+        <mesh position={[0, 0.038, 0.025]} rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.008, 0.008, 0.07, 8]} />
+          <meshStandardMaterial
+            color="#ffffff"
+            transparent
+            opacity={0.3}
+            roughness={0.2}
+          />
         </mesh>
-        <mesh position={[0.03, 0.005, 0.032]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.015, 0.015, 0.02, 8]} />
-          <meshStandardMaterial color="#831843" roughness={0.8} />
+        {/* Nostril Inset Cavities */}
+        <mesh position={[-0.032, 0.004, 0.032]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.016, 0.016, 0.015, 12]} />
+          <meshStandardMaterial color="#831843" roughness={0.75} />
         </mesh>
-      </group>
-
-      {/* Eyes */}
-      <mesh position={[-0.08, 0.08, 0.22]}>
-        <sphereGeometry args={[0.03, 8, 8]} />
-        <meshStandardMaterial color="#0f172a" roughness={0.1} />
-      </mesh>
-      <mesh position={[0.08, 0.08, 0.22]}>
-        <sphereGeometry args={[0.03, 8, 8]} />
-        <meshStandardMaterial color="#0f172a" roughness={0.1} />
-      </mesh>
-      {/* Specular White Highlights */}
-      <mesh position={[-0.07, 0.095, 0.24]}>
-        <sphereGeometry args={[0.01, 6, 6]} />
-        <meshBasicMaterial color="#ffffff" />
-      </mesh>
-      <mesh position={[0.09, 0.095, 0.24]}>
-        <sphereGeometry args={[0.01, 6, 6]} />
-        <meshBasicMaterial color="#ffffff" />
-      </mesh>
-
-      {/* Rosy Cheeks */}
-      <mesh position={[-0.14, 0.02, 0.2]}>
-        <circleGeometry args={[0.035, 12]} />
-        <meshBasicMaterial color="#fb7185" transparent opacity={0.7} side={THREE.DoubleSide} />
-      </mesh>
-      <mesh position={[0.14, 0.02, 0.2]}>
-        <circleGeometry args={[0.035, 12]} />
-        <meshBasicMaterial color="#fb7185" transparent opacity={0.7} side={THREE.DoubleSide} />
-      </mesh>
-
-      {/* Floppy Pig Ears */}
-      <group position={[-0.14, 0.2, 0.06]} rotation={[0.2, -0.3, -0.4]}>
-        <mesh castShadow>
-          <coneGeometry args={[0.06, 0.14, 8]} />
-          <meshStandardMaterial color="#ec4899" roughness={0.5} />
-        </mesh>
-      </group>
-      <group position={[0.14, 0.2, 0.06]} rotation={[0.2, 0.3, 0.4]}>
-        <mesh castShadow>
-          <coneGeometry args={[0.06, 0.14, 8]} />
-          <meshStandardMaterial color="#ec4899" roughness={0.5} />
+        <mesh position={[0.032, 0.004, 0.032]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.016, 0.016, 0.015, 12]} />
+          <meshStandardMaterial color="#831843" roughness={0.75} />
         </mesh>
       </group>
 
-      {/* Traveler Helmet / Explorer Cap */}
+      {/* Dual-Reflection Anime Specular Eyes */}
+      {/* Left Eye */}
+      <group position={[-0.085, 0.08, 0.22]}>
+        {/* Deep Glossy Pupil */}
+        <mesh castShadow>
+          <sphereGeometry args={[0.032, 16, 16]} />
+          <meshStandardMaterial color="#0f172a" roughness={0.08} metalness={0.2} />
+        </mesh>
+        {/* Large Primary Top-Left White Gleam */}
+        <mesh position={[0.008, 0.012, 0.022]}>
+          <sphereGeometry args={[0.011, 8, 8]} />
+          <meshBasicMaterial color="#ffffff" />
+        </mesh>
+        {/* Smaller Secondary Bottom-Right Gleam */}
+        <mesh position={[-0.008, -0.01, 0.02]}>
+          <sphereGeometry args={[0.0055, 6, 6]} />
+          <meshBasicMaterial color="#ffffff" />
+        </mesh>
+      </group>
+
+      {/* Right Eye */}
+      <group position={[0.085, 0.08, 0.22]}>
+        {/* Deep Glossy Pupil */}
+        <mesh castShadow>
+          <sphereGeometry args={[0.032, 16, 16]} />
+          <meshStandardMaterial color="#0f172a" roughness={0.08} metalness={0.2} />
+        </mesh>
+        {/* Large Primary Top-Left White Gleam */}
+        <mesh position={[-0.008, 0.012, 0.022]}>
+          <sphereGeometry args={[0.011, 8, 8]} />
+          <meshBasicMaterial color="#ffffff" />
+        </mesh>
+        {/* Smaller Secondary Bottom-Right Gleam */}
+        <mesh position={[0.008, -0.01, 0.02]}>
+          <sphereGeometry args={[0.0055, 6, 6]} />
+          <meshBasicMaterial color="#ffffff" />
+        </mesh>
+      </group>
+
+      {/* Soft Rosy Blushing Cheeks */}
+      <mesh
+        position={[-0.145, 0.015, 0.2]}
+        rotation={[0.1, -0.3, 0]}
+      >
+        <circleGeometry args={[0.04, 16]} />
+        <meshBasicMaterial
+          color="#fb7185"
+          transparent
+          opacity={0.65}
+          side={THREE.DoubleSide}
+          depthWrite={false}
+        />
+      </mesh>
+      <mesh
+        position={[0.145, 0.015, 0.2]}
+        rotation={[0.1, 0.3, 0]}
+      >
+        <circleGeometry args={[0.04, 16]} />
+        <meshBasicMaterial
+          color="#fb7185"
+          transparent
+          opacity={0.65}
+          side={THREE.DoubleSide}
+          depthWrite={false}
+        />
+      </mesh>
+
+      {/* Floppy Pig Ears with Inner Pink Lining */}
+      {/* Left Ear */}
+      <group position={[-0.15, 0.21, 0.06]} rotation={[0.2, -0.3, -0.45]}>
+        {/* Outer Ear */}
+        <mesh castShadow>
+          <coneGeometry args={[0.065, 0.15, 12]} />
+          <meshStandardMaterial color="#ec4899" roughness={0.35} metalness={0.06} />
+        </mesh>
+        {/* Inner Pink Lining */}
+        <mesh position={[0, -0.01, 0.025]} rotation={[0.1, 0, 0]}>
+          <coneGeometry args={[0.045, 0.11, 12]} />
+          <meshStandardMaterial color="#fbcfe8" roughness={0.45} />
+        </mesh>
+      </group>
+
+      {/* Right Ear */}
+      <group position={[0.15, 0.21, 0.06]} rotation={[0.2, 0.3, 0.45]}>
+        {/* Outer Ear */}
+        <mesh castShadow>
+          <coneGeometry args={[0.065, 0.15, 12]} />
+          <meshStandardMaterial color="#ec4899" roughness={0.35} metalness={0.06} />
+        </mesh>
+        {/* Inner Pink Lining */}
+        <mesh position={[0, -0.01, 0.025]} rotation={[0.1, 0, 0]}>
+          <coneGeometry args={[0.045, 0.11, 12]} />
+          <meshStandardMaterial color="#fbcfe8" roughness={0.45} />
+        </mesh>
+      </group>
+
+      {/* Adventurer Explorer Cap with Brass/Gold Goggles & Blue Visor Lenses */}
       <group position={[0, 0.16, -0.01]}>
+        {/* Cap Dome */}
         <mesh castShadow>
-          <sphereGeometry args={[0.22, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
-          <meshStandardMaterial color={palette.detail} roughness={0.3} metalness={0.2} />
+          <sphereGeometry args={[0.23, 20, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
+          <meshStandardMaterial color={palette.detail} roughness={0.35} metalness={0.15} />
         </mesh>
-        {/* Helmet Visor / Goggles */}
-        <mesh position={[0, 0.04, 0.19]} rotation={[0.2, 0, 0]}>
-          <boxGeometry args={[0.18, 0.04, 0.04]} />
-          <meshStandardMaterial color="#facc15" roughness={0.2} metalness={0.6} />
+        {/* Cap Front Brim */}
+        <mesh position={[0, 0.01, 0.16]} rotation={[0.25, 0, 0]} castShadow>
+          <boxGeometry args={[0.18, 0.018, 0.1]} />
+          <meshStandardMaterial color="#1d4ed8" roughness={0.4} />
         </mesh>
+
+        {/* Goggles Leather Strap */}
+        <mesh position={[0, 0.055, 0]} rotation={[0.15, 0, 0]}>
+          <torusGeometry args={[0.232, 0.014, 8, 24]} />
+          <meshStandardMaterial color="#78350f" roughness={0.7} />
+        </mesh>
+
+        {/* Goggles Center Bridge */}
+        <mesh position={[0, 0.07, 0.21]} rotation={[0.2, 0, 0]}>
+          <boxGeometry args={[0.038, 0.014, 0.015]} />
+          <meshStandardMaterial color="#f59e0b" metalness={0.92} roughness={0.15} />
+        </mesh>
+
+        {/* Left Goggle Rim & Blue Visor Lens */}
+        <group position={[-0.065, 0.07, 0.205]} rotation={[0.2, -0.08, 0]}>
+          <mesh castShadow>
+            <torusGeometry args={[0.042, 0.011, 10, 20]} />
+            <meshStandardMaterial color="#f59e0b" metalness={0.92} roughness={0.15} />
+          </mesh>
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.036, 0.036, 0.008, 16]} />
+            <meshStandardMaterial
+              color="#38bdf8"
+              roughness={0.1}
+              metalness={0.25}
+              transparent
+              opacity={0.85}
+            />
+          </mesh>
+        </group>
+
+        {/* Right Goggle Rim & Blue Visor Lens */}
+        <group position={[0.065, 0.07, 0.205]} rotation={[0.2, 0.08, 0]}>
+          <mesh castShadow>
+            <torusGeometry args={[0.042, 0.011, 10, 20]} />
+            <meshStandardMaterial color="#f59e0b" metalness={0.92} roughness={0.15} />
+          </mesh>
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.036, 0.036, 0.008, 16]} />
+            <meshStandardMaterial
+              color="#38bdf8"
+              roughness={0.1}
+              metalness={0.25}
+              transparent
+              opacity={0.85}
+            />
+          </mesh>
+        </group>
       </group>
 
-      {/* Traveler Adventurer Backpack */}
+      {/* Adventurer Backpack with Leather Straps, Gold Buckles & Rolled Canvas Bedroll */}
       <group position={[0, 0.02, -0.24]}>
+        {/* Main Canvas Backpack */}
         <mesh castShadow>
-          <boxGeometry args={[0.18, 0.22, 0.12]} />
-          <meshStandardMaterial color={palette.accent} roughness={0.6} />
+          <boxGeometry args={[0.2, 0.24, 0.13]} />
+          <meshStandardMaterial color={palette.accent} roughness={0.55} />
         </mesh>
-        {/* Bedroll on top */}
-        <mesh position={[0, 0.13, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
-          <cylinderGeometry args={[0.04, 0.04, 0.2, 10]} />
-          <meshStandardMaterial color="#eab308" roughness={0.7} />
+        {/* Backpack Outer Pouch */}
+        <mesh position={[0, -0.04, -0.07]} castShadow>
+          <boxGeometry args={[0.14, 0.11, 0.04]} />
+          <meshStandardMaterial color="#0369a1" roughness={0.6} />
+        </mesh>
+
+        {/* Leather Straps */}
+        <mesh position={[-0.05, 0, 0.065]}>
+          <boxGeometry args={[0.02, 0.23, 0.01]} />
+          <meshStandardMaterial color="#78350f" roughness={0.65} />
+        </mesh>
+        <mesh position={[0.05, 0, 0.065]}>
+          <boxGeometry args={[0.02, 0.23, 0.01]} />
+          <meshStandardMaterial color="#78350f" roughness={0.65} />
+        </mesh>
+
+        {/* Gold Buckles */}
+        <mesh position={[-0.05, -0.03, -0.092]}>
+          <boxGeometry args={[0.032, 0.028, 0.012]} />
+          <meshStandardMaterial color="#f59e0b" metalness={0.92} roughness={0.15} />
+        </mesh>
+        <mesh position={[0.05, -0.03, -0.092]}>
+          <boxGeometry args={[0.032, 0.028, 0.012]} />
+          <meshStandardMaterial color="#f59e0b" metalness={0.92} roughness={0.15} />
+        </mesh>
+
+        {/* Rolled Canvas Bedroll on top */}
+        <mesh position={[0, 0.145, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+          <cylinderGeometry args={[0.048, 0.048, 0.24, 14]} />
+          <meshStandardMaterial color="#eab308" roughness={0.65} />
+        </mesh>
+        {/* Bedroll Leather Ties */}
+        <mesh position={[-0.06, 0.145, 0]} rotation={[0, 0, Math.PI / 2]}>
+          <torusGeometry args={[0.05, 0.008, 8, 16]} />
+          <meshStandardMaterial color="#78350f" roughness={0.65} />
+        </mesh>
+        <mesh position={[0.06, 0.145, 0]} rotation={[0, 0, Math.PI / 2]}>
+          <torusGeometry args={[0.05, 0.008, 8, 16]} />
+          <meshStandardMaterial color="#78350f" roughness={0.65} />
         </mesh>
       </group>
 
-      {/* Little Stubby Legs */}
+      {/* Little Stubby Vinyl Legs */}
       <mesh position={[-0.1, -0.22, 0.06]} castShadow>
-        <cylinderGeometry args={[0.04, 0.045, 0.1, 8]} />
-        <meshStandardMaterial color="#ec4899" roughness={0.5} />
+        <cylinderGeometry args={[0.04, 0.045, 0.1, 10]} />
+        <meshStandardMaterial color="#ec4899" roughness={0.35} metalness={0.06} />
       </mesh>
       <mesh position={[0.1, -0.22, 0.06]} castShadow>
-        <cylinderGeometry args={[0.04, 0.045, 0.1, 8]} />
-        <meshStandardMaterial color="#ec4899" roughness={0.5} />
+        <cylinderGeometry args={[0.04, 0.045, 0.1, 10]} />
+        <meshStandardMaterial color="#ec4899" roughness={0.35} metalness={0.06} />
       </mesh>
       <mesh position={[-0.1, -0.22, -0.06]} castShadow>
-        <cylinderGeometry args={[0.04, 0.045, 0.1, 8]} />
-        <meshStandardMaterial color="#ec4899" roughness={0.5} />
+        <cylinderGeometry args={[0.04, 0.045, 0.1, 10]} />
+        <meshStandardMaterial color="#ec4899" roughness={0.35} metalness={0.06} />
       </mesh>
       <mesh position={[0.1, -0.22, -0.06]} castShadow>
-        <cylinderGeometry args={[0.04, 0.045, 0.1, 8]} />
-        <meshStandardMaterial color="#ec4899" roughness={0.5} />
+        <cylinderGeometry args={[0.04, 0.045, 0.1, 10]} />
+        <meshStandardMaterial color="#ec4899" roughness={0.35} metalness={0.06} />
       </mesh>
 
-      {/* Curly Tail */}
+      {/* Cute Curly Vinyl Tail */}
       <mesh position={[0, -0.06, -0.26]} rotation={[0.6, 0, 0]}>
-        <torusGeometry args={[0.035, 0.012, 8, 16, Math.PI * 1.5]} />
-        <meshStandardMaterial color="#ec4899" roughness={0.5} />
+        <torusGeometry args={[0.038, 0.012, 10, 16, Math.PI * 1.5]} />
+        <meshStandardMaterial color="#ec4899" roughness={0.35} metalness={0.06} />
       </mesh>
     </group>
   );
@@ -572,6 +730,75 @@ function Mascot3DSpeechBubble({ text }: { text: string }) {
   );
 }
 
+/**
+ * Procedural Shockwave Dust Ring on Hop Touchdown.
+ * Expands from radius 0.2 to 0.55 while fading opacity 0.8 to 0 using ringGeometry and useFrame.
+ */
+export function LandingDustRing({
+  trigger = 0,
+  color = '#fef08a',
+}: {
+  trigger?: number;
+  color?: string;
+}) {
+  const meshRef = useRef<THREE.Mesh>(null);
+  const matRef = useRef<THREE.MeshBasicMaterial>(null);
+  const animRef = useRef({ progress: 1.0, active: false });
+  const lastTriggerRef = useRef(trigger);
+
+  useEffect(() => {
+    if (trigger > 0 && trigger !== lastTriggerRef.current) {
+      lastTriggerRef.current = trigger;
+      animRef.current.progress = 0;
+      animRef.current.active = true;
+      if (meshRef.current) {
+        meshRef.current.visible = true;
+      }
+    }
+  }, [trigger]);
+
+  useFrame((_, delta) => {
+    if (!animRef.current.active || !meshRef.current || !matRef.current) return;
+
+    // Fast snappy shockwave: ~0.32 seconds
+    animRef.current.progress += delta / 0.32;
+    const p = Math.min(1, animRef.current.progress);
+
+    if (p >= 1) {
+      animRef.current.active = false;
+      meshRef.current.visible = false;
+    } else {
+      // Easing out quadratic expansion: fast burst decelerating
+      const ease = 1 - Math.pow(1 - p, 2);
+      // Base ring geometry: inner 0.16, outer 0.20 (radius ~0.2)
+      // Scaled by (1 + ease * 1.75) -> outer radius reaches 0.20 * 2.75 = 0.55
+      const s = 1 + ease * 1.75;
+      meshRef.current.scale.set(s, s, 1);
+      // Fades opacity from 0.8 down to 0
+      matRef.current.opacity = 0.8 * (1 - p);
+    }
+  });
+
+  return (
+    <mesh
+      ref={meshRef}
+      rotation={[-Math.PI / 2, 0, 0]}
+      position={[0, 0.02, 0]}
+      visible={false}
+    >
+      <ringGeometry args={[0.16, 0.2, 32]} />
+      <meshBasicMaterial
+        ref={matRef}
+        color={color}
+        transparent
+        opacity={0.8}
+        side={THREE.DoubleSide}
+        depthWrite={false}
+      />
+    </mesh>
+  );
+}
+
 function SingleMascotPawn({
   player,
   playerIndex,
@@ -583,6 +810,7 @@ function SingleMascotPawn({
   const meshHolderRef = useRef<THREE.Group>(null);
   const turnArrowRef = useRef<THREE.Group>(null);
   const [bubbleText, setBubbleText] = useState<string | null>(null);
+  const [landingTrigger, setLandingTrigger] = useState(0);
 
   useEffect(() => {
     const mascotCharMap: Record<string, string> = {
@@ -669,6 +897,7 @@ function SingleMascotPawn({
         s.currentTile = toTile;
         s.progress = 0;
         soundManager.playHopSound();
+        setLandingTrigger((c) => c + 1);
 
         if (s.pathStep >= s.path.length - 1) {
           // Reached destination!
@@ -691,11 +920,9 @@ function SingleMascotPawn({
       );
       groupRef.current.rotation.y = s.facingAngle;
 
-      // Squash and stretch during jump
-      const hopSin = Math.sin(p * Math.PI);
-      const scaleY = 1 + hopSin * 0.35;
-      const scaleXZ = 1 - hopSin * 0.15;
-      meshHolderRef.current.scale.set(scaleXZ, scaleY, scaleXZ);
+      // Kinematic squash & stretch with volume preservation
+      const { scaleX, scaleY, scaleZ } = calculateHopSquashStretch(p);
+      meshHolderRef.current.scale.set(scaleX, scaleY, scaleZ);
     } else {
       // Resting / Idle
       const basePos = getTile3DPosition(player.position);
@@ -748,6 +975,9 @@ function SingleMascotPawn({
       <group ref={meshHolderRef} position={[0, 0.06, 0]}>
         <MascotModel mascot={player.mascot} />
       </group>
+
+      {/* Landing Dust Shockwave Ring on hop touchdown */}
+      <LandingDustRing trigger={landingTrigger} />
 
       {/* 3D Vertical Spotlight God-Ray Beam from Sky (Meta World Turn Spotlight) */}
       {isActiveTurn && (
