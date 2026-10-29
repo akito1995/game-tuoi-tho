@@ -42,7 +42,7 @@ const OWNER_MASCOT_COLORS: Record<string, string> = {
   BUFFALO: '#3b82f6',
 };
 
-interface BoardTiles3DProps {
+export interface BoardTiles3DProps {
   tiles?: Tile[];
   hoveredTileId?: number | null;
   selectedTileId?: number | null;
@@ -50,7 +50,7 @@ interface BoardTiles3DProps {
   onTileHover?: (tileId: number | null) => void;
 }
 
-interface SingleTile3DProps {
+export interface SingleTile3DProps {
   tile: Tile;
   layout: TileLayoutInfo;
   isHovered: boolean;
@@ -59,12 +59,12 @@ interface SingleTile3DProps {
   onHover?: (tileId: number | null) => void;
 }
 
-function formatPrice(price?: number): string {
+export function formatPrice(price?: number): string {
   if (!price) return '';
   return `${price.toLocaleString('vi-VN')}đ`;
 }
 
-function formatShortPrice(price?: number): string {
+export function formatShortPrice(price?: number): string {
   if (!price) return '';
   if (price >= 1_000_000) {
     const m = price / 1_000_000;
@@ -76,12 +76,12 @@ function formatShortPrice(price?: number): string {
   return `${price}`;
 }
 
-function formatTileName(name: string, isCorner: boolean): string {
+export function formatTileName(name: string, isCorner: boolean): string {
   if (isCorner) {
     if (name.includes('Xuất Phát')) return 'XUẤT PHÁT';
+    if (name.includes('Đi Vào Tù') || name.includes('Vào Tù')) return 'VÀO TÙ';
     if (name.includes('Trại Giam') || name.includes('Tù')) return 'TRẠI GIAM';
     if (name.includes('Lễ Hội')) return 'LỄ HỘI';
-    if (name.includes('Đi Vào Tù')) return 'VÀO TÙ';
   }
   return name.replace(/\s*\([^)]*\)/g, '');
 }
@@ -90,113 +90,589 @@ function formatTileName(name: string, isCorner: boolean): string {
    SPECIAL CORNER 3D PROPS (START, JAIL, FESTIVAL, POLICE)
    ========================================================================= */
 
-function StartToriiGate() {
+/**
+ * Corner 0 (START - Xuất Phát / Cổng Làng):
+ * Grand golden & vermilion Arc de Triomphe style Torii/Gate with curved roof eaves,
+ * gold finials, red carpet runway with glowing forward navigation arrow, and salary badge.
+ */
+export function StartToriiGate() {
   return (
     <group position={[0, 0.05, 0]}>
-      {/* Stone Foundation */}
+      {/* Stone Foundation Steps */}
       <mesh position={[0, 0.015, 0]} receiveShadow>
-        <boxGeometry args={[1.9, 0.03, 1.9]} />
-        <meshStandardMaterial color="#64748b" roughness={0.9} />
-      </mesh>
-      {/* Red Columns */}
-      <mesh position={[-0.72, 0.55, 0]} castShadow>
-        <cylinderGeometry args={[0.08, 0.1, 1.1, 8]} />
-        <meshStandardMaterial color="#dc2626" roughness={0.3} metalness={0.1} />
-      </mesh>
-      <mesh position={[0.72, 0.55, 0]} castShadow>
-        <cylinderGeometry args={[0.08, 0.1, 1.1, 8]} />
-        <meshStandardMaterial color="#dc2626" roughness={0.3} metalness={0.1} />
-      </mesh>
-      {/* Top Crossbeam */}
-      <mesh position={[0, 1.1, 0]} castShadow>
-        <boxGeometry args={[1.95, 0.16, 0.28]} />
-        <meshStandardMaterial color="#b91c1c" roughness={0.25} />
-      </mesh>
-      <mesh position={[0, 1.25, 0]} castShadow>
-        <boxGeometry args={[1.7, 0.1, 0.36]} />
-        <meshStandardMaterial color="#f59e0b" roughness={0.2} metalness={0.8} />
-      </mesh>
-    </group>
-  );
-}
-
-function StoneCavernArch() {
-  return (
-    <group position={[0, 0.05, 0]}>
-      <mesh position={[0, 0.65, 0]} castShadow receiveShadow>
-        <torusGeometry args={[0.65, 0.32, 7, 12, Math.PI]} />
-        <meshStandardMaterial color="#475569" roughness={0.92} flatShading />
-      </mesh>
-      <mesh position={[0, 0.42, -0.08]}>
-        <circleGeometry args={[0.55, 16, 0, Math.PI]} />
-        <meshBasicMaterial color="#020617" />
-      </mesh>
-      <mesh position={[0, 0.1, 0.25]} receiveShadow>
-        <boxGeometry args={[0.7, 0.08, 0.35]} />
-        <meshStandardMaterial color="#64748b" roughness={0.85} />
-      </mesh>
-    </group>
-  );
-}
-
-function BauCuaFestivalProp() {
-  const bowlRef = useRef<THREE.Group>(null);
-
-  useFrame(({ clock }) => {
-    if (!bowlRef.current) return;
-    const t = clock.getElapsedTime();
-    bowlRef.current.position.y = 0.32 + Math.sin(t * 2) * 0.05;
-  });
-
-  return (
-    <group position={[0, 0.05, 0]}>
-      {/* Red Lacquer Plate with Gold Rim */}
-      <mesh position={[0, 0.04, 0]} receiveShadow>
-        <cylinderGeometry args={[0.55, 0.58, 0.06, 24]} />
-        <meshStandardMaterial color="#991b1b" roughness={0.3} metalness={0.2} />
-      </mesh>
-      <mesh position={[0, 0.072, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.48, 0.54, 24]} />
-        <meshStandardMaterial color="#fbbf24" metalness={0.9} roughness={0.15} />
+        <boxGeometry args={[2.05, 0.03, 2.05]} />
+        <meshStandardMaterial color="#475569" roughness={0.85} />
       </mesh>
 
-      {/* 3 Miniature Folk Dice on Plate */}
-      <mesh position={[-0.14, 0.12, 0]} castShadow>
-        <boxGeometry args={[0.12, 0.12, 0.12]} />
-        <meshStandardMaterial color="#b45309" roughness={0.3} />
-      </mesh>
-      <mesh position={[0.14, 0.12, -0.08]} castShadow>
-        <boxGeometry args={[0.12, 0.12, 0.12]} />
-        <meshStandardMaterial color="#059669" roughness={0.3} />
-      </mesh>
-      <mesh position={[0.02, 0.12, 0.14]} castShadow>
-        <boxGeometry args={[0.12, 0.12, 0.12]} />
-        <meshStandardMaterial color="#e11d48" roughness={0.3} />
+      {/* Red Carpet Runway leading towards Tile 1 (local -X direction) */}
+      <mesh position={[-0.2, 0.032, 0]} receiveShadow>
+        <boxGeometry args={[1.65, 0.008, 0.78]} />
+        <meshStandardMaterial color="#991b1b" roughness={0.3} />
       </mesh>
 
-      {/* Hovering Golden Bronze Bowl */}
-      <group ref={bowlRef} position={[0, 0.32, 0]}>
-        <mesh castShadow>
-          <sphereGeometry args={[0.34, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
-          <meshStandardMaterial
-            color="#f59e0b"
-            metalness={0.9}
-            roughness={0.2}
-            side={THREE.DoubleSide}
-          />
+      {/* Gold Fringe Side Trims on Red Carpet */}
+      <mesh position={[-0.2, 0.033, 0.39]}>
+        <boxGeometry args={[1.65, 0.006, 0.03]} />
+        <meshStandardMaterial color="#f59e0b" metalness={0.9} roughness={0.2} />
+      </mesh>
+      <mesh position={[-0.2, 0.033, -0.39]}>
+        <boxGeometry args={[1.65, 0.006, 0.03]} />
+        <meshStandardMaterial color="#f59e0b" metalness={0.9} roughness={0.2} />
+      </mesh>
+
+      {/* Glowing Yellow Navigation Chevron Arrow pointing towards -X (Tile 1) */}
+      <group position={[-0.52, 0.04, 0]} rotation={[0, Math.PI / 2, 0]}>
+        <mesh position={[0, 0, 0]}>
+          <coneGeometry args={[0.16, 0.28, 3]} />
+          <meshBasicMaterial color="#facc15" />
         </mesh>
-        <mesh position={[0, 0.35, 0]} castShadow>
-          <sphereGeometry args={[0.06, 8, 8]} />
+        <mesh position={[0, 0, -0.16]}>
+          <boxGeometry args={[0.08, 0.005, 0.18]} />
+          <meshBasicMaterial color="#facc15" />
+        </mesh>
+      </group>
+
+      {/* Left Vermilion Pillar with Gold Rings */}
+      <group position={[0.42, 0, 0.65]}>
+        <mesh position={[0, 0.05, 0]}>
+          <cylinderGeometry args={[0.12, 0.14, 0.1, 12]} />
+          <meshStandardMaterial color="#fbbf24" metalness={0.95} roughness={0.1} />
+        </mesh>
+        <mesh position={[0, 0.62, 0]} castShadow>
+          <cylinderGeometry args={[0.085, 0.095, 1.15, 12]} />
+          <meshStandardMaterial color="#dc2626" roughness={0.25} metalness={0.15} />
+        </mesh>
+        <mesh position={[0, 1.2, 0]}>
+          <cylinderGeometry args={[0.12, 0.1, 0.06, 12]} />
           <meshStandardMaterial color="#fbbf24" metalness={0.95} roughness={0.1} />
         </mesh>
       </group>
 
-      <pointLight position={[0, 0.6, 0]} color="#f59e0b" intensity={0.9} distance={3} />
+      {/* Right Vermilion Pillar with Gold Rings */}
+      <group position={[0.42, 0, -0.65]}>
+        <mesh position={[0, 0.05, 0]}>
+          <cylinderGeometry args={[0.12, 0.14, 0.1, 12]} />
+          <meshStandardMaterial color="#fbbf24" metalness={0.95} roughness={0.1} />
+        </mesh>
+        <mesh position={[0, 0.62, 0]} castShadow>
+          <cylinderGeometry args={[0.085, 0.095, 1.15, 12]} />
+          <meshStandardMaterial color="#dc2626" roughness={0.25} metalness={0.15} />
+        </mesh>
+        <mesh position={[0, 1.2, 0]}>
+          <cylinderGeometry args={[0.12, 0.1, 0.06, 12]} />
+          <meshStandardMaterial color="#fbbf24" metalness={0.95} roughness={0.1} />
+        </mesh>
+      </group>
+
+      {/* Grand Arch Beams & Curved Roof Eaves */}
+      {/* Lower Crossbeam */}
+      <mesh position={[0.42, 1.14, 0]} castShadow>
+        <boxGeometry args={[0.24, 0.12, 1.7]} />
+        <meshStandardMaterial color="#b91c1c" roughness={0.2} />
+      </mesh>
+      {/* Upper Main Beam with curved eaves */}
+      <mesh position={[0.42, 1.27, 0]} castShadow>
+        <boxGeometry args={[0.3, 0.14, 1.95]} />
+        <meshStandardMaterial color="#991b1b" roughness={0.2} />
+      </mesh>
+      {/* Gold Top Ridge Crest */}
+      <mesh position={[0.42, 1.38, 0]} castShadow>
+        <boxGeometry args={[0.26, 0.08, 1.75]} />
+        <meshStandardMaterial color="#f59e0b" metalness={0.95} roughness={0.1} />
+      </mesh>
+
+      {/* Gold Roof Finials at beam ends */}
+      <mesh position={[0.42, 1.42, 0.96]} rotation={[0.4, 0, 0]}>
+        <coneGeometry args={[0.06, 0.16, 4]} />
+        <meshStandardMaterial color="#fbbf24" metalness={0.95} roughness={0.1} />
+      </mesh>
+      <mesh position={[0.42, 1.42, -0.96]} rotation={[-0.4, 0, 0]}>
+        <coneGeometry args={[0.06, 0.16, 4]} />
+        <meshStandardMaterial color="#fbbf24" metalness={0.95} roughness={0.1} />
+      </mesh>
+
+      {/* Imperial Center Lotus Medallion */}
+      <mesh position={[0.26, 1.27, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.1, 0.1, 0.04, 16]} />
+        <meshStandardMaterial color="#fbbf24" metalness={0.95} roughness={0.1} />
+      </mesh>
+
+      {/* Warm Golden Gate Light */}
+      <pointLight position={[0.3, 0.9, 0]} color="#f59e0b" intensity={1.5} distance={3.5} />
     </group>
   );
 }
 
-function FloatingLuckyWheel() {
+/**
+ * Corner 8 (JAIL - Vào Tù / Thăm Tù):
+ * Inner secure cell with dark steel bars, heavy iron door with padlock, caution hazard stripe trim;
+ * Outer perimeter with "THĂM TÙ" visitor bench and safe visitor zone badge.
+ */
+export function JailCornerProp() {
+  return (
+    <group position={[0, 0.05, 0]}>
+      {/* Inner Cell Base (Secure Zone) */}
+      <group position={[-0.26, 0.02, 0.26]}>
+        <mesh receiveShadow>
+          <boxGeometry args={[1.2, 0.04, 1.2]} />
+          <meshStandardMaterial color="#1e293b" roughness={0.9} />
+        </mesh>
+
+        {/* Yellow/Black caution border trim */}
+        <mesh position={[0, 0.022, 0.58]}>
+          <boxGeometry args={[1.2, 0.005, 0.05]} />
+          <meshStandardMaterial color="#eab308" roughness={0.4} />
+        </mesh>
+        <mesh position={[0.58, 0.022, 0]}>
+          <boxGeometry args={[0.05, 0.005, 1.2]} />
+          <meshStandardMaterial color="#eab308" roughness={0.4} />
+        </mesh>
+
+        {/* 4 Dark Steel Corner Posts */}
+        {[
+          [-0.52, -0.52],
+          [0.52, -0.52],
+          [-0.52, 0.52],
+          [0.52, 0.52],
+        ].map(([px, pz], i) => (
+          <mesh key={`jail-post-${i}`} position={[px, 0.55, pz]} castShadow>
+            <cylinderGeometry args={[0.035, 0.035, 1.05, 8]} />
+            <meshStandardMaterial color="#0f172a" metalness={0.9} roughness={0.2} />
+          </mesh>
+        ))}
+
+        {/* Vertical Steel Cell Bars Grid along exposed faces */}
+        {[-0.35, -0.18, 0, 0.18, 0.35].map((val, i) => (
+          <React.Fragment key={`jail-bar-${i}`}>
+            {/* Front face bars */}
+            <mesh position={[val, 0.55, 0.52]} castShadow>
+              <cylinderGeometry args={[0.016, 0.016, 1.05, 8]} />
+              <meshStandardMaterial color="#334155" metalness={0.9} roughness={0.25} />
+            </mesh>
+            {/* Side face bars */}
+            <mesh position={[0.52, 0.55, val]} castShadow>
+              <cylinderGeometry args={[0.016, 0.016, 1.05, 8]} />
+              <meshStandardMaterial color="#334155" metalness={0.9} roughness={0.25} />
+            </mesh>
+          </React.Fragment>
+        ))}
+
+        {/* Cell Heavy Steel Top Roof Frame */}
+        <mesh position={[0, 1.08, 0]} castShadow>
+          <boxGeometry args={[1.16, 0.06, 1.16]} />
+          <meshStandardMaterial color="#1e293b" metalness={0.8} roughness={0.4} />
+        </mesh>
+
+        {/* Heavy Iron Door Cross-Brace & Brass Padlock */}
+        <mesh position={[0.53, 0.45, 0.2]} rotation={[0, 0, 0.1]}>
+          <boxGeometry args={[0.02, 0.08, 0.08]} />
+          <meshStandardMaterial color="#f59e0b" metalness={0.95} roughness={0.15} />
+        </mesh>
+
+        {/* Red Warning Ceiling Lantern */}
+        <mesh position={[0, 1.02, 0]}>
+          <sphereGeometry args={[0.05, 8, 8]} />
+          <meshBasicMaterial color="#ef4444" />
+        </mesh>
+        <pointLight position={[0, 0.85, 0]} color="#ef4444" intensity={1.2} distance={2.5} />
+      </group>
+
+      {/* Outer Safe Visitor Zone (Khu Thăm Tù) */}
+      <group position={[0.55, 0.02, -0.45]}>
+        {/* Visitor Bench (Wood slats & iron legs) */}
+        <mesh position={[0, 0.14, 0]} castShadow receiveShadow>
+          <boxGeometry args={[0.68, 0.03, 0.24]} />
+          <meshStandardMaterial color="#78350f" roughness={0.6} />
+        </mesh>
+        <mesh position={[0, 0.28, -0.1]} rotation={[-0.1, 0, 0]} castShadow>
+          <boxGeometry args={[0.68, 0.2, 0.03]} />
+          <meshStandardMaterial color="#78350f" roughness={0.6} />
+        </mesh>
+        {/* Iron Legs */}
+        {[-0.28, 0.28].map((lx, i) => (
+          <mesh key={`bench-leg-${i}`} position={[lx, 0.07, 0]} castShadow>
+            <boxGeometry args={[0.04, 0.14, 0.2]} />
+            <meshStandardMaterial color="#0f172a" metalness={0.9} />
+          </mesh>
+        ))}
+
+        {/* Visitor Zone Brass Boundary Plaque */}
+        <mesh position={[0, 0.005, 0.28]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[0.6, 0.12]} />
+          <meshStandardMaterial color="#f59e0b" metalness={0.8} roughness={0.2} />
+        </mesh>
+      </group>
+    </group>
+  );
+}
+
+/**
+ * Corner 16 (FESTIVAL - Lễ Hội / Bến Du Thuyền / Quỹ Heo Đất):
+ * Vibrant festival pavilion stage with multi-color pennant banners,
+ * dual golden confetti cannon columns, and glowing event aura ring ("X2 TIỀN THUÊ").
+ */
+export function FestivalCornerProp() {
+  const auraRef = useRef<THREE.Mesh>(null);
+  const pigRef = useRef<THREE.Group>(null);
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    if (auraRef.current) {
+      auraRef.current.rotation.z = t * 0.8;
+      const s = 1 + Math.sin(t * 3) * 0.05;
+      auraRef.current.scale.set(s, s, 1);
+    }
+    if (pigRef.current) {
+      pigRef.current.position.y = 0.52 + Math.sin(t * 2.5) * 0.03;
+      pigRef.current.rotation.y = t * 0.6;
+    }
+  });
+
+  return (
+    <group position={[0, 0.05, 0]}>
+      {/* Grand Festival Dais (Octagonal red stage with gold rim) */}
+      <mesh position={[0, 0.05, 0]} receiveShadow>
+        <cylinderGeometry args={[0.95, 1.0, 0.1, 16]} />
+        <meshStandardMaterial color="#991b1b" roughness={0.3} metalness={0.2} />
+      </mesh>
+
+      {/* Gold Ring around Stage */}
+      <mesh position={[0, 0.102, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.88, 0.95, 24]} />
+        <meshStandardMaterial color="#fbbf24" metalness={0.95} roughness={0.1} />
+      </mesh>
+
+      {/* Pulsing Event Aura Ring */}
+      <mesh
+        ref={auraRef}
+        position={[0, 0.106, 0]}
+        rotation={[-Math.PI / 2, 0, 0]}
+      >
+        <ringGeometry args={[0.65, 0.82, 32]} />
+        <meshStandardMaterial
+          color="#f43f5e"
+          emissive="#e11d48"
+          emissiveIntensity={1.5}
+          transparent
+          opacity={0.7}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      {/* 4 Vermilion & Gold Pavilion Pillars */}
+      {[
+        [-0.5, -0.5],
+        [0.5, -0.5],
+        [-0.5, 0.5],
+        [0.5, 0.5],
+      ].map(([px, pz], i) => (
+        <group key={`pavilion-col-${i}`} position={[px, 0, pz]}>
+          <mesh position={[0, 0.55, 0]} castShadow>
+            <cylinderGeometry args={[0.04, 0.05, 0.9, 10]} />
+            <meshStandardMaterial color="#dc2626" roughness={0.3} />
+          </mesh>
+          <mesh position={[0, 0.98, 0]}>
+            <sphereGeometry args={[0.06, 8, 8]} />
+            <meshStandardMaterial color="#fbbf24" metalness={0.95} roughness={0.1} />
+          </mesh>
+        </group>
+      ))}
+
+      {/* Multi-color pennant banners (#ef4444, #3b82f6, #eab308, #10b981) */}
+      {[
+        { x: -0.3, c: '#ef4444' },
+        { x: -0.1, c: '#3b82f6' },
+        { x: 0.1, c: '#eab308' },
+        { x: 0.3, c: '#10b981' },
+      ].map((flag, fi) => (
+        <mesh key={`pennant-front-${fi}`} position={[flag.x, 0.92, 0.5]} rotation={[0, 0, Math.PI]}>
+          <coneGeometry args={[0.07, 0.14, 3]} />
+          <meshStandardMaterial color={flag.c} roughness={0.3} />
+        </mesh>
+      ))}
+      {[
+        { z: -0.3, c: '#10b981' },
+        { z: -0.1, c: '#eab308' },
+        { z: 0.1, c: '#3b82f6' },
+        { z: 0.3, c: '#ef4444' },
+      ].map((flag, fi) => (
+        <mesh key={`pennant-side-${fi}`} position={[0.5, 0.92, flag.z]} rotation={[0, 0, Math.PI]}>
+          <coneGeometry args={[0.07, 0.14, 3]} />
+          <meshStandardMaterial color={flag.c} roughness={0.3} />
+        </mesh>
+      ))}
+
+      {/* Dual Golden Confetti Cannon Columns */}
+      <group position={[-0.75, 0.1, 0.2]} rotation={[0.4, 0, -0.6]}>
+        <mesh castShadow>
+          <cylinderGeometry args={[0.07, 0.09, 0.36, 12]} />
+          <meshStandardMaterial color="#f59e0b" metalness={0.95} roughness={0.1} />
+        </mesh>
+      </group>
+      <group position={[0.75, 0.1, 0.2]} rotation={[0.4, 0, 0.6]}>
+        <mesh castShadow>
+          <cylinderGeometry args={[0.07, 0.09, 0.36, 12]} />
+          <meshStandardMaterial color="#f59e0b" metalness={0.95} roughness={0.1} />
+        </mesh>
+      </group>
+
+      {/* Floating Sparkle Confetti particles hovering above */}
+      {[
+        [-0.4, 1.25, 0.1, '#ef4444'],
+        [-0.2, 1.35, -0.2, '#3b82f6'],
+        [0.2, 1.3, 0.15, '#fbbf24'],
+        [0.35, 1.22, -0.1, '#10b981'],
+        [0.0, 1.4, 0.0, '#f43f5e'],
+      ].map(([cx, cy, cz, color], i) => (
+        <mesh key={`confetti-${i}`} position={[cx as number, cy as number, cz as number]} rotation={[0.5, 0.5, 0]}>
+          <boxGeometry args={[0.04, 0.04, 0.04]} />
+          <meshBasicMaterial color={color as string} />
+        </mesh>
+      ))}
+
+      {/* Central Golden Piggy Bank Trophy */}
+      <group ref={pigRef} position={[0, 0.52, 0]}>
+        <mesh castShadow>
+          <sphereGeometry args={[0.22, 16, 16]} />
+          <meshStandardMaterial color="#fbbf24" metalness={0.95} roughness={0.1} />
+        </mesh>
+        <mesh position={[0, 0, 0.2]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.07, 0.07, 0.05, 12]} />
+          <meshStandardMaterial color="#f59e0b" metalness={0.9} roughness={0.15} />
+        </mesh>
+        <mesh position={[0, 0.21, 0]}>
+          <boxGeometry args={[0.1, 0.02, 0.03]} />
+          <meshStandardMaterial color="#78350f" />
+        </mesh>
+      </group>
+
+      <pointLight position={[0, 0.8, 0]} color="#f59e0b" intensity={2.0} distance={4} />
+    </group>
+  );
+}
+
+/**
+ * Corner 24 (GO_TO_JAIL - Cảnh Sát Bắt Vào Tù):
+ * Police checkpoint booth with flashing blue and red emergency beacons,
+ * striped red/white boom barrier bar, and large red directional arrow pointing towards jail.
+ */
+export function GoToJailPoliceProp() {
+  const redBeaconRef = useRef<THREE.Mesh>(null);
+  const blueBeaconRef = useRef<THREE.Mesh>(null);
+  const beaconLightRef = useRef<THREE.PointLight>(null);
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    const flash = Math.sin(t * 12);
+    if (redBeaconRef.current) {
+      const mat = redBeaconRef.current.material as THREE.MeshStandardMaterial;
+      if (mat) mat.emissiveIntensity = flash > 0 ? 2.8 : 0.2;
+    }
+    if (blueBeaconRef.current) {
+      const mat = blueBeaconRef.current.material as THREE.MeshStandardMaterial;
+      if (mat) mat.emissiveIntensity = flash < 0 ? 2.8 : 0.2;
+    }
+    if (beaconLightRef.current) {
+      beaconLightRef.current.color.set(flash > 0 ? '#ef4444' : '#3b82f6');
+      beaconLightRef.current.intensity = Math.abs(flash) * 1.8;
+    }
+  });
+
+  return (
+    <group position={[0, 0.05, 0]}>
+      {/* Asphalt Checkpoint Road Base */}
+      <mesh position={[0, 0.015, 0]} receiveShadow>
+        <boxGeometry args={[2.0, 0.03, 2.0]} />
+        <meshStandardMaterial color="#0f172a" roughness={0.85} />
+      </mesh>
+
+      {/* Large Red Directional Chevron Arrow pointing towards Jail (towards bottom-left: -X, +Z) */}
+      <group position={[0.2, 0.035, -0.2]} rotation={[0, -Math.PI / 4, 0]}>
+        <mesh position={[0, 0, 0]}>
+          <coneGeometry args={[0.2, 0.35, 3]} />
+          <meshBasicMaterial color="#ef4444" />
+        </mesh>
+        <mesh position={[0, 0, -0.2]}>
+          <boxGeometry args={[0.1, 0.005, 0.22]} />
+          <meshBasicMaterial color="#ef4444" />
+        </mesh>
+      </group>
+
+      {/* Police Guard Checkpoint Booth */}
+      <group position={[-0.45, 0.03, 0.45]}>
+        {/* Booth Cabin Body */}
+        <mesh position={[0, 0.42, 0]} castShadow receiveShadow>
+          <boxGeometry args={[0.62, 0.8, 0.62]} />
+          <meshStandardMaterial color="#1e293b" roughness={0.3} metalness={0.2} />
+        </mesh>
+        {/* Inspection Windows */}
+        <mesh position={[0, 0.48, 0.315]}>
+          <boxGeometry args={[0.48, 0.28, 0.02]} />
+          <meshStandardMaterial color="#38bdf8" roughness={0.1} transparent opacity={0.7} />
+        </mesh>
+        <mesh position={[0.315, 0.48, 0]}>
+          <boxGeometry args={[0.02, 0.28, 0.48]} />
+          <meshStandardMaterial color="#38bdf8" roughness={0.1} transparent opacity={0.7} />
+        </mesh>
+        {/* Checkpoint Roof Canopy with yellow caution stripe */}
+        <mesh position={[0, 0.84, 0]} castShadow>
+          <boxGeometry args={[0.74, 0.06, 0.74]} />
+          <meshStandardMaterial color="#0f172a" metalness={0.5} roughness={0.4} />
+        </mesh>
+        <mesh position={[0, 0.84, 0.375]}>
+          <boxGeometry args={[0.74, 0.03, 0.01]} />
+          <meshBasicMaterial color="#eab308" />
+        </mesh>
+
+        {/* Dual Flashing Emergency Sirens on Booth Roof */}
+        {/* Red Siren */}
+        <mesh ref={redBeaconRef} position={[-0.16, 0.92, 0]}>
+          <cylinderGeometry args={[0.045, 0.055, 0.1, 10]} />
+          <meshStandardMaterial
+            color="#ef4444"
+            emissive="#ef4444"
+            emissiveIntensity={2.0}
+            roughness={0.2}
+          />
+        </mesh>
+        {/* Blue Siren */}
+        <mesh ref={blueBeaconRef} position={[0.16, 0.92, 0]}>
+          <cylinderGeometry args={[0.045, 0.055, 0.1, 10]} />
+          <meshStandardMaterial
+            color="#3b82f6"
+            emissive="#3b82f6"
+            emissiveIntensity={2.0}
+            roughness={0.2}
+          />
+        </mesh>
+
+        <pointLight
+          ref={beaconLightRef}
+          position={[0, 1.1, 0]}
+          color="#ef4444"
+          intensity={1.8}
+          distance={4.5}
+        />
+      </group>
+
+      {/* Striped Red/White Boom Barrier Gate */}
+      <group position={[0.2, 0.03, 0.45]}>
+        {/* Barrier Pivot Post */}
+        <mesh position={[0, 0.22, 0]} castShadow>
+          <cylinderGeometry args={[0.06, 0.08, 0.42, 8]} />
+          <meshStandardMaterial color="#334155" metalness={0.8} />
+        </mesh>
+        {/* Boom Barrier Arm with 5 alternating red/white stripes */}
+        <group position={[0.42, 0.38, 0]} rotation={[0, 0, -0.15]}>
+          {[-0.32, -0.16, 0, 0.16, 0.32].map((xpos, idx) => (
+            <mesh key={`barrier-stripe-${idx}`} position={[xpos, 0, 0]} castShadow>
+              <boxGeometry args={[0.16, 0.05, 0.05]} />
+              <meshStandardMaterial
+                color={idx % 2 === 0 ? '#ef4444' : '#f8fafc'}
+                roughness={0.3}
+              />
+            </mesh>
+          ))}
+          {/* Circular Stop Sign Medallion */}
+          <mesh position={[0, 0, 0.035]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.08, 0.08, 0.015, 16]} />
+            <meshStandardMaterial color="#ef4444" roughness={0.3} />
+          </mesh>
+        </group>
+      </group>
+
+      {/* Police Patrol Cruiser Interceptor */}
+      <group position={[-0.1, 0.03, -0.48]} rotation={[0, -0.4, 0]}>
+        <mesh position={[0, 0.14, 0]} castShadow>
+          <boxGeometry args={[0.9, 0.2, 0.48]} />
+          <meshStandardMaterial color="#0f172a" roughness={0.3} metalness={0.3} />
+        </mesh>
+        <mesh position={[0.06, 0.3, 0]} castShadow>
+          <boxGeometry args={[0.46, 0.16, 0.42]} />
+          <meshStandardMaterial color="#f8fafc" roughness={0.3} />
+        </mesh>
+        <mesh position={[0.06, 0.41, 0]}>
+          <boxGeometry args={[0.12, 0.06, 0.24]} />
+          <meshStandardMaterial color="#3b82f6" emissive="#3b82f6" emissiveIntensity={1.5} />
+        </mesh>
+      </group>
+    </group>
+  );
+}
+
+export function SpecialTileProp({ tileId }: { tileId: number }) {
+  if (tileId === 0) return <StartToriiGate />;
+  if (tileId === 8) return <JailCornerProp />;
+  if (tileId === 16) return <FestivalCornerProp />;
+  if (tileId === 24) return <GoToJailPoliceProp />;
+  return null;
+}
+
+/* =========================================================================
+   SPECIAL EVENT PROPS (CHANCE - RƯƠNG VÀNG & FATE - BÁNH XE ĐỊNH MỆNH)
+   ========================================================================= */
+
+/**
+ * CHANCE (7, 18, 29):
+ * Golden treasure chest icon with curved lid, lock clasp, and floating glowing golden coin.
+ */
+export function GoldenTreasureChestProp() {
+  const groupRef = useRef<THREE.Group>(null);
+
+  useFrame(({ clock }) => {
+    if (!groupRef.current) return;
+    const t = clock.getElapsedTime();
+    groupRef.current.position.y = 0.36 + Math.sin(t * 3) * 0.05;
+    groupRef.current.rotation.y = t * 1.2;
+  });
+
+  return (
+    <group ref={groupRef} position={[0, 0.36, 0.35]}>
+      {/* Wooden Chest Base */}
+      <mesh castShadow position={[0, 0, 0]}>
+        <boxGeometry args={[0.3, 0.16, 0.22]} />
+        <meshStandardMaterial color="#b45309" roughness={0.5} />
+      </mesh>
+      {/* Gold Bandings */}
+      <mesh position={[0, 0, 0]}>
+        <boxGeometry args={[0.31, 0.17, 0.04]} />
+        <meshStandardMaterial color="#f59e0b" metalness={0.9} roughness={0.2} />
+      </mesh>
+      <mesh position={[0, 0, 0]}>
+        <boxGeometry args={[0.06, 0.17, 0.23]} />
+        <meshStandardMaterial color="#f59e0b" metalness={0.9} roughness={0.2} />
+      </mesh>
+      {/* Curved Lid */}
+      <mesh position={[0, 0.08, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+        <cylinderGeometry args={[0.11, 0.11, 0.3, 16, 1, false, 0, Math.PI]} />
+        <meshStandardMaterial color="#d97706" roughness={0.4} />
+      </mesh>
+      {/* Front Golden Lock Clasp */}
+      <mesh position={[0, 0.02, 0.115]}>
+        <boxGeometry args={[0.05, 0.06, 0.02]} />
+        <meshStandardMaterial color="#fbbf24" metalness={0.95} roughness={0.1} />
+      </mesh>
+      {/* Floating Glowing Golden Coin/Star on top */}
+      <mesh position={[0, 0.24, 0]}>
+        <octahedronGeometry args={[0.07, 0]} />
+        <meshStandardMaterial
+          color="#fbbf24"
+          emissive="#f59e0b"
+          emissiveIntensity={1.8}
+          roughness={0.1}
+          metalness={0.9}
+        />
+      </mesh>
+      <pointLight color="#f59e0b" intensity={0.8} distance={2.5} />
+    </group>
+  );
+}
+
+/**
+ * FATE (2, 14, 26):
+ * Purple wheel of destiny / mystic star icon rotating in place.
+ */
+export function FloatingLuckyWheel() {
   const wheelRef = useRef<THREE.Group>(null);
 
   useFrame(({ clock }) => {
@@ -210,12 +686,12 @@ function FloatingLuckyWheel() {
     <group ref={wheelRef} position={[0, 0.42, 0.35]}>
       {/* Outer Golden Wheel Rim */}
       <mesh>
-        <torusGeometry args={[0.25, 0.025, 8, 24]} />
-        <meshStandardMaterial color="#fbbf24" metalness={0.9} roughness={0.15} />
+        <torusGeometry args={[0.26, 0.025, 8, 24]} />
+        <meshStandardMaterial color="#fbbf24" metalness={0.95} roughness={0.12} />
       </mesh>
-      {/* Inner Wheel Disc with 8 Color Slices */}
+      {/* Inner Wheel Disc with Purple Slices */}
       <mesh rotation={[-Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.23, 0.23, 0.02, 8]} />
+        <cylinderGeometry args={[0.24, 0.24, 0.02, 8]} />
         <meshStandardMaterial
           color="#8b5cf6"
           emissive="#6d28d9"
@@ -223,74 +699,26 @@ function FloatingLuckyWheel() {
           roughness={0.2}
         />
       </mesh>
-      {/* Center Golden Gem Hub */}
+      {/* Center Mystic 8-Pointed Star Hub */}
       <mesh position={[0, 0, 0.02]}>
-        <sphereGeometry args={[0.055, 8, 8]} />
-        <meshStandardMaterial color="#fbbf24" metalness={0.95} roughness={0.1} />
+        <octahedronGeometry args={[0.08, 0]} />
+        <meshStandardMaterial
+          color="#fbbf24"
+          emissive="#fef08a"
+          emissiveIntensity={1.2}
+          metalness={0.95}
+          roughness={0.1}
+        />
       </mesh>
+      <pointLight color="#8b5cf6" intensity={0.9} distance={2.5} />
     </group>
   );
 }
 
-function SpecialTileProp({ tileId }: { tileId: number }) {
-  if (tileId === 0) return <StartToriiGate />;
-  if (tileId === 8) return <StoneCavernArch />;
-  if (tileId === 16) {
-    // 3D Bầu Cua Tôm Cá Festival Stage (Meta World Mini-Game Landmark)
-    return <BauCuaFestivalProp />;
-  }
-  if (tileId === 24) {
-    // Police Car
-    return (
-      <group position={[0, 0.05, 0]} rotation={[0, -0.6, 0]}>
-        <mesh position={[0, 0.18, 0]} castShadow>
-          <boxGeometry args={[0.85, 0.24, 0.5]} />
-          <meshStandardMaterial color="#0f172a" roughness={0.3} metalness={0.2} />
-        </mesh>
-        <mesh position={[0.06, 0.34, 0]} castShadow>
-          <boxGeometry args={[0.44, 0.2, 0.44]} />
-          <meshStandardMaterial color="#f8fafc" roughness={0.3} />
-        </mesh>
-        <mesh position={[0.06, 0.48, 0]}>
-          <boxGeometry args={[0.12, 0.08, 0.26]} />
-          <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={2.0} />
-        </mesh>
-      </group>
-    );
-  }
-  return null;
-}
-
-function FloatingCardCube({ type }: { type: 'CHANCE' | 'FATE' }) {
-  const meshRef = useRef<THREE.Mesh>(null);
-  const isChance = type === 'CHANCE';
-
-  useFrame(({ clock }) => {
-    if (!meshRef.current) return;
-    const t = clock.getElapsedTime();
-    meshRef.current.rotation.y = t * 1.8;
-    meshRef.current.position.y = 0.38 + Math.sin(t * 3.5) * 0.05;
-  });
-
-  return (
-    <mesh ref={meshRef} position={[0, 0.38, 0.35]} castShadow>
-      <boxGeometry args={[0.28, 0.28, 0.28]} />
-      <meshStandardMaterial
-        color={isChance ? '#f59e0b' : '#8b5cf6'}
-        emissive={isChance ? '#d97706' : '#6d28d9'}
-        emissiveIntensity={0.8}
-        roughness={0.15}
-        metalness={0.4}
-      />
-    </mesh>
-  );
-}
-
-
 /* =========================================================================
    MINIATURE CITY LANDMARK ICONS (Iconic Vietnamese Monuments on Tiles)
    ========================================================================= */
-function MiniTileLandmark({ tileId }: { tileId: number }) {
+export function MiniTileLandmark({ tileId }: { tileId: number }) {
   switch (tileId) {
     case 31: // TP. Hồ Chí Minh: Mini Landmark 81 Spire
       return (
@@ -343,7 +771,46 @@ function MiniTileLandmark({ tileId }: { tileId: number }) {
           </mesh>
         </group>
       );
-    case 22: // Đà Nẵng: Mini Cầu Rồng Golden Dragon Arch
+    case 25: // Vịnh Hạ Long: Mini Karst Sail Junk
+      return (
+        <group position={[0.42, 0.02, 0.12]}>
+          <mesh position={[0, 0.06, 0]} castShadow>
+            <coneGeometry args={[0.16, 0.24, 5]} />
+            <meshStandardMaterial color="#047857" roughness={0.8} />
+          </mesh>
+          <mesh position={[0.12, 0.14, 0]}>
+            <coneGeometry args={[0.08, 0.18, 3]} />
+            <meshStandardMaterial color="#f59e0b" roughness={0.4} />
+          </mesh>
+        </group>
+      );
+    case 22: // Tràng An Ninh Bình: Mini Karst Grotto Peak
+      return (
+        <group position={[0.42, 0.02, 0.12]}>
+          <mesh position={[0, 0.12, 0]} castShadow>
+            <coneGeometry args={[0.16, 0.28, 6]} />
+            <meshStandardMaterial color="#15803d" roughness={0.8} />
+          </mesh>
+        </group>
+      );
+    case 20: // Trạm Cấp Nước Sạch: Mini Water Reservoir Tower
+      return (
+        <group position={[0.42, 0.02, 0.12]}>
+          <mesh position={[0, 0.12, 0]} castShadow>
+            <cylinderGeometry args={[0.06, 0.09, 0.24, 6]} />
+            <meshStandardMaterial color="#64748b" metalness={0.7} />
+          </mesh>
+          <mesh position={[0, 0.28, 0]} castShadow>
+            <cylinderGeometry args={[0.12, 0.12, 0.16, 12]} />
+            <meshStandardMaterial color="#0284c7" metalness={0.4} roughness={0.2} />
+          </mesh>
+          <mesh position={[0, 0.39, 0]}>
+            <coneGeometry args={[0.13, 0.08, 12]} />
+            <meshStandardMaterial color="#38bdf8" metalness={0.5} />
+          </mesh>
+        </group>
+      );
+    case 19: // Cầu Rồng Đà Nẵng: Mini Golden Dragon Arch
       return (
         <group position={[0.42, 0.02, 0.12]}>
           <mesh position={[0, 0.14, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
@@ -356,16 +823,29 @@ function MiniTileLandmark({ tileId }: { tileId: number }) {
           </mesh>
         </group>
       );
-    case 13: // Nha Trang: Mini Beach Parasol & Sunbed
+    case 15: // Cố Đô Huế: Mini Imperial Ngo Mon Gate
       return (
         <group position={[0.42, 0.02, 0.12]}>
-          <mesh position={[0, 0.16, 0]} castShadow>
-            <cylinderGeometry args={[0.015, 0.015, 0.32, 6]} />
+          <mesh position={[0, 0.08, 0]} castShadow>
+            <boxGeometry args={[0.26, 0.16, 0.18]} />
+            <meshStandardMaterial color="#dc2626" roughness={0.4} />
+          </mesh>
+          <mesh position={[0, 0.2, 0]} castShadow>
+            <boxGeometry args={[0.3, 0.05, 0.22]} />
+            <meshStandardMaterial color="#f59e0b" metalness={0.8} />
+          </mesh>
+        </group>
+      );
+    case 13: // Đà Lạt: Mini Pine Tree
+      return (
+        <group position={[0.42, 0.02, 0.12]}>
+          <mesh position={[0, 0.06, 0]} castShadow>
+            <cylinderGeometry args={[0.02, 0.03, 0.12, 6]} />
             <meshStandardMaterial color="#78350f" />
           </mesh>
-          <mesh position={[0, 0.32, 0]} castShadow>
-            <coneGeometry args={[0.18, 0.08, 12]} />
-            <meshStandardMaterial color="#0284c7" />
+          <mesh position={[0, 0.2, 0]} castShadow>
+            <coneGeometry args={[0.14, 0.24, 6]} />
+            <meshStandardMaterial color="#15803d" />
           </mesh>
         </group>
       );
@@ -382,20 +862,20 @@ function MiniTileLandmark({ tileId }: { tileId: number }) {
           </mesh>
         </group>
       );
-    case 4: // Cần Thơ: Mini Floating Market Sampan
+    case 9: // Nha Trang: Mini Beach Parasol & Sunbed
       return (
-        <group position={[0.42, 0.02, 0.12]} rotation={[0, 0.3, 0]}>
-          <mesh position={[0, 0.04, 0]} castShadow>
-            <boxGeometry args={[0.26, 0.05, 0.1]} />
-            <meshStandardMaterial color="#78350f" roughness={0.7} />
+        <group position={[0.42, 0.02, 0.12]}>
+          <mesh position={[0, 0.16, 0]} castShadow>
+            <cylinderGeometry args={[0.015, 0.015, 0.32, 6]} />
+            <meshStandardMaterial color="#78350f" />
           </mesh>
-          <mesh position={[0, 0.08, 0]}>
-            <coneGeometry args={[0.04, 0.03, 10]} />
-            <meshStandardMaterial color="#fef08a" />
+          <mesh position={[0, 0.32, 0]} castShadow>
+            <coneGeometry args={[0.18, 0.08, 12]} />
+            <meshStandardMaterial color="#0284c7" />
           </mesh>
         </group>
       );
-    case 14: // Vũng Tàu: Mini Coastal Lighthouse
+    case 6: // Vũng Tàu: Mini Coastal Lighthouse
       return (
         <group position={[0.42, 0.02, 0.12]}>
           <mesh position={[0, 0.18, 0]} castShadow>
@@ -408,6 +888,36 @@ function MiniTileLandmark({ tileId }: { tileId: number }) {
           </mesh>
         </group>
       );
+    case 4: // Nhà Máy Điện: Mini Power Pylon Tower
+      return (
+        <group position={[0.42, 0.02, 0.12]}>
+          <mesh position={[0, 0.18, 0]} castShadow>
+            <cylinderGeometry args={[0.02, 0.06, 0.36, 4]} />
+            <meshStandardMaterial color="#0891b2" metalness={0.8} roughness={0.3} />
+          </mesh>
+          <mesh position={[0, 0.28, 0]}>
+            <boxGeometry args={[0.22, 0.02, 0.03]} />
+            <meshStandardMaterial color="#0891b2" metalness={0.8} />
+          </mesh>
+          <mesh position={[0, 0.38, 0]}>
+            <octahedronGeometry args={[0.04, 0]} />
+            <meshStandardMaterial color="#fef08a" emissive="#facc15" emissiveIntensity={2.0} />
+          </mesh>
+        </group>
+      );
+    case 1: // Đất Mũi Cà Mau: Mini Southernmost Marker
+      return (
+        <group position={[0.42, 0.02, 0.12]}>
+          <mesh position={[0, 0.08, 0]} castShadow>
+            <boxGeometry args={[0.16, 0.16, 0.16]} />
+            <meshStandardMaterial color="#10b981" />
+          </mesh>
+          <mesh position={[0, 0.2, 0]}>
+            <coneGeometry args={[0.08, 0.12, 4]} />
+            <meshStandardMaterial color="#f59e0b" metalness={0.8} />
+          </mesh>
+        </group>
+      );
     default:
       return null;
   }
@@ -416,7 +926,7 @@ function MiniTileLandmark({ tileId }: { tileId: number }) {
 /* =========================================================================
    OWNER CLAIM SPOTLIGHT / BEACON RING (Subtle Pulsing Neon Ground Ring)
    ========================================================================= */
-function OwnerSpotlightRing({
+export function OwnerSpotlightRing({
   color,
   radius = 0.52,
 }: {
@@ -428,7 +938,6 @@ function OwnerSpotlightRing({
   useFrame(({ clock }) => {
     if (!ringRef.current) return;
     const t = clock.getElapsedTime();
-    // Subtle breathing pulse: 0.95 -> 1.05 scale, dynamic opacity
     const s = 1.0 + Math.sin(t * 3.0) * 0.06;
     ringRef.current.scale.set(s, s, 1);
     const mat = ringRef.current.material as THREE.MeshStandardMaterial;
@@ -456,7 +965,7 @@ function OwnerSpotlightRing({
           roughness={0.2}
         />
       </mesh>
-      {/* Subtle translucent floor beacon fill */}
+      {/* Floor beacon fill */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.001, 0]}>
         <circleGeometry args={[radius * 0.72, 24]} />
         <meshStandardMaterial
@@ -475,7 +984,7 @@ function OwnerSpotlightRing({
 /* =========================================================================
    SINGLE 3D TILE SLAB COMPONENT (Tactile Porcelain Ceramic & Acrylic Finish)
    ========================================================================= */
-function SingleTile3D({
+export function SingleTile3D({
   tile,
   layout,
   isHovered,
@@ -538,21 +1047,18 @@ function SingleTile3D({
       ? layout.depth
       : layout.width;
 
+  // High-Gloss Tactile Porcelain Material Colors
   const slabColor = isSelected
     ? '#fef08a'
     : activeHover
       ? '#ffffff'
-      : isMetropolis
-        ? '#ffffff'
-        : '#f8fafc';
+      : '#f8fafc';
 
   const rimColor = isSelected
     ? '#f59e0b'
     : activeHover
       ? '#38bdf8'
-      : isMetropolis
-        ? '#f59e0b'
-        : '#cbd5e1';
+      : '#f59e0b';
 
   return (
     <group
@@ -599,7 +1105,7 @@ function SingleTile3D({
         />
       </RoundedBox>
 
-      {/* Polished Gold & Chrome Beveled Chamfer Rim */}
+      {/* Polished Gold & Chrome Chamfer Rim */}
       <RoundedBox
         args={[localWidth - 0.03, 0.04, localDepth - 0.03]}
         radius={0.02}
@@ -608,19 +1114,19 @@ function SingleTile3D({
       >
         <meshStandardMaterial
           color={rimColor}
-          roughness={isMetropolis ? 0.12 : 0.18}
-          metalness={isMetropolis ? 0.95 : 0.82}
+          roughness={0.14}
+          metalness={0.92}
         />
       </RoundedBox>
 
-      {/* Meta World City Street Infrastructure (Asphalt Road & Curb Detailing on Outer Perimeter) */}
+      {/* Street Infrastructure on Outer Perimeter */}
       {!layout.isCorner && (
         <group position={[0, 0.005, localDepth / 2 - 0.22]}>
           {/* Raised Sidewalk Curb Stone */}
           <mesh position={[0, 0.016, -0.21]} castShadow receiveShadow>
             <boxGeometry args={[localWidth - 0.06, 0.024, 0.05]} />
             <meshStandardMaterial
-              color={isMetropolis ? '#f1f5f9' : '#cbd5e1'}
+              color="#cbd5e1"
               roughness={0.35}
               metalness={0.1}
             />
@@ -630,7 +1136,7 @@ function SingleTile3D({
           <mesh receiveShadow position={[0, 0.008, 0]}>
             <boxGeometry args={[localWidth - 0.06, 0.018, 0.4]} />
             <meshStandardMaterial
-              color={isMetropolis ? '#0f172a' : '#1e293b'}
+              color="#1e293b"
               roughness={0.88}
               metalness={0.05}
             />
@@ -677,7 +1183,7 @@ function SingleTile3D({
       {/* Miniature 3D City Landmarks on Iconic Vietnamese Tiles */}
       {!layout.isCorner && <MiniTileLandmark tileId={tile.id} />}
 
-      {/* Header Color Band (Facing island center: local -Z side) */}
+      {/* Header Color Band for all 8 Color Regions (Facing island center: local -Z side) */}
       {!layout.isCorner && (
         <group position={[0, 0.016, -localDepth / 2 + 0.28]}>
           <RoundedBox
@@ -688,16 +1194,17 @@ function SingleTile3D({
             castShadow
           >
             <meshPhysicalMaterial
-              color={isMetropolis ? '#1d4ed8' : bannerColor}
-              clearcoat={isMetropolis ? 1.0 : 0.6}
-              clearcoatRoughness={isMetropolis ? 0.08 : 0.15}
-              roughness={isMetropolis ? 0.12 : 0.16}
-              metalness={isMetropolis ? 0.15 : 0.25}
-              emissive={isMetropolis ? '#2563eb' : bannerColor}
-              emissiveIntensity={isMetropolis ? 0.32 : 0.22}
+              color={bannerColor}
+              clearcoat={0.95}
+              clearcoatRoughness={0.08}
+              roughness={0.12}
+              metalness={0.15}
+              emissive={bannerColor}
+              emissiveIntensity={0.28}
             />
           </RoundedBox>
-          {/* Gold Filigree Trim Bar */}
+
+          {/* Gold Filigree Trim Bar on ALL Regional/Property Tiles */}
           <mesh position={[0, 0.016, 0.22]} castShadow>
             <boxGeometry args={[localWidth - 0.12, 0.01, 0.03]} />
             <meshStandardMaterial
@@ -706,8 +1213,9 @@ function SingleTile3D({
               roughness={0.1}
             />
           </mesh>
-          {/* Embossed Gold Filigree Medallion & Side Ornaments for Metropolis */}
-          {isMetropolis && (
+
+          {/* Embossed Gold Filigree Medallion & Side Ornaments */}
+          {(tile.type === 'PROPERTY' || isMetropolis) && (
             <>
               {/* Center golden crest seal */}
               <mesh position={[0, 0.018, 0.22]} castShadow>
@@ -726,7 +1234,7 @@ function SingleTile3D({
         </group>
       )}
 
-      {/* 3D Metropolis Gold Medal Seal on Tile Surface */}
+      {/* 3D Gold Medal Seal on Tile Surface for Metropolis */}
       {isMetropolis && (
         <group position={[0, 0.012, 0.02]}>
           <mesh castShadow receiveShadow>
@@ -753,10 +1261,9 @@ function SingleTile3D({
         <OwnerSpotlightRing color={ownerColor} radius={localWidth * 0.35} />
       )}
 
-      {/* Dynamic 3D Ownership Holographic Laser Fence & Neon Glow (Meta World Signature) */}
+      {/* Dynamic 3D Ownership Holographic Laser Fence & Neon Glow */}
       {ownerColor && (
         <group position={[0, 0.01, 0]}>
-          {/* Glowing Floor Boundary */}
           <mesh position={[0, 0.005, 0]}>
             <boxGeometry args={[localWidth - 0.05, 0.02, localDepth - 0.05]} />
             <meshStandardMaterial
@@ -797,12 +1304,12 @@ function SingleTile3D({
         </group>
       )}
 
-      {/* Special Corner 3D Props */}
+      {/* Bespoke 3D Art for Special Corner Tiles (START, JAIL, FESTIVAL, POLICE) */}
       {layout.isCorner && <SpecialTileProp tileId={tile.id} />}
 
-      {/* Floating 3D Prop: Gold Question Cube for Chance, Spinning Wheel for Fate */}
+      {/* Floating 3D Prop: Golden Treasure Chest for Chance, Spinning Lucky Wheel for Fate */}
       {!layout.isCorner && tile.type === 'CHANCE' && (
-        <FloatingCardCube type={tile.type} />
+        <GoldenTreasureChestProp />
       )}
       {!layout.isCorner && tile.type === 'FATE' && (
         <FloatingLuckyWheel />
@@ -817,7 +1324,7 @@ function SingleTile3D({
         lockZ={false}
       >
         <Text
-          fontSize={layout.isCorner ? 0.26 : 0.2}
+          fontSize={layout.isCorner ? 0.24 : 0.2}
           color={layout.isCorner ? '#ffffff' : '#0f172a'}
           anchorX="center"
           anchorY="middle"
@@ -828,61 +1335,125 @@ function SingleTile3D({
           {displayName}
         </Text>
 
-        {priceDisplay && !layout.isCorner && (
+        {/* 3D Gold Medal Price Badge on ALL Non-Corner Tiles with a Price */}
+        {tile.price !== undefined && !layout.isCorner && (
           <group position={[0, -0.22, 0]}>
-            {isMetropolis ? (
-              <group>
-                {/* 3D Raised Golden Cylinder Pill Medal */}
-                <mesh rotation={[Math.PI / 2, 0, 0]} scale={[3.6, 1, 1]} castShadow>
-                  <cylinderGeometry args={[0.11, 0.11, 0.02, 16]} />
-                  <meshStandardMaterial
-                    color="#f59e0b"
-                    metalness={0.92}
-                    roughness={0.18}
-                  />
-                </mesh>
-                {/* Inner Beveled Inset Gold Ring */}
-                <mesh position={[0, 0, 0.012]} rotation={[Math.PI / 2, 0, 0]} scale={[3.3, 1, 0.8]}>
-                  <cylinderGeometry args={[0.095, 0.095, 0.01, 16]} />
-                  <meshStandardMaterial
-                    color="#fef08a"
-                    metalness={0.95}
-                    roughness={0.12}
-                  />
-                </mesh>
-                {/* High-contrast bold numeral price text */}
-                <Text
-                  position={[0, 0, 0.02]}
-                  fontSize={0.12}
-                  color="#1e1b4b"
-                  anchorX="center"
-                  anchorY="middle"
-                  outlineWidth={0.008}
-                  outlineColor="#fef08a"
-                  fontWeight="bold"
-                >
-                  {formatShortPrice(tile.price)}
-                </Text>
-              </group>
-            ) : (
-              <>
-                <mesh position={[0, 0, -0.005]}>
-                  <planeGeometry args={[0.92, 0.17]} />
-                  <meshBasicMaterial color="#091322" transparent opacity={0.75} />
-                </mesh>
-                <Text
-                  fontSize={0.13}
-                  color="#fbbf24"
-                  anchorX="center"
-                  anchorY="middle"
-                  outlineWidth={0.012}
-                  outlineColor="#78350f"
-                  fontWeight="bold"
-                >
-                  {priceDisplay}
-                </Text>
-              </>
-            )}
+            {/* 3D Raised Golden Cylinder Pill Medal */}
+            <mesh rotation={[Math.PI / 2, 0, 0]} scale={[3.6, 1, 1]} castShadow>
+              <cylinderGeometry args={[0.11, 0.11, 0.02, 16]} />
+              <meshStandardMaterial
+                color="#f59e0b"
+                metalness={0.92}
+                roughness={0.18}
+              />
+            </mesh>
+            {/* Inner Beveled Inset Gold Ring */}
+            <mesh position={[0, 0, 0.012]} rotation={[Math.PI / 2, 0, 0]} scale={[3.3, 1, 0.8]}>
+              <cylinderGeometry args={[0.095, 0.095, 0.01, 16]} />
+              <meshStandardMaterial
+                color="#fef08a"
+                metalness={0.95}
+                roughness={0.12}
+              />
+            </mesh>
+            {/* High-contrast bold numeral price text */}
+            <Text
+              position={[0, 0, 0.02]}
+              fontSize={0.12}
+              color="#1e1b4b"
+              anchorX="center"
+              anchorY="middle"
+              outlineWidth={0.008}
+              outlineColor="#fef08a"
+              fontWeight="bold"
+            >
+              {formatShortPrice(tile.price)}
+            </Text>
+          </group>
+        )}
+
+        {/* Corner Subtitle Badges */}
+        {layout.isCorner && tile.id === 0 && (
+          <group position={[0, -0.22, 0]}>
+            <mesh rotation={[Math.PI / 2, 0, 0]} scale={[3.8, 1, 1]}>
+              <cylinderGeometry args={[0.1, 0.1, 0.02, 16]} />
+              <meshStandardMaterial color="#dc2626" metalness={0.8} roughness={0.2} />
+            </mesh>
+            <Text
+              position={[0, 0, 0.02]}
+              fontSize={0.11}
+              color="#fef08a"
+              anchorX="center"
+              anchorY="middle"
+              outlineWidth={0.008}
+              outlineColor="#78350f"
+              fontWeight="bold"
+            >
+              +200.000đ
+            </Text>
+          </group>
+        )}
+
+        {layout.isCorner && tile.id === 8 && (
+          <group position={[0, -0.22, 0]}>
+            <mesh rotation={[Math.PI / 2, 0, 0]} scale={[3.4, 1, 1]}>
+              <cylinderGeometry args={[0.09, 0.09, 0.02, 16]} />
+              <meshStandardMaterial color="#334155" metalness={0.8} roughness={0.2} />
+            </mesh>
+            <Text
+              position={[0, 0, 0.02]}
+              fontSize={0.1}
+              color="#fef08a"
+              anchorX="center"
+              anchorY="middle"
+              outlineWidth={0.008}
+              outlineColor="#0f172a"
+              fontWeight="bold"
+            >
+              THĂM TÙ
+            </Text>
+          </group>
+        )}
+
+        {layout.isCorner && tile.id === 16 && (
+          <group position={[0, -0.22, 0]}>
+            <mesh rotation={[Math.PI / 2, 0, 0]} scale={[3.6, 1, 1]}>
+              <cylinderGeometry args={[0.09, 0.09, 0.02, 16]} />
+              <meshStandardMaterial color="#b91c1c" metalness={0.8} roughness={0.2} />
+            </mesh>
+            <Text
+              position={[0, 0, 0.02]}
+              fontSize={0.1}
+              color="#facc15"
+              anchorX="center"
+              anchorY="middle"
+              outlineWidth={0.008}
+              outlineColor="#78350f"
+              fontWeight="bold"
+            >
+              X2 TIỀN THUÊ
+            </Text>
+          </group>
+        )}
+
+        {layout.isCorner && tile.id === 24 && (
+          <group position={[0, -0.22, 0]}>
+            <mesh rotation={[Math.PI / 2, 0, 0]} scale={[3.6, 1, 1]}>
+              <cylinderGeometry args={[0.09, 0.09, 0.02, 16]} />
+              <meshStandardMaterial color="#b91c1c" metalness={0.8} roughness={0.2} />
+            </mesh>
+            <Text
+              position={[0, 0, 0.02]}
+              fontSize={0.1}
+              color="#ffffff"
+              anchorX="center"
+              anchorY="middle"
+              outlineWidth={0.008}
+              outlineColor="#7f1d1d"
+              fontWeight="bold"
+            >
+              VÀO TÙ NGAY
+            </Text>
           </group>
         )}
       </Billboard>
