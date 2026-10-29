@@ -6,12 +6,27 @@ import {
   calculateHopSquashStretch,
   getTileBuildingPosition,
   getBuildingTier,
+  calculateBuildingPopScale,
   getDiceFaceNormal,
   getDiceTargetEuler,
   rotateVectorByEuler,
   MASCOT_PALETTES,
 } from '@/components/games/co-ty-phu/board-3d/board3dHelpers';
 import { PigMesh, LandingDustRing } from '@/components/games/co-ty-phu/board-3d/MascotPawns3D';
+import {
+  FlagStructure,
+  VillageHouse1Structure,
+  VillageHouse2Structure,
+  LuxuryVillaStructure,
+  GrandGoldenResortStructure,
+  BuildingUpgradeSparkles,
+} from '@/components/games/co-ty-phu/board-3d/Buildings3D';
+import {
+  HaNoiTurtleTower,
+  HCMCBenThanhLandmark,
+  HaiPhongPort,
+  CityLandmark3D,
+} from '@/components/games/co-ty-phu/board-3d/CityLandmarks3D';
 import { TILE_SURFACE_Y, TILE_CENTER_OFFSET } from '@/components/games/co-ty-phu/board-3d/tilePositions';
 
 describe('Mascots and Buildings 3D Helpers', () => {
@@ -264,6 +279,88 @@ describe('Mascots and Buildings 3D Helpers', () => {
     it('should export PigMesh and LandingDustRing 3D components', () => {
       expect(typeof PigMesh).toBe('function');
       expect(typeof LandingDustRing).toBe('function');
+    });
+  });
+
+  describe('5-Tier Architectural Building Components & Metropolis Landmarks', () => {
+    it('should export all 5 procedural building tier components and upgrade sparkles', () => {
+      expect(typeof FlagStructure).toBe('function');
+      expect(typeof VillageHouse1Structure).toBe('function');
+      expect(typeof VillageHouse2Structure).toBe('function');
+      expect(typeof LuxuryVillaStructure).toBe('function');
+      expect(typeof GrandGoldenResortStructure).toBe('function');
+      expect(typeof BuildingUpgradeSparkles).toBe('function');
+    });
+
+    it('should export Metropolis iconic landmark components', () => {
+      expect(typeof HaNoiTurtleTower).toBe('function');
+      expect(typeof HCMCBenThanhLandmark).toBe('function');
+      expect(typeof HaiPhongPort).toBe('function');
+      expect(typeof CityLandmark3D).toBe('function');
+    });
+
+    it('should correctly map property ownership and house levels across all 5 tiers', () => {
+      // Tier -1: Unowned
+      expect(getBuildingTier({ ownerId: null, houseCount: 0 })).toBe(-1);
+      expect(getBuildingTier({})).toBe(-1);
+
+      // Tier 0: Claim Flag (owned, 0 houses)
+      expect(getBuildingTier({ ownerId: 'player_red', houseCount: 0 })).toBe(0);
+
+      // Tier 1: Village House 1 (Nhà ngói 3 gian)
+      expect(getBuildingTier({ ownerId: 'player_blue', houseCount: 1 })).toBe(1);
+
+      // Tier 2: Village House 2 (Lầu 2 tầng)
+      expect(getBuildingTier({ ownerId: 'player_gold', houseCount: 2 })).toBe(2);
+
+      // Tier 3: Luxury Villa (Biệt thự nghỉ dưỡng)
+      expect(getBuildingTier({ ownerId: 'player_green', houseCount: 3 })).toBe(3);
+
+      // Tier 4: Grand Golden Resort (4 houses or hasResort)
+      expect(getBuildingTier({ ownerId: 'player_red', houseCount: 4 })).toBe(4);
+      expect(getBuildingTier({ ownerId: 'player_red', houseCount: 2, hasResort: true })).toBe(4);
+      expect(getBuildingTier({ ownerId: 'player_red', houseCount: 0, hasResort: true })).toBe(4);
+    });
+
+    it('should calculate spring pop bounce scale curve (0 -> 1.18 -> 0.97 -> 1.0)', () => {
+      // At start (0 progress): scale = 0
+      expect(calculateBuildingPopScale(0)).toBe(0);
+      expect(calculateBuildingPopScale(-0.5)).toBe(0);
+
+      // Peak overshoot around progress 0.25 - 0.30 reaches ~1.18
+      const peakScale = calculateBuildingPopScale(0.28);
+      expect(peakScale).toBeGreaterThanOrEqual(1.15);
+      expect(peakScale).toBeLessThanOrEqual(1.22);
+
+      // Rebound undershoot around progress 0.60 - 0.70 dips below 1.0 (settling rebound)
+      const reboundScale = calculateBuildingPopScale(0.65);
+      expect(reboundScale).toBeLessThan(1.0);
+      expect(reboundScale).toBeGreaterThanOrEqual(0.95);
+
+      // At completion (1.0 progress): scale = 1.0
+      expect(calculateBuildingPopScale(1.0)).toBe(1.0);
+      expect(calculateBuildingPopScale(1.5)).toBe(1.0);
+    });
+
+    it('should correctly dispatch landmarks for Metropolis tiles 28, 30, and 31', () => {
+      // Tile 28: Cảng Hải Phòng
+      const landmark28 = CityLandmark3D({ tileId: 28 });
+      expect(landmark28).toBeDefined();
+      expect(landmark28?.type).toBe(HaiPhongPort);
+
+      // Tile 30: Hà Nội Tháp Rùa Hồ Gươm
+      const landmark30 = CityLandmark3D({ tileId: 30 });
+      expect(landmark30).toBeDefined();
+      expect(landmark30?.type).toBe(HaNoiTurtleTower);
+
+      // Tile 31: TP. Hồ Chí Minh Chợ Bến Thành & Landmark Tower
+      const landmark31 = CityLandmark3D({ tileId: 31 });
+      expect(landmark31).toBeDefined();
+      expect(landmark31?.type).toBe(HCMCBenThanhLandmark);
+
+      // Unmapped tile should return null
+      const unmapped = CityLandmark3D({ tileId: 999 });
+      expect(unmapped).toBeNull();
     });
   });
 });

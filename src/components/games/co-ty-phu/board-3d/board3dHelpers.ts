@@ -231,6 +231,19 @@ export function getBuildingTier(tile: {
 }
 
 /**
+ * Calculates the spring pop bounce scale factor for building appearance and upgrades.
+ * Progress is in [0, 1].
+ * Yields a lively pop bounce: 0 -> peak ~1.18 -> rebound ~0.97 -> settles at 1.0.
+ */
+export function calculateBuildingPopScale(progress: number): number {
+  if (progress <= 0) return 0;
+  if (progress >= 1) return 1;
+  const decay = Math.exp(-4.8 * progress);
+  const oscillation = Math.cos(8.6 * progress) + 0.25 * Math.sin(8.6 * progress);
+  return Number((1 - decay * oscillation).toFixed(4));
+}
+
+/**
  * Face normal vectors in unrotated die local space.
  */
 export function getDiceFaceNormal(value: number): [number, number, number] {
