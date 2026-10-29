@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Skull, Lock, Bot, User, Coins, Eye } from 'lucide-react';
+import { Skull, Lock, Bot, User, Coins, Gem, Crown, Eye } from 'lucide-react';
 import { useGameStore } from '@/lib/game-engine/gameStore';
 import {
   getMascotInfo,
@@ -31,7 +31,7 @@ export function PlayerListBar({ className = '' }: PlayerListBarProps) {
         const netWorth = calculatePlayerNetWorth(player, tiles);
         const isBankrupt = player.bankrupt;
 
-        // Group owned property tiles by color group for miniature badge row
+        // Group owned property tiles by color group for miniature gem pips
         const ownedColorGroups = (player.properties || [])
           .map((id) => tiles[id]?.colorGroup)
           .filter(Boolean);
@@ -39,33 +39,42 @@ export function PlayerListBar({ className = '' }: PlayerListBarProps) {
         return (
           <div
             key={player.id}
-            className={`relative flex items-center gap-2.5 rounded-xl border px-3 py-2 transition-all duration-300 backdrop-blur-md ${
+            className={`relative flex items-center gap-2.5 rounded-2xl p-2.5 sm:p-3 transition-all duration-300 backdrop-blur-xl ${
               isBankrupt
-                ? 'border-red-900/40 bg-red-950/20 opacity-55 grayscale'
+                ? 'border border-red-900/40 bg-red-950/20 opacity-50 grayscale shadow-inner'
                 : isActive
-                ? `border-amber-400 bg-slate-900/90 ring-2 ring-amber-400/80 shadow-lg shadow-amber-500/20 scale-102`
-                : 'border-white/10 bg-slate-950/70 hover:border-white/20'
+                ? 'glass-hud-active scale-105 z-10'
+                : 'glass-hud hover:border-white/30 hover:scale-102'
             }`}
           >
-            {/* Active Turn Pulsing Tag */}
+            {/* Active Turn Floating Crown Tag */}
             {isActive && !isBankrupt && (
-              <div className="absolute -top-2.5 left-3 flex items-center gap-1 rounded-full bg-amber-400 px-2 py-0.2 text-[10px] font-extrabold text-slate-950 shadow-md animate-bounce">
+              <div className="absolute -top-3 left-4 flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 px-2.5 py-0.5 text-[9px] font-black text-slate-950 shadow-lg shadow-amber-500/40 animate-bounce ring-2 ring-yellow-200">
+                <Crown className="h-3 w-3 fill-slate-950 text-slate-950" />
                 <span>LƯỢT ĐI</span>
               </div>
             )}
 
-            {/* Avatar & Mascot */}
+            {/* Avatar & 3D Glow Ring */}
             <div className="relative">
               <div
-                className={`flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-gradient-to-tr ${mascot.avatarBg} text-xl shadow-md`}
+                className={`relative flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-2xl bg-gradient-to-tr ${mascot.avatarBg} text-2xl shadow-xl ring-2 ${
+                  isActive ? 'ring-amber-300 shadow-amber-400/50' : 'ring-white/30'
+                }`}
               >
                 {isBankrupt ? <Skull className="h-6 w-6 text-white" /> : mascot.emoji}
               </div>
 
-              {/* Bot vs Human pill */}
-              <div className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-slate-900 text-[10px] text-slate-300 border border-slate-700">
+              {/* Bot vs Human Identifier */}
+              <div
+                className={`absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold shadow-md border ${
+                  player.isBot
+                    ? 'bg-sky-950 text-sky-300 border-sky-400'
+                    : 'bg-emerald-950 text-emerald-300 border-emerald-400'
+                }`}
+              >
                 {player.isBot ? (
-                  <Bot className="h-2.5 w-2.5 text-cyan-400" />
+                  <Bot className="h-2.5 w-2.5 text-sky-400" />
                 ) : (
                   <User className="h-2.5 w-2.5 text-emerald-400" />
                 )}
@@ -73,41 +82,42 @@ export function PlayerListBar({ className = '' }: PlayerListBarProps) {
             </div>
 
             {/* Info details */}
-            <div className="flex flex-col">
+            <div className="flex flex-col min-w-[100px] sm:min-w-[115px]">
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold text-white max-w-[100px] sm:max-w-[120px] truncate">
+                <span className="text-xs sm:text-sm font-black text-white truncate max-w-[95px] sm:max-w-[115px] drop-shadow">
                   {player.name}
                 </span>
 
                 {/* Jail status */}
                 {player.inJail && !isBankrupt && (
-                  <span className="flex items-center gap-0.5 rounded bg-red-500/20 px-1 py-0.2 text-[9px] font-bold text-red-300 border border-red-500/30">
-                    <Lock className="h-2.5 w-2.5" />
-                    <span>Tù</span>
+                  <span className="flex items-center gap-0.5 rounded-full bg-rose-500/30 px-1.5 py-0.2 text-[8px] font-black text-rose-300 border border-rose-400/50 shadow">
+                    <Lock className="h-2 w-2" />
+                    <span>TÙ</span>
                   </span>
                 )}
 
                 {/* Bankrupt / Spectator tag */}
                 {isBankrupt && (
-                  <span className="flex items-center gap-1 rounded bg-slate-800/90 px-1.5 py-0.5 text-[9px] font-bold text-slate-300 border border-slate-600 shadow-sm">
-                    <Eye className="h-2.5 w-2.5 text-cyan-400" />
-                    <span>Đang Xem</span>
+                  <span className="flex items-center gap-1 rounded-full bg-slate-800/90 px-1.5 py-0.5 text-[8px] font-bold text-slate-300 border border-slate-600">
+                    <Eye className="h-2 w-2 text-cyan-400" />
+                    <span>XEM</span>
                   </span>
                 )}
               </div>
 
-              {/* Money and Net Worth */}
+              {/* Cash & Net Worth Badges */}
               <div className="flex items-center gap-2 mt-0.5">
-                <div className="flex items-center gap-0.5 text-xs font-extrabold text-amber-300">
-                  <Coins className="h-3 w-3 text-amber-400" />
-                  <span>{formatShortMoney(player.money)}</span>
+                <div className="flex items-center gap-1 text-xs font-black text-amber-300 drop-shadow">
+                  <Coins className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400" />
+                  <span className="text-glow-gold">{formatShortMoney(player.money)}</span>
                 </div>
-                <div className="text-[10px] text-slate-400">
-                  (TS: {formatShortMoney(netWorth)})
+                <div className="flex items-center gap-0.5 text-[10px] font-bold text-sky-300" title="Tổng giá trị tài sản">
+                  <Gem className="h-2.5 w-2.5 text-sky-400" />
+                  <span>{formatShortMoney(netWorth)}</span>
                 </div>
               </div>
 
-              {/* Owned Properties Miniature Dots */}
+              {/* Owned Properties Miniature Gem Pips */}
               {ownedColorGroups.length > 0 && !isBankrupt && (
                 <div className="flex items-center gap-1 mt-1">
                   {ownedColorGroups.slice(0, 6).map((group, gIdx) => {
@@ -116,12 +126,12 @@ export function PlayerListBar({ className = '' }: PlayerListBarProps) {
                       <span
                         key={gIdx}
                         title={`Sở hữu ô thuộc vùng ${badge.regionName}`}
-                        className={`h-2 w-2 rounded-full ${badge.dotClass} ring-1 ring-black/40`}
+                        className={`h-2.5 w-2.5 rounded-full ${badge.dotClass} shadow-md ring-1 ring-white/40`}
                       />
                     );
                   })}
                   {ownedColorGroups.length > 6 && (
-                    <span className="text-[9px] text-slate-400">
+                    <span className="text-[8px] font-extrabold text-amber-300">
                       +{ownedColorGroups.length - 6}
                     </span>
                   )}
