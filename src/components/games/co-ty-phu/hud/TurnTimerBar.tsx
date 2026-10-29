@@ -16,7 +16,6 @@ export function TurnTimerBar({ turnTimeLimitSeconds = 60 }: TurnTimerBarProps) {
 
   const activePlayer = players[activePlayerIndex];
   const isBot = activePlayer?.isBot || false;
-  const isWaitingRoll = gamePhase === 'WAITING';
 
   const [timeLeft, setTimeLeft] = useState(turnTimeLimitSeconds);
   const autoRollTriggeredRef = useRef(false);
@@ -27,10 +26,9 @@ export function TurnTimerBar({ turnTimeLimitSeconds = 60 }: TurnTimerBarProps) {
     autoRollTriggeredRef.current = false;
   }, [activePlayerIndex, turnTimeLimitSeconds]);
 
-  // 60-Second Countdown Timer for Human Players
+  // 60-Second Countdown Timer for Human Players (BUG-05: auto-expire and advance turn if modal or action stalled)
   useEffect(() => {
-    // Only count down if player is human and currently in WAITING phase
-    if (isBot || !isWaitingRoll) {
+    if (isBot || gamePhase === 'GAME_OVER') {
       return;
     }
 
@@ -38,13 +36,23 @@ export function TurnTimerBar({ turnTimeLimitSeconds = 60 }: TurnTimerBarProps) {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(interval);
-          // Auto roll when time runs out
           if (!autoRollTriggeredRef.current) {
             autoRollTriggeredRef.current = true;
             try {
-              rollDice();
-            } catch {
-              // Ignore
+              const currentPhase = useGameStore.getState().gamePhase;
+              if (currentPhase === 'WAITING') {
+                rollDice();
+              } else if (currentPhase === 'ACTION_REQUIRED' || currentPhase === 'ACTION') {
+                useGameStore.getState().setGamePhase('TURN_END');
+                useGameStore.getState().endTurn();
+              } else if (currentPhase === 'CARD_DRAWN') {
+                useGameStore.getState().dismissCard();
+                useGameStore.getState().endTurn();
+              } else if (currentPhase === 'TURN_END') {
+                useGameStore.getState().endTurn();
+              }
+            } catch (err) {
+              console.warn('Auto turn timer action failed:', err);
             }
           }
           return 0;
@@ -54,7 +62,7 @@ export function TurnTimerBar({ turnTimeLimitSeconds = 60 }: TurnTimerBarProps) {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isBot, isWaitingRoll, activePlayerIndex, rollDice]);
+  }, [isBot, gamePhase, activePlayerIndex, rollDice]);
 
   if (!activePlayer) return null;
 
@@ -89,7 +97,7 @@ export function TurnTimerBar({ turnTimeLimitSeconds = 60 }: TurnTimerBarProps) {
             <span className="text-xs sm:text-sm font-semibold text-amber-100">
               Đến lượt: <strong className="text-amber-300">{activePlayer.name}</strong>
             </span>
-            {isWaitingRoll && (
+            {gamePhase !== 'GAME_OVER' && (
               <div
                 className={`flex items-center gap-1 font-mono text-xs sm:text-sm font-black px-2 py-0.5 rounded-full ${
                   isLowTime ? 'bg-rose-600 text-white' : 'bg-amber-500/30 text-amber-300'

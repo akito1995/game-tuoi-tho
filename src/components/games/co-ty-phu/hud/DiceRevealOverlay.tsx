@@ -63,6 +63,7 @@ export function DiceRevealOverlay() {
   const [visible, setVisible] = useState(false);
   const [displayedDice, setDisplayedDice] = useState<[number, number]>([1, 1]);
   const [showDoubleAura, setShowDoubleAura] = useState(false);
+  const [rollerName, setRollerName] = useState('');
 
   const activePlayer = players[activePlayerIndex];
 
@@ -70,6 +71,7 @@ export function DiceRevealOverlay() {
     // Trigger when dice values update or game phase indicates an active roll
     if (dice && dice[0] > 0 && dice[1] > 0) {
       setDisplayedDice(dice);
+      setRollerName(players[activePlayerIndex]?.name || 'Người Chơi');
       setVisible(true);
 
       const isCurrentDouble = dice[0] === dice[1];
@@ -105,7 +107,7 @@ export function DiceRevealOverlay() {
 
         {/* Player Name and Header */}
         <p className="text-xs font-bold tracking-wider text-amber-300 uppercase">
-          {activePlayer?.name || 'Người Chơi'} Đã Đổ
+          {rollerName || activePlayer?.name || 'Người Chơi'} Đã Đổ
         </p>
 
         {/* 2 Big Rolling Dice Side-by-Side */}

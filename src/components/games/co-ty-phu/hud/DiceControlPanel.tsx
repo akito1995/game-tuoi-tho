@@ -181,10 +181,23 @@ export function DiceControlPanel({ className = '' }: DiceControlPanelProps) {
         ) : canEnd ? (
           <button
             onClick={handleEndTurn}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-3 text-sm font-extrabold uppercase tracking-wider text-slate-950 shadow-lg shadow-emerald-500/30 transition-all hover:scale-102 hover:brightness-110 active:scale-95"
+            className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-extrabold uppercase tracking-wider text-slate-950 shadow-lg transition-all hover:scale-102 hover:brightness-110 active:scale-95 ${
+              isDouble && !activePlayer?.inJail
+                ? 'bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 ring-4 ring-yellow-400/60 shadow-yellow-500/40 animate-pulse'
+                : 'bg-gradient-to-r from-emerald-500 to-teal-500 shadow-emerald-500/30'
+            }`}
           >
-            <span>KẾT THÚC LƯỢT</span>
-            <ArrowRight className="h-5 w-5" />
+            {isDouble && !activePlayer?.inJail ? (
+              <>
+                <Dices className="h-5 w-5" />
+                <span>ĐỔ TIẾP (SỐ ĐÔI)</span>
+              </>
+            ) : (
+              <>
+                <span>KẾT THÚC LƯỢT</span>
+                <ArrowRight className="h-5 w-5" />
+              </>
+            )}
           </button>
         ) : (
           <div className="flex flex-1 items-center justify-center rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-2.5 text-xs font-semibold text-slate-400">

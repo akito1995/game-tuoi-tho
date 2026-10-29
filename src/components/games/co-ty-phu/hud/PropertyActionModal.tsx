@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   X,
   MapPin,
@@ -75,6 +75,15 @@ export function PropertyActionModal({
     return (Math.min(3, Math.max(0, currentTier + 1)) as 0 | 1 | 2 | 3);
   });
 
+  // BUG-01/02: Synchronize selectedTier whenever current tile changes
+  useEffect(() => {
+    if (tile && (tile.type === 'TRANSPORT' || tile.type === 'UTILITY')) {
+      setSelectedTier(0);
+    } else {
+      setSelectedTier((Math.min(3, Math.max(0, currentTier + 1)) as 0 | 1 | 2 | 3));
+    }
+  }, [currentTileId, currentTier, tile?.type]);
+
   const [activeTab, setActiveTab] = useState<'BUY' | 'MANAGE'>('BUY');
 
   if (!isOpen || !tile || !activePlayer || activePlayer.isBot) return null;
@@ -88,7 +97,7 @@ export function PropertyActionModal({
   const tiers = [
     {
       tierIndex: 0 as const,
-      name: 'Đất nền',
+      name: isTransportOrUtility ? 'Sở hữu cơ bản' : 'Đất nền',
       icon: Flag,
       cost: isUnowned ? tilePrice : 0,
       rent: tile.rentMultiplier?.[0] || tile.baseRent || Math.round(tilePrice * 0.1),
@@ -132,7 +141,8 @@ export function PropertyActionModal({
   const handleConfirm = () => {
     if (!canAfford) return;
     soundManager.playCoinSound();
-    const success = buyOrUpgradeProperty(tile.id, selectedTier);
+    const targetTier = isTransportOrUtility ? 0 : selectedTier;
+    const success = buyOrUpgradeProperty(tile.id, targetTier);
     if (success) {
       soundManager.playBuildSound();
     }

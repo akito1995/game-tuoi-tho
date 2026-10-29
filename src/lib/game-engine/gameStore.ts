@@ -68,6 +68,25 @@ export function checkColorMonopoly(
  */
 export function calculateRent(tile: Tile, tiles: Tile[]): number {
   if (tile.isMortgaged) return 0;
+
+  // For Transport tiles: rent scales with number of transport tiles owned by same player
+  if (tile.type === 'TRANSPORT' && tile.ownerId) {
+    const ownedTransportCount = tiles.filter(
+      (t) => t.type === 'TRANSPORT' && t.ownerId === tile.ownerId
+    ).length;
+    const tierIdx = Math.max(0, Math.min(ownedTransportCount - 1, (tile.rentMultiplier?.length || 1) - 1));
+    return tile.rentMultiplier?.[tierIdx] || tile.baseRent || 25000;
+  }
+
+  // For Utility tiles: rent scales with number of utility tiles owned by same player
+  if (tile.type === 'UTILITY' && tile.ownerId) {
+    const ownedUtilityCount = tiles.filter(
+      (t) => t.type === 'UTILITY' && t.ownerId === tile.ownerId
+    ).length;
+    const tierIdx = Math.max(0, Math.min(ownedUtilityCount - 1, (tile.rentMultiplier?.length || 1) - 1));
+    return tile.rentMultiplier?.[tierIdx] || tile.baseRent || 20000;
+  }
+
   const tier = tile.hasResort ? 4 : Math.min(3, tile.houseCount || 0);
   let rent = 0;
   if (tile.rentMultiplier && tile.rentMultiplier.length > tier) {
@@ -308,9 +327,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }
     }
 
-    // 2. Double bonus & speed check
+    // 2. Double bonus & speed check (BUG-04: Award +50,000 VND on doubles)
     if (isDouble && !activePlayer.inJail) {
-      logs.push(`${activePlayer.name} đổ xúc xắc đôi [${d1}, ${d2}]! Được đổ thêm lượt nữa!`);
+      activePlayer.money += 50000;
+      logs.push(`${activePlayer.name} đổ xúc xắc đôi [${d1}, ${d2}]! Nhận thưởng nóng +50.000đ và được đổ thêm lượt nữa!`);
 
       if (newDoubleStreak >= 3) {
         logs.push(
@@ -431,6 +451,39 @@ export const useGameStore = create<GameStore>((set, get) => ({
         } else if (target === 8) {
           activePlayer.inJail = true;
           activePlayer.jailTurns = state.settings.maxJailTurns;
+        } else {
+          // BUG-03: Process landed tile on teleport destination
+          const destTile = tiles[target];
+          if (destTile) {
+            logs.push(`${activePlayer.name} bay thẳng tới ô [${target}] ${destTile.name}.`);
+            if (destTile.ownerId && destTile.ownerId !== activePlayer.id) {
+              const rent = calculateRent(destTile, tiles);
+              logs.push(`${activePlayer.name} phải trả tiền thuê ${rent.toLocaleString('vi-VN')}đ cho chủ sở hữu.`);
+              if (activePlayer.money >= rent) {
+                activePlayer.money -= rent;
+                const ownerIdx = state.players.findIndex((p) => p.id === destTile.ownerId);
+                if (ownerIdx !== -1) {
+                  state.players[ownerIdx].money += rent;
+                }
+              } else {
+                logs.push(`${activePlayer.name} không đủ tiền trả thuê và bị phá sản!`);
+                const bk = processBankruptcy(state.players, tiles, state.activePlayerIndex, destTile.ownerId);
+                set({
+                  players: bk.players,
+                  tiles: bk.tiles,
+                  dice: [d1, d2],
+                  isDouble: false,
+                  doubleStreak: 0,
+                  consecutiveDoubles: 0,
+                  jackpotFund: currentJackpot,
+                  winner: bk.winner,
+                  gamePhase: bk.gameOver ? 'GAME_OVER' : 'TURN_END',
+                  eventLogs: logs,
+                });
+                return [d1, d2];
+              }
+            }
+          }
         }
       } else if (drawn.type === 'JAIL_FREE') {
         activePlayer.jailFreeCards = (activePlayer.jailFreeCards || 0) + 1;
@@ -624,10 +677,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (!activePlayer || activePlayer.bankrupt) return false;
 
     const tile = state.tiles[tileId];
-    if (!tile || tile.type !== 'PROPERTY') return false;
-
-    // Check round 1 restriction for Landmark
-    if (targetTier === 3 && (state.currentRound || 1) <= 1) {
+    if (
+      !tile ||
+      (tile.type !== 'PROPERTY' && tile.type !== 'TRANSPORT' && tile.type !== 'UTILITY')
+    ) {
       return false;
     }
 
@@ -635,6 +688,51 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const isUnowned = !tile.ownerId;
 
     if (!isOwnedByMe && !isUnowned) return false;
+
+    // BUG-01: Transport and Utility tiles purchase (Tier 0 only, cannot build houses)
+    if (tile.type === 'TRANSPORT' || tile.type === 'UTILITY') {
+      if (!isUnowned) return false;
+      const cost = tile.price || 0;
+      if (activePlayer.money < cost) return false;
+
+      const newMoney = activePlayer.money - cost;
+      const updatedPlayer: Player = {
+        ...activePlayer,
+        money: newMoney,
+        properties: [...activePlayer.properties, tileId],
+      };
+
+      const updatedTiles = state.tiles.map((t) =>
+        t.id === tileId
+          ? {
+              ...t,
+              ownerId: activePlayer.id,
+              houseCount: 0,
+              hasResort: false,
+              isMortgaged: false,
+            }
+          : t
+      );
+
+      const updatedPlayers = [...state.players];
+      updatedPlayers[state.activePlayerIndex] = updatedPlayer;
+
+      set({
+        players: updatedPlayers,
+        tiles: updatedTiles,
+        gamePhase: 'TURN_END',
+        eventLogs: [
+          ...state.eventLogs,
+          `${activePlayer.name} đã mua thành công ${tile.name} với giá ${cost.toLocaleString('vi-VN')}đ.`,
+        ],
+      });
+      return true;
+    }
+
+    // Check round 1 restriction for Landmark
+    if (targetTier === 3 && (state.currentRound || 1) <= 1) {
+      return false;
+    }
 
     const currentTier = isUnowned
       ? -1
@@ -1077,11 +1175,30 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   applyAndDismissCurrentCard: () => {
-    set({ currentCard: null, gamePhase: 'TURN_END' });
+    get().dismissCard();
   },
 
   dismissCard: () => {
-    set({ currentCard: null, gamePhase: 'TURN_END' });
+    const state = get();
+    const activePlayer = state.players[state.activePlayerIndex];
+    let nextPhase: GamePhase = 'TURN_END';
+
+    // BUG-03: If player was teleported to an unowned tile or own tile, allow action
+    if (activePlayer && !activePlayer.bankrupt && !activePlayer.inJail) {
+      const currentTile = state.tiles[activePlayer.position];
+      if (
+        currentTile &&
+        (currentTile.type === 'PROPERTY' || currentTile.type === 'TRANSPORT' || currentTile.type === 'UTILITY')
+      ) {
+        if (!currentTile.ownerId) {
+          nextPhase = 'ACTION_REQUIRED';
+        } else if (currentTile.ownerId === activePlayer.id) {
+          nextPhase = 'ACTION';
+        }
+      }
+    }
+
+    set({ currentCard: null, gamePhase: nextPhase });
   },
 
   endTurn: () => {
