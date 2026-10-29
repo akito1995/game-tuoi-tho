@@ -17,6 +17,7 @@ import { TurnTimerBar } from './TurnTimerBar';
 import { DiceRevealOverlay } from './DiceRevealOverlay';
 import { PropertyInspectorModal } from './PropertyInspectorModal';
 import { MascotDialogueBanner } from './MascotDialogueBanner';
+import { FlyingMoneyVFX } from './FlyingMoneyVFX';
 
 export interface CoTyPhuHUDProps {
   className?: string;
@@ -47,6 +48,9 @@ export function CoTyPhuHUD({
     >
       {/* Big Animated 3D Dice Reveal Overlay (Active during dice roll) */}
       <DiceRevealOverlay />
+
+      {/* Parabolic Flying Money & Coins Particle VFX */}
+      <FlyingMoneyVFX />
 
       {/* Top Bar: Header, 60s Turn Timer, and Player List */}
       <div className="pointer-events-auto flex flex-col w-full gap-1.5">

@@ -18,6 +18,15 @@ import {
   calculatePropertyTierDetails,
   calculateRemainingBalance,
 } from '@/components/games/co-ty-phu/hud/PropertyActionModal';
+import {
+  ChanceCardModal,
+  getChanceCardCategoryDetails,
+} from '@/components/games/co-ty-phu/hud/ChanceCardModal';
+import { FlyingMoneyVFX } from '@/components/games/co-ty-phu/hud/FlyingMoneyVFX';
+import { CoTyPhuHUD } from '@/components/games/co-ty-phu/hud/CoTyPhuHUD';
+import { GameHeader } from '@/components/games/co-ty-phu/hud/GameHeader';
+import { PlayerListBar } from '@/components/games/co-ty-phu/hud/PlayerListBar';
+import { TurnTimerBar } from '@/components/games/co-ty-phu/hud/TurnTimerBar';
 
 describe('HUD Helpers and UI Logic Suite', () => {
   beforeEach(() => {
@@ -553,6 +562,49 @@ describe('HUD Helpers and UI Logic Suite', () => {
       const res4 = calculateRemainingBalance(500000, 0);
       expect(res4.canAfford).toBe(false);
       expect(res4.remainingCash).toBe(500000);
+    });
+  });
+
+  describe('Stage 5: Commercial Arcade HUD & Parabolic VFX Components', () => {
+    it('should export all key Stage 5 HUD and modal components', () => {
+      expect(typeof ChanceCardModal).toBe('function');
+      expect(typeof FlyingMoneyVFX).toBe('function');
+      expect(typeof CoTyPhuHUD).toBe('function');
+      expect(typeof GameHeader).toBe('function');
+      expect(typeof PlayerListBar).toBe('function');
+      expect(typeof TurnTimerBar).toBe('function');
+    });
+
+    it('should properly configure Chance Card (Cơ Hội) details with gold theme and rewards', () => {
+      const details = getChanceCardCategoryDetails({
+        id: 'test-card-1',
+        title: 'Cơ Hội Vàng',
+        description: 'Nhận tiền thưởng sinh nhật 200.000đ',
+        type: 'CASH_GAIN',
+        amount: 200000,
+      });
+
+      expect(details.isFate).toBe(false);
+      expect(details.categoryName).toBe('CƠ HỘI PHÁT TÀI');
+      expect(details.badgeText).toContain('200.000đ');
+      expect(details.borderColor).toBe('border-amber-400');
+      expect(details.artIcon).toBe('💰');
+    });
+
+    it('should properly distinguish Fate Card (Khí Vận) with amethyst theme and penalties', () => {
+      const details = getChanceCardCategoryDetails({
+        id: 'test-fate-1',
+        title: 'Khí Vận Định Mệnh',
+        description: 'Nộp phạt vi phạm tốc độ 100.000đ',
+        type: 'CASH_LOSS',
+        amount: 100000,
+      });
+
+      expect(details.isFate).toBe(true);
+      expect(details.categoryName).toBe('KHÍ VẬN ĐỊNH MỆNH');
+      expect(details.badgeText).toContain('100.000đ');
+      expect(details.borderColor).toBe('border-purple-400');
+      expect(details.artIcon).toBe('⚖️');
     });
   });
 });
