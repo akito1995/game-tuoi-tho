@@ -32,12 +32,24 @@ export interface BoardTableFrameProps {
  */
 export function TropicalOceanWater() {
   const innerWaterRef = useRef<THREE.Mesh>(null);
+  const ripplePlaneRef = useRef<THREE.Mesh>(null);
   const outerWaterRef = useRef<THREE.Mesh>(null);
+  const foamRef = useRef<THREE.Mesh>(null);
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
     if (innerWaterRef.current) {
-      innerWaterRef.current.position.y = -0.32 + Math.sin(t * 1.0) * 0.015;
+      innerWaterRef.current.position.y = -0.32 + Math.sin(t * 1.0) * 0.012;
+    }
+    if (ripplePlaneRef.current) {
+      ripplePlaneRef.current.position.y = -0.315 + Math.sin(t * 1.5 + 0.5) * 0.01;
+      ripplePlaneRef.current.rotation.z = Math.sin(t * 0.2) * 0.02;
+    }
+    if (foamRef.current) {
+      const foamMat = foamRef.current.material as THREE.MeshBasicMaterial;
+      if (foamMat) {
+        foamMat.opacity = 0.28 + Math.sin(t * 2.2) * 0.08;
+      }
     }
     if (outerWaterRef.current) {
       outerWaterRef.current.position.y = -0.55 + Math.sin(t * 0.8) * 0.02;
@@ -70,10 +82,42 @@ export function TropicalOceanWater() {
         />
       </mesh>
 
+      {/* Water Surface Shimmer & Ripple Layer */}
+      <mesh
+        ref={ripplePlaneRef}
+        position={[0, -0.315, 0]}
+        rotation={[-Math.PI / 2, 0, 0]}
+      >
+        <planeGeometry args={[15.4, 15.4, 16, 16]} />
+        <meshStandardMaterial
+          color="#2dd4bf"
+          roughness={0.12}
+          metalness={0.5}
+          transparent
+          opacity={0.32}
+          depthWrite={false}
+        />
+      </mesh>
+
+      {/* Shore Foam Lap Ring along all 4 stone quays */}
+      <mesh
+        ref={foamRef}
+        position={[0, -0.31, 0]}
+        rotation={[-Math.PI / 2, 0, 0]}
+      >
+        <ringGeometry args={[6.8, 7.7, 36]} />
+        <meshBasicMaterial
+          color="#ecfeff"
+          transparent
+          opacity={0.3}
+          depthWrite={false}
+        />
+      </mesh>
+
       {/* Luminous Aquatic Lotus Caustic Rings */}
-      <mesh position={[0, -0.30, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[2.5, 6.8, 36]} />
-        <meshBasicMaterial color="#2dd4bf" transparent opacity={0.22} depthWrite={false} />
+      <mesh position={[0, -0.305, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[2.5, 6.2, 36]} />
+        <meshBasicMaterial color="#2dd4bf" transparent opacity={0.2} depthWrite={false} />
       </mesh>
 
       {/* 2. OUTER SURROUNDING RIVER / SEA WATER */}
@@ -161,7 +205,9 @@ export function BeachPalmTree({ position, scale = 0.9 }: { position: [number, nu
 }
 
 /**
- * River Cruiser / Wooden Barge cruising in surrounding waters
+ * Traditional Vietnamese Wooden River Junk / Sampan Cruising in surrounding waters
+ * Features a planked mahogany hull, arched bamboo mat cabin, mast with sail,
+ * stern lantern, and water wake.
  */
 export function CruisingYacht({ initialRadius = 16, speed = 0.1 }: { initialRadius?: number; speed?: number }) {
   const groupRef = useRef<THREE.Group>(null);
@@ -172,32 +218,75 @@ export function CruisingYacht({ initialRadius = 16, speed = 0.1 }: { initialRadi
     angleRef.current += speed * delta * 0.18;
     const x = Math.cos(angleRef.current) * initialRadius;
     const z = Math.sin(angleRef.current) * initialRadius;
-    groupRef.current.position.set(x, -0.5, z);
+    groupRef.current.position.set(x, -0.48 + Math.sin(angleRef.current * 8) * 0.015, z);
     groupRef.current.rotation.y = -angleRef.current + Math.PI;
+    groupRef.current.rotation.z = Math.sin(angleRef.current * 6) * 0.03;
   });
 
   return (
     <group ref={groupRef}>
-      <mesh position={[0, 0.1, 0]} castShadow>
-        <boxGeometry args={[0.45, 0.2, 1.4]} />
-        <meshStandardMaterial color="#78350f" roughness={0.7} />
+      {/* 1. Main Planked Wooden Hull */}
+      <mesh position={[0, 0.12, 0]} castShadow receiveShadow>
+        <boxGeometry args={[0.55, 0.22, 1.8]} />
+        <meshStandardMaterial color="#5c290a" roughness={0.82} />
       </mesh>
-      <mesh position={[0, 0.25, -0.1]} castShadow>
-        <boxGeometry args={[0.34, 0.16, 0.7]} />
-        <meshStandardMaterial color="#fef08a" roughness={0.5} />
+      {/* Curved Pointed Prow (Mũi Thuyền) */}
+      <mesh position={[0, 0.18, 0.95]} rotation={[0.4, 0, 0]} castShadow>
+        <boxGeometry args={[0.48, 0.22, 0.45]} />
+        <meshStandardMaterial color="#78350f" roughness={0.8} />
+      </mesh>
+      {/* Pointed Stem Post */}
+      <mesh position={[0, 0.32, 1.15]} rotation={[0.2, 0, 0]} castShadow>
+        <boxGeometry args={[0.08, 0.35, 0.08]} />
+        <meshStandardMaterial color="#b45309" roughness={0.7} />
+      </mesh>
+
+      {/* 2. Arched Woven Bamboo Mat Cabin Shelter (Mui Thuyền Nan) */}
+      <mesh position={[0, 0.32, -0.15]} castShadow>
+        <cylinderGeometry args={[0.3, 0.3, 0.85, 12, 1, false, 0, Math.PI]} />
+        <meshStandardMaterial color="#ca8a04" roughness={0.85} side={THREE.DoubleSide} />
+      </mesh>
+
+      {/* 3. Bamboo Mast & Traditional Ochre Tan Sail */}
+      <mesh position={[0, 0.65, 0.42]} castShadow>
+        <cylinderGeometry args={[0.02, 0.025, 0.95, 6]} />
+        <meshStandardMaterial color="#ca8a04" roughness={0.7} />
+      </mesh>
+      <mesh position={[0, 0.72, 0.28]} rotation={[0, 0.1, 0.05]} castShadow>
+        <boxGeometry args={[0.02, 0.7, 0.38]} />
+        <meshStandardMaterial color="#d97706" roughness={0.9} />
+      </mesh>
+
+      {/* 4. Stern Red Paper Lantern */}
+      <group position={[0, 0.35, -0.92]}>
+        <mesh position={[0, 0.06, 0]}>
+          <cylinderGeometry args={[0.005, 0.005, 0.12, 4]} />
+          <meshBasicMaterial color="#1e293b" />
+        </mesh>
+        <mesh castShadow>
+          <sphereGeometry args={[0.07, 8, 8]} />
+          <meshStandardMaterial color="#dc2626" emissive="#b91c1c" emissiveIntensity={1.2} />
+        </mesh>
+      </group>
+
+      {/* 5. Trailing Wake Foam on Water */}
+      <mesh position={[0, -0.04, -1.2]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[0.6, 1.1]} />
+        <meshBasicMaterial color="#ecfeff" transparent opacity={0.35} depthWrite={false} />
       </mesh>
     </group>
   );
 }
 
 /**
- * Ancient Brick Viaduct Pier with Arch Underneath
+ * Ancient Brick Viaduct Recessed Arch Niche in the retaining embankment wall
+ * Safely embedded below board level (Y between -0.15 and -0.75) with deep shadowed cavity.
  */
 function ViaductArchSegment({
   position,
   rotation = [0, 0, 0],
   width = 2.4,
-  height = 0.65,
+  height = 0.55,
 }: {
   position: [number, number, number];
   rotation?: [number, number, number];
@@ -207,19 +296,29 @@ function ViaductArchSegment({
   return (
     <group position={position} rotation={rotation}>
       {/* Left Stone Pier */}
-      <mesh position={[-width / 2 + 0.18, -height / 2, 0]} castShadow receiveShadow>
-        <boxGeometry args={[0.32, height, 0.35]} />
-        <meshStandardMaterial color="#475569" roughness={0.9} />
+      <mesh position={[-width / 2 + 0.16, -height / 2, 0]} castShadow receiveShadow>
+        <boxGeometry args={[0.28, height, 0.32]} />
+        <meshStandardMaterial color="#334155" roughness={0.92} />
       </mesh>
       {/* Right Stone Pier */}
-      <mesh position={[width / 2 - 0.18, -height / 2, 0]} castShadow receiveShadow>
-        <boxGeometry args={[0.32, height, 0.35]} />
-        <meshStandardMaterial color="#475569" roughness={0.9} />
+      <mesh position={[width / 2 - 0.16, -height / 2, 0]} castShadow receiveShadow>
+        <boxGeometry args={[0.28, height, 0.32]} />
+        <meshStandardMaterial color="#334155" roughness={0.92} />
       </mesh>
-      {/* Brick Arch Vault */}
-      <mesh position={[0, -0.12, 0]} castShadow receiveShadow>
-        <torusGeometry args={[width / 2 - 0.28, 0.14, 6, 12, Math.PI]} />
-        <meshStandardMaterial color="#b45309" roughness={0.88} />
+      {/* Recessed Dark Arch Alcove Cavity */}
+      <mesh position={[0, -height / 2, -0.06]}>
+        <boxGeometry args={[width - 0.36, height * 0.9, 0.22]} />
+        <meshStandardMaterial color="#091422" roughness={0.98} />
+      </mesh>
+      {/* Weathered Stone Arch Lintel Header */}
+      <mesh position={[0, -0.04, 0.02]} castShadow receiveShadow>
+        <boxGeometry args={[width, 0.08, 0.36]} />
+        <meshStandardMaterial color="#475569" roughness={0.85} />
+      </mesh>
+      {/* Weathered Terracotta Keystones */}
+      <mesh position={[0, -0.04, 0.19]} castShadow>
+        <boxGeometry args={[0.22, 0.11, 0.05]} />
+        <meshStandardMaterial color="#991b1b" roughness={0.78} />
       </mesh>
     </group>
   );
@@ -358,10 +457,10 @@ export function BoardTableFrame({
 
     for (let i = 0; i < steps; i++) {
       const offset = -span / 2 + i * stepSize;
-      list.push({ pos: [offset, -0.02, -halfInner + 0.05], rot: [0, 0, 0] });
-      list.push({ pos: [offset, -0.02, halfInner - 0.05], rot: [0, Math.PI, 0] });
-      list.push({ pos: [halfInner - 0.05, -0.02, offset], rot: [0, -Math.PI / 2, 0] });
-      list.push({ pos: [-halfInner + 0.05, -0.02, offset], rot: [0, Math.PI / 2, 0] });
+      list.push({ pos: [offset, -0.45, -halfInner + 0.15], rot: [0, 0, 0] });
+      list.push({ pos: [offset, -0.45, halfInner - 0.15], rot: [0, Math.PI, 0] });
+      list.push({ pos: [halfInner - 0.15, -0.45, offset], rot: [0, -Math.PI / 2, 0] });
+      list.push({ pos: [-halfInner + 0.15, -0.45, offset], rot: [0, Math.PI / 2, 0] });
     }
     return list;
   }, [innerSize, halfInner]);
