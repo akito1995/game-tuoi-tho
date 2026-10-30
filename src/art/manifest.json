@@ -1,0 +1,172 @@
+{
+  "version": "1.0.0",
+  "updatedAt": "2026-10-30T10:35:20.684Z",
+  "characters": {
+    "be-ti": [
+      {
+        "id": "be-ti",
+        "poseIndex": 1,
+        "filename": "pose-1.png",
+        "path": "/art/characters/be-ti/pose-1.png",
+        "width": 317,
+        "height": 777
+      },
+      {
+        "id": "be-ti",
+        "poseIndex": 2,
+        "filename": "pose-2.png",
+        "path": "/art/characters/be-ti/pose-2.png",
+        "width": 392,
+        "height": 777
+      },
+      {
+        "id": "be-ti",
+        "poseIndex": 3,
+        "filename": "pose-3.png",
+        "path": "/art/characters/be-ti/pose-3.png",
+        "width": 415,
+        "height": 777
+      },
+      {
+        "id": "be-ti",
+        "poseIndex": 4,
+        "filename": "pose-4.png",
+        "path": "/art/characters/be-ti/pose-4.png",
+        "width": 388,
+        "height": 777
+      }
+    ],
+    "chi-may": [
+      {
+        "id": "chi-may",
+        "poseIndex": 1,
+        "filename": "pose-1.png",
+        "path": "/art/characters/chi-may/pose-1.png",
+        "width": 338,
+        "height": 825
+      },
+      {
+        "id": "chi-may",
+        "poseIndex": 2,
+        "filename": "pose-2.png",
+        "path": "/art/characters/chi-may/pose-2.png",
+        "width": 353,
+        "height": 825
+      },
+      {
+        "id": "chi-may",
+        "poseIndex": 3,
+        "filename": "pose-3.png",
+        "path": "/art/characters/chi-may/pose-3.png",
+        "width": 417,
+        "height": 825
+      },
+      {
+        "id": "chi-may",
+        "poseIndex": 4,
+        "filename": "pose-4.png",
+        "path": "/art/characters/chi-may/pose-4.png",
+        "width": 367,
+        "height": 825
+      }
+    ],
+    "co-hoa": [
+      {
+        "id": "co-hoa",
+        "poseIndex": 1,
+        "filename": "pose-1.png",
+        "path": "/art/characters/co-hoa/pose-1.png",
+        "width": 354,
+        "height": 855
+      },
+      {
+        "id": "co-hoa",
+        "poseIndex": 2,
+        "filename": "pose-2.png",
+        "path": "/art/characters/co-hoa/pose-2.png",
+        "width": 361,
+        "height": 855
+      },
+      {
+        "id": "co-hoa",
+        "poseIndex": 3,
+        "filename": "pose-3.png",
+        "path": "/art/characters/co-hoa/pose-3.png",
+        "width": 441,
+        "height": 855
+      },
+      {
+        "id": "co-hoa",
+        "poseIndex": 4,
+        "filename": "pose-4.png",
+        "path": "/art/characters/co-hoa/pose-4.png",
+        "width": 387,
+        "height": 855
+      }
+    ],
+    "ong-bay": [
+      {
+        "id": "ong-bay",
+        "poseIndex": 1,
+        "filename": "pose-1.png",
+        "path": "/art/characters/ong-bay/pose-1.png",
+        "width": 301,
+        "height": 750
+      },
+      {
+        "id": "ong-bay",
+        "poseIndex": 2,
+        "filename": "pose-2.png",
+        "path": "/art/characters/ong-bay/pose-2.png",
+        "width": 354,
+        "height": 750
+      },
+      {
+        "id": "ong-bay",
+        "poseIndex": 3,
+        "filename": "pose-3.png",
+        "path": "/art/characters/ong-bay/pose-3.png",
+        "width": 447,
+        "height": 750
+      },
+      {
+        "id": "ong-bay",
+        "poseIndex": 4,
+        "filename": "pose-4.png",
+        "path": "/art/characters/ong-bay/pose-4.png",
+        "width": 370,
+        "height": 750
+      }
+    ]
+  },
+  "avatars": [
+    {
+      "name": "avatar-1",
+      "filename": "avatar-1.png",
+      "path": "/art/avatars/avatar-1.png",
+      "width": 571,
+      "height": 578
+    },
+    {
+      "name": "avatar-2",
+      "filename": "avatar-2.png",
+      "path": "/art/avatars/avatar-2.png",
+      "width": 578,
+      "height": 580
+    },
+    {
+      "name": "avatar-3",
+      "filename": "avatar-3.png",
+      "path": "/art/avatars/avatar-3.png",
+      "width": 571,
+      "height": 583
+    },
+    {
+      "name": "avatar-4",
+      "filename": "avatar-4.png",
+      "path": "/art/avatars/avatar-4.png",
+      "width": 577,
+      "height": 584
+    }
+  ]
+}
