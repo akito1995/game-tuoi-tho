@@ -49,11 +49,11 @@ function AdaptiveCamera() {
     if (camera instanceof THREE.PerspectiveCamera) {
       const isPortraitOrNarrow = size.width < 768 || size.width / size.height < 1.05;
       if (isPortraitOrNarrow) {
-        camera.fov = 44;
-        camera.position.set(15.5, 24.5, 18.5);
+        camera.fov = 36;
+        camera.position.set(12.5, 15.5, 14.5);
       } else {
-        camera.fov = 34;
-        camera.position.set(14.5, 21.5, 17.5);
+        camera.fov = 28;
+        camera.position.set(10.5, 12.8, 12.5);
       }
       camera.updateProjectionMatrix();
     }
@@ -64,8 +64,8 @@ function AdaptiveCamera() {
     if (!camera) return;
     const isMoving = gamePhase === 'MOVING' || gamePhase === 'ROLLING' || gamePhase === 'TOKEN_MOVING' || gamePhase === 'DICE_ROLLING';
     const pawnTilePos = activePlayer ? getTile3DPosition(activePlayer.position) : [0, 0, 0];
-    const targetX = isMoving ? pawnTilePos[0] * 0.2 : 0;
-    const targetZ = isMoving ? pawnTilePos[2] * 0.2 : 0;
+    const targetX = isMoving ? pawnTilePos[0] * 0.35 : 0;
+    const targetZ = isMoving ? pawnTilePos[2] * 0.35 : 0;
 
     const ctrl = (threeState as unknown as { controls: { target: THREE.Vector3; update: () => void } }).controls;
     if (ctrl && ctrl.target) {
@@ -122,10 +122,21 @@ export function BoardCanvas({
 
   const handleResetCamera = () => {
     if (controlsRef.current) {
-      controlsRef.current.reset();
-      controlsRef.current.object.position.set(14.5, 21.5, 17.5);
+      const isNarrow =
+        typeof window !== 'undefined' &&
+        (window.innerWidth < 768 || window.innerWidth / window.innerHeight < 1.05);
+      const targetPos = isNarrow ? [12.5, 15.5, 14.5] : [10.5, 12.8, 12.5];
       controlsRef.current.target.set(0, 0, 0);
+      controlsRef.current.object.position.set(targetPos[0], targetPos[1], targetPos[2]);
+      if ('fov' in controlsRef.current.object) {
+        const cam = controlsRef.current.object as THREE.PerspectiveCamera;
+        cam.fov = isNarrow ? 36 : 28;
+        cam.updateProjectionMatrix();
+      }
       controlsRef.current.update();
+      if (typeof controlsRef.current.saveState === 'function') {
+        controlsRef.current.saveState();
+      }
     }
   };
 
@@ -146,7 +157,7 @@ export function BoardCanvas({
 
   return (
     <div
-      className={`relative overflow-hidden select-none bg-gradient-to-b from-[#0369a1] via-[#0284c7] to-[#38bdf8] ${className}`}
+      className={`relative overflow-hidden select-none bg-gradient-to-b from-[#0a0f1d] via-[#1e1b4b] to-[#312e81] ${className}`}
     >
       <Canvas
         shadows="soft"
@@ -156,11 +167,11 @@ export function BoardCanvas({
           alpha: true,
           powerPreference: 'high-performance',
           toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.15,
+          toneMappingExposure: 1.25,
         }}
         camera={{
-          position: [14.5, 21.5, 17.5],
-          fov: 34,
+          position: [10.5, 12.8, 12.5],
+          fov: 28,
           near: 0.1,
           far: 180,
         }}
@@ -174,11 +185,11 @@ export function BoardCanvas({
 
           {/* Golden Ambient Particle Dust floating over the island */}
           <Sparkles
-            count={45}
-            scale={28}
-            size={3.5}
-            speed={0.4}
-            opacity={0.55}
+            count={65}
+            scale={24}
+            size={4.0}
+            speed={0.5}
+            opacity={0.65}
             color="#fbbf24"
           />
 
@@ -227,10 +238,10 @@ export function BoardCanvas({
             makeDefault
             enableDamping
             dampingFactor={0.06}
-            minDistance={8}
-            maxDistance={35}
-            minPolarAngle={Math.PI / 6}
-            maxPolarAngle={Math.PI / 2.25}
+            minDistance={6}
+            maxDistance={24}
+            minPolarAngle={Math.PI / 4}
+            maxPolarAngle={Math.PI / 2.3}
             target={[0, 0, 0]}
           />
         )}

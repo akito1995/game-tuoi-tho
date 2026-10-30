@@ -73,57 +73,57 @@ export function Environment3D() {
 
   return (
     <group name="vietnam-heritage-environment">
-      {/* Clean, vibrant tropical/twilight sky haze (Never murky black) */}
-      <fog attach="fog" args={['#0284c7', 70, 160]} />
+      {/* Cinematic Twilight Purple Atmospheric Fog */}
+      <fog attach="fog" args={['#1e1b4b', 32, 105]} />
 
       {/* Balanced baseline ambient light */}
-      <ambientLight color="#ffffff" intensity={0.82} />
+      <ambientLight color="#f1f5f9" intensity={0.78} />
 
-      {/* Hemisphere Light: Vivid Sky Blue Top & Warm Earth Ground Bounce */}
+      {/* Hemisphere Light: Twilight Indigo Sky & Sunset Amber Ground */}
       <hemisphereLight
-        color="#38bdf8"
+        color="#818cf8"
         groundColor="#d97706"
-        intensity={0.85}
+        intensity={1.05}
       />
 
-      {/* Primary Key Sunlight (Cinematic late-afternoon golden hour angle) */}
+      {/* Primary Key Sunlight (Cinematic golden hour sunset angle) */}
       <directionalLight
         ref={dirLightRef}
-        position={[-16, 26, -12]}
-        color="#fffbeb"
-        intensity={2.8}
+        position={[-18, 22, -14]}
+        color="#fef3c7"
+        intensity={3.4}
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
         shadow-camera-near={1.0}
         shadow-camera-far={80}
-        shadow-camera-left={-22}
-        shadow-camera-right={22}
-        shadow-camera-top={22}
-        shadow-camera-bottom={-22}
+        shadow-camera-left={-20}
+        shadow-camera-right={20}
+        shadow-camera-top={20}
+        shadow-camera-bottom={-20}
         shadow-bias={-0.0001}
         shadow-normalBias={0.03}
       />
 
-      {/* Secondary Fill Light: Soft Warm Amber Glow on shaded faces */}
+      {/* Secondary Fill Light: Warm Terracotta Glow */}
       <directionalLight
-        position={[16, 20, 16]}
-        color="#fed7aa"
-        intensity={0.95}
+        position={[14, 16, 14]}
+        color="#fdba74"
+        intensity={1.15}
       />
 
       {/* Central Lotus Lagoon Turquoise Bounce Light */}
       <directionalLight
-        position={[0, -10, 0]}
+        position={[0, -8, 0]}
         color="#06b6d4"
-        intensity={0.55}
+        intensity={0.75}
       />
 
-      {/* Sunset Clouds in high sky */}
-      <GoldenSunsetCloud initialPosition={[-24, 22, -18]} scale={1.4} speed={0.018} />
-      <GoldenSunsetCloud initialPosition={[26, 25, 20]} scale={1.6} speed={0.015} />
-      <GoldenSunsetCloud initialPosition={[-18, 20, 24]} scale={1.2} speed={0.02} />
-      <GoldenSunsetCloud initialPosition={[22, 23, -22]} scale={1.3} speed={0.014} />
+      {/* Golden Sunset Clouds floating gracefully */}
+      <GoldenSunsetCloud initialPosition={[-24, 18, -18]} scale={1.4} speed={0.018} />
+      <GoldenSunsetCloud initialPosition={[26, 20, 20]} scale={1.6} speed={0.015} />
+      <GoldenSunsetCloud initialPosition={[-18, 16, 24]} scale={1.2} speed={0.02} />
+      <GoldenSunsetCloud initialPosition={[22, 19, -22]} scale={1.3} speed={0.014} />
     </group>
   );
 }

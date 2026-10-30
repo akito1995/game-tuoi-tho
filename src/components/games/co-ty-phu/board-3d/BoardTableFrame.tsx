@@ -132,10 +132,10 @@ export function TropicalOceanWater() {
         <meshBasicMaterial color="#2dd4bf" transparent opacity={0.2} depthWrite={false} />
       </mesh>
 
-      {/* 2. OUTER SURROUNDING RIVER / SEA WATER */}
+      {/* 2. OUTER SURROUNDING RIVER / SEA WATER (Deep Sapphire Twilight Ocean) */}
       <mesh position={[0, -1.8, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[160, 160]} />
-        <meshStandardMaterial color="#022c44" roughness={0.95} />
+        <planeGeometry args={[180, 180]} />
+        <meshStandardMaterial color="#061224" roughness={0.95} />
       </mesh>
 
       <mesh
@@ -144,20 +144,20 @@ export function TropicalOceanWater() {
         rotation={[-Math.PI / 2, 0, 0]}
         receiveShadow
       >
-        <planeGeometry args={[150, 150, 24, 24]} />
+        <planeGeometry args={[170, 170, 32, 32]} />
         <meshStandardMaterial
-          color="#0284c7"
-          roughness={0.08}
-          metalness={0.3}
+          color="#0d2b45"
+          roughness={0.06}
+          metalness={0.4}
           transparent
-          opacity={0.85}
+          opacity={0.92}
         />
       </mesh>
 
       {/* Shoreline Turquoise Shallow Ring */}
       <mesh position={[0, -0.52, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[10.0, 22.0, 48]} />
-        <meshBasicMaterial color="#38bdf8" transparent opacity={0.3} depthWrite={false} />
+        <meshBasicMaterial color="#0891b2" transparent opacity={0.25} depthWrite={false} />
       </mesh>
     </group>
   );
@@ -479,6 +479,145 @@ function RetroBalustradeRow({
 }
 
 /**
+ * Vintage Emerald-Green Passenger Train Car on Elevated Viaduct Tracks (Meta World Icon)
+ */
+function VintageRailwayTrain({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position}>
+      {/* 1. Steel Rails & Wooden Sleepers */}
+      <mesh position={[0, -0.22, 0]} receiveShadow>
+        <boxGeometry args={[4.2, 0.04, 0.45]} />
+        <meshStandardMaterial color="#451a03" roughness={0.9} />
+      </mesh>
+      {[-0.12, 0.12].map((rz, ri) => (
+        <mesh key={`steel-rail-${ri}`} position={[0, -0.18, rz]} castShadow>
+          <boxGeometry args={[4.2, 0.05, 0.03]} />
+          <meshStandardMaterial color="#cbd5e1" metalness={0.9} roughness={0.2} />
+        </mesh>
+      ))}
+
+      {/* 2. Train Bogies & Steel Wheels */}
+      {[-1.2, 1.2].map((bx, bi) => (
+        <group key={`bogie-${bi}`} position={[bx, -0.12, 0]}>
+          {[-0.2, 0.2].map((wx, wi) => (
+            <mesh key={`wheel-${wi}`} position={[wx, 0, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+              <cylinderGeometry args={[0.09, 0.09, 0.32, 12]} />
+              <meshStandardMaterial color="#1e293b" metalness={0.9} roughness={0.3} />
+            </mesh>
+          ))}
+        </group>
+      ))}
+
+      {/* 3. Main Emerald Green Railcar Body */}
+      <mesh position={[0, 0.24, 0]} castShadow receiveShadow>
+        <boxGeometry args={[3.4, 0.62, 0.52]} />
+        <meshStandardMaterial color="#166534" metalness={0.4} roughness={0.4} />
+      </mesh>
+
+      {/* Cream Curved Passenger Roof */}
+      <mesh position={[0, 0.58, 0]} castShadow>
+        <cylinderGeometry args={[0.28, 0.28, 3.42, 12, 1, false, 0, Math.PI]} />
+        <meshStandardMaterial color="#fef08a" roughness={0.5} />
+      </mesh>
+
+      {/* Passenger Windows with Warm Golden Interior Glow */}
+      {[-1.2, -0.6, 0, 0.6, 1.2].map((wx, wi) => (
+        <mesh key={`train-win-${wi}`} position={[wx, 0.28, 0.265]}>
+          <planeGeometry args={[0.34, 0.26]} />
+          <meshStandardMaterial color="#fef08a" emissive="#f59e0b" emissiveIntensity={1.8} />
+        </mesh>
+      ))}
+      <pointLight position={[0, 0.3, 0.4]} color="#fbbf24" intensity={1.8} distance={5.0} />
+    </group>
+  );
+}
+
+/**
+ * Grand Suspension Bridge Cable Towers on Horizon (Meta World Background)
+ */
+function GrandSuspensionBridgeTowers({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position}>
+      {/* Twin Steel Towers */}
+      {[-1.8, 1.8].map((tx, ti) => (
+        <group key={`bridge-tower-${ti}`} position={[tx, 0, 0]}>
+          {/* Main vertical legs */}
+          {[-0.6, 0.6].map((lx, li) => (
+            <mesh key={`tower-leg-${li}`} position={[lx, 5.5, 0]} castShadow>
+              <boxGeometry args={[0.45, 11.0, 0.55]} />
+              <meshStandardMaterial color="#334155" metalness={0.7} roughness={0.4} />
+            </mesh>
+          ))}
+          {/* Horizontal cross-bracing struts */}
+          {[2.5, 5.5, 8.5, 10.5].map((sy, si) => (
+            <mesh key={`strut-${si}`} position={[0, sy, 0]} castShadow>
+              <boxGeometry args={[1.65, 0.3, 0.4]} />
+              <meshStandardMaterial color="#475569" metalness={0.75} roughness={0.35} />
+            </mesh>
+          ))}
+          {/* Pointed Gothic Arch Tops */}
+          <mesh position={[0, 11.5, 0]} castShadow>
+            <coneGeometry args={[0.55, 1.2, 4]} />
+            <meshStandardMaterial color="#1e293b" metalness={0.8} />
+          </mesh>
+        </group>
+      ))}
+
+      {/* Main Sweeping Suspension Cables */}
+      <mesh position={[0, 8.2, 0]} rotation={[0, 0, 0.05]}>
+        <boxGeometry args={[8.5, 0.08, 0.08]} />
+        <meshStandardMaterial color="#cbd5e1" metalness={0.9} />
+      </mesh>
+    </group>
+  );
+}
+
+/**
+ * Grand Classical Heritage Terminal Station Pavilion (Meta World Architecture)
+ */
+function HeritageStationPavilion({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position}>
+      {/* Granite Plinth Base */}
+      <mesh position={[0, 0.3, 0]} castShadow receiveShadow>
+        <boxGeometry args={[3.2, 0.6, 1.4]} />
+        <meshStandardMaterial color="#64748b" roughness={0.8} />
+      </mesh>
+      {/* Classical Portico Facade with Stone Columns */}
+      <mesh position={[0, 1.1, 0.35]} castShadow receiveShadow>
+        <boxGeometry args={[2.8, 1.0, 0.6]} />
+        <meshStandardMaterial color="#f1f5f9" roughness={0.65} />
+      </mesh>
+      {/* Arched Portico Windows */}
+      {[-0.8, 0, 0.8].map((ax, ai) => (
+        <group key={`station-arch-${ai}`} position={[ax, 1.0, 0.66]}>
+          <mesh>
+            <planeGeometry args={[0.45, 0.7]} />
+            <meshStandardMaterial color="#fef08a" emissive="#f59e0b" emissiveIntensity={1.8} />
+          </mesh>
+        </group>
+      ))}
+      {/* Classical Triangular Pediment */}
+      <mesh position={[0, 1.85, 0.35]} rotation={[0, 0, Math.PI / 4]} castShadow>
+        <boxGeometry args={[1.5, 1.5, 0.65]} />
+        <meshStandardMaterial color="#f8fafc" roughness={0.6} />
+      </mesh>
+      {/* Central Verdigris Copper Dome */}
+      <mesh position={[0, 2.3, -0.1]} castShadow>
+        <sphereGeometry args={[0.85, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshStandardMaterial color="#0d9488" metalness={0.65} roughness={0.4} />
+      </mesh>
+      {/* Glowing Warm Station Clock Tower */}
+      <mesh position={[0, 2.0, 0.68]}>
+        <circleGeometry args={[0.22, 16]} />
+        <meshStandardMaterial color="#fef08a" emissive="#f59e0b" emissiveIntensity={2.5} />
+      </mesh>
+      <pointLight position={[0, 1.6, 0.9]} color="#fbbf24" intensity={2.2} distance={6.0} />
+    </group>
+  );
+}
+
+/**
  * Classic Vintage Gas Street Lamp with Warm Glowing Glass Globe & Point Light
  */
 function VintageStreetLamp({ position }: { position: [number, number, number] }) {
@@ -722,6 +861,21 @@ export function BoardTableFrame({
         length={innerSize - 2.4}
         direction="z"
       />
+
+      {/* ================= 8. META WORLD ICONIC RAILWAY, STATION & BRIDGE ================= */}
+      <VintageRailwayTrain position={[-3.8, rimHeight + 0.35, -halfOuter - 0.4]} />
+      <HeritageStationPavilion position={[3.6, rimHeight, -halfOuter - 0.45]} />
+      <GrandSuspensionBridgeTowers position={[24, 3.5, -18]} />
+
+      {/* Promenade Gas Street Lamps along the outer walkway */}
+      <VintageStreetLamp position={[-halfOuter + 2.8, rimHeight, -rimCenterOffset]} />
+      <VintageStreetLamp position={[halfOuter - 2.8, rimHeight, -rimCenterOffset]} />
+      <VintageStreetLamp position={[-halfOuter + 2.8, rimHeight, rimCenterOffset]} />
+      <VintageStreetLamp position={[halfOuter - 2.8, rimHeight, rimCenterOffset]} />
+      <VintageStreetLamp position={[-rimCenterOffset, rimHeight, -halfInner + 2.5]} />
+      <VintageStreetLamp position={[rimCenterOffset, rimHeight, -halfInner + 2.5]} />
+      <VintageStreetLamp position={[-rimCenterOffset, rimHeight, halfInner - 2.5]} />
+      <VintageStreetLamp position={[rimCenterOffset, rimHeight, halfInner - 2.5]} />
     </group>
   );
 }
