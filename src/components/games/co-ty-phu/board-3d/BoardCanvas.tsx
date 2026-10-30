@@ -184,11 +184,11 @@ export function BoardCanvas({
 
           {/* Soft Ground Contact Shadows grounding the entire board & diorama */}
           <ContactShadows
-            position={[0, -0.06, 0]}
-            opacity={0.68}
-            scale={34}
-            blur={1.8}
-            far={6}
+            position={[0, -0.34, 0]}
+            opacity={0.45}
+            scale={36}
+            blur={2.0}
+            far={8}
             color="#040d1a"
           />
 

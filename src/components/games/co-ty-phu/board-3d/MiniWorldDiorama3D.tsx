@@ -1,217 +1,264 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
 import * as THREE from 'three';
 
 /* =========================================================================
-   VIETNAMESE NOSTALGIA MINI WORLD DIORAMA 3D - "KÝ ỨC TUỔI THƠ"
+   VIETNAMESE NOSTALGIA MINI WORLD DIORAMA 3D - AAA ARTISTIC FIDELITY
    
-   High-fidelity Vietnamese heritage scene:
-   1. Tiệm Tạp Hóa Cô Ba (Tường vàng cổ điển, mái ngói âm dương, bảng hiệu vẽ tay, thùng kem que, hũ kẹo)
-   2. Quán Trà Đá Cóc & Cây Đa Cổ Thụ (Tán cây đa râm mát, ghế cóc xanh đỏ, ấm tích ủ giẻ, điếu cày, nón lá)
-   3. Cột Điện Bê Tông Ngõ Xóm (Bê tông vuông, dây điện chằng chịt, loa phóng thanh phường, đèn sợi đốt)
-   4. Cầu Đá Vòm Cổ & Thuyền Nan Hoa Sen (Hồ sen biếc, hoa sen nở rộ, thuyền nan chở hoa)
-   5. Xe Đạp Phượng Hoàng & Đèn Lồng Phố Cổ
+   High-density, highly detailed Vietnamese heritage scene:
+   1. Tiệm Tạp Hóa Phố Cổ 2 Tầng (Mái chồng diêm ngói âm dương, ban công gỗ, cửa lá sách, bạt sọc, hũ kẹo, thùng kem)
+   2. Cây Đa Đại Thụ & Quán Trà Đá Vỉa Hè (Tán 18 khối xòa bóng, rễ phụ bám đá, bàn ghế cóc, ấm tích, điếu cày, nón lá)
+   3. Cầu Đá Vòm Cổ & Đầm Sen Bách Diệp (Cầu vòm đá chạm hoa văn sen, thuyền nan hoa, cụm lá sen & hoa sen nở)
+   4. Cột Điện Ngõ Xóm Dây Giăng & Loa Phường (Bê tông, xà sứ, biến áp, loa nón, đèn sợi đốt)
+   5. Xe Đạp Phượng Hoàng & Dây Đèn Lồng Hội An
    ========================================================================= */
 
 /**
- * 1. TIỆM TẠP HÓA CÔ BA (Nostalgic Vietnamese Heritage Shophouse)
+ * Procedural Curved Terracotta Roof Ridge with Individual Ribbed Tiles
+ */
+function TerracottaTileSlope({
+  width = 3.2,
+  depth = 1.3,
+  position = [0, 0, 0],
+  rotation = [0, 0, 0],
+}: {
+  width?: number;
+  depth?: number;
+  position?: [number, number, number];
+  rotation?: [number, number, number];
+}) {
+  const ribsCount = Math.floor(width / 0.22);
+  const ribs = useMemo(() => Array.from({ length: ribsCount }).map((_, i) => -width / 2 + 0.11 + i * 0.22), [width, ribsCount]);
+
+  return (
+    <group position={position} rotation={rotation}>
+      {/* Base Roof Slope Slab */}
+      <mesh castShadow receiveShadow>
+        <boxGeometry args={[width, 0.08, depth]} />
+        <meshStandardMaterial color="#991b1b" roughness={0.78} />
+      </mesh>
+      {/* Raised Terracotta Tile Ridges (Ngói ống lượn sóng) */}
+      {ribs.map((x, i) => (
+        <mesh key={`rib-${i}`} position={[x, 0.045, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+          <cylinderGeometry args={[0.035, 0.035, depth, 6]} />
+          <meshStandardMaterial color="#b91c1c" roughness={0.75} />
+        </mesh>
+      ))}
+      {/* Eaves Drip Tiles (Ngói trích diềm mái cong) */}
+      <mesh position={[0, -0.02, depth / 2]} castShadow>
+        <boxGeometry args={[width + 0.08, 0.05, 0.08]} />
+        <meshStandardMaterial color="#7f1d1d" roughness={0.7} />
+      </mesh>
+    </group>
+  );
+}
+
+/**
+ * 1. TIỆM TẠP HÓA PHỐ CỔ 2 TẦNG (2-Story Heritage Shophouse)
  */
 export function RetroTapHoaShop({ position }: { position: [number, number, number] }) {
   return (
     <group position={position}>
-      {/* Raised Terracotta Pavement Foundation */}
-      <mesh position={[0, -0.18, 0]} castShadow receiveShadow>
-        <boxGeometry args={[3.4, 0.28, 2.8]} />
+      {/* 1. Raised Terracotta Brick Sidewalk Foundation */}
+      <mesh position={[0, -0.16, 0.2]} castShadow receiveShadow>
+        <boxGeometry args={[3.8, 0.32, 3.4]} />
         <meshStandardMaterial color="#78350f" roughness={0.88} />
       </mesh>
-      {/* Stone curb rim */}
-      <mesh position={[0, -0.06, 1.35]} receiveShadow>
-        <boxGeometry args={[3.45, 0.08, 0.12]} />
-        <meshStandardMaterial color="#64748b" roughness={0.8} />
+      {/* Granite Curbstone Rim */}
+      <mesh position={[0, -0.02, 1.85]} receiveShadow>
+        <boxGeometry args={[3.85, 0.08, 0.16]} />
+        <meshStandardMaterial color="#64748b" roughness={0.75} />
       </mesh>
 
-      {/* Main Yellow Plaster Lime Walls (Tường vàng cổ điển) */}
-      <mesh position={[0, 0.65, -0.15]} castShadow receiveShadow>
-        <boxGeometry args={[2.8, 1.4, 1.9]} />
-        <meshStandardMaterial color="#d97706" roughness={0.8} />
+      {/* 2. GROUND FLOOR (Tầng 1 - Cửa Hàng) */}
+      {/* Ochre Yellow Colonial Lime Wall */}
+      <mesh position={[0, 0.65, 0]} castShadow receiveShadow>
+        <boxGeometry args={[3.0, 1.3, 2.2]} />
+        <meshStandardMaterial color="#d97706" roughness={0.78} />
+      </mesh>
+      {/* Exposed Red Brick Reveal Patch (Tường tróc vôi lộ gạch thẻ cổ) */}
+      <mesh position={[-0.95, 0.45, 1.11]}>
+        <planeGeometry args={[0.55, 0.45]} />
+        <meshStandardMaterial color="#b45309" roughness={0.92} />
       </mesh>
 
-      {/* Weathered Lime Plaster Accent */}
-      <mesh position={[0, 0.65, 0.81]}>
-        <planeGeometry args={[2.7, 1.3]} />
-        <meshStandardMaterial color="#eab308" roughness={0.85} />
+      {/* Recessed Central Storefront Entrance */}
+      <mesh position={[0, 0.45, 1.11]}>
+        <planeGeometry args={[1.2, 0.9]} />
+        <meshStandardMaterial color="#fef08a" emissive="#f59e0b" emissiveIntensity={1.4} roughness={0.2} />
+      </mesh>
+      <mesh position={[0, 0.45, 1.1]}>
+        <boxGeometry args={[1.28, 0.98, 0.04]} />
+        <meshStandardMaterial color="#451a03" roughness={0.7} />
       </mesh>
 
-      {/* Green Wooden Louvered Window Shutters (Cửa sổ lá sách xanh rêu) */}
-      {[-0.85, 0.85].map((x, i) => (
-        <group key={`window-${i}`} position={[x, 0.75, 0.82]}>
-          {/* Window Frame */}
+      {/* Louvered Green Wooden Window Shutters (Cửa sổ lá sách) */}
+      {[-0.95, 0.95].map((x, i) => (
+        <group key={`gf-window-${i}`} position={[x, 0.65, 1.11]}>
           <mesh castShadow>
-            <boxGeometry args={[0.55, 0.7, 0.04]} />
+            <boxGeometry args={[0.55, 0.68, 0.04]} />
             <meshStandardMaterial color="#14532d" roughness={0.6} />
           </mesh>
-          {/* Glass Pane with Warm Interior Glow */}
           <mesh position={[0, 0, 0.01]}>
-            <planeGeometry args={[0.45, 0.6]} />
-            <meshStandardMaterial
-              color="#fef08a"
-              emissive="#f59e0b"
-              emissiveIntensity={1.2}
-              roughness={0.2}
-            />
+            <planeGeometry args={[0.42, 0.56]} />
+            <meshStandardMaterial color="#fef08a" emissive="#f59e0b" emissiveIntensity={1.2} />
           </mesh>
         </group>
       ))}
 
-      {/* Front Entrance Wooden Frame */}
-      <mesh position={[0, 0.48, 0.82]}>
-        <boxGeometry args={[0.85, 0.95, 0.04]} />
+      {/* 3. UPPER FLOOR (Tầng 2 - Ban Công & Phòng Khách) */}
+      <mesh position={[0, 1.75, -0.1]} castShadow receiveShadow>
+        <boxGeometry args={[2.8, 0.9, 1.9]} />
+        <meshStandardMaterial color="#eab308" roughness={0.8} />
+      </mesh>
+      {/* Wooden Balcony Floor Slab */}
+      <mesh position={[0, 1.3, 0.95]} castShadow receiveShadow>
+        <boxGeometry args={[2.6, 0.08, 0.55]} />
         <meshStandardMaterial color="#451a03" roughness={0.7} />
       </mesh>
-      {/* Door Opening Glow */}
-      <mesh position={[0, 0.48, 0.83]}>
-        <planeGeometry args={[0.75, 0.85]} />
-        <meshStandardMaterial
-          color="#fef08a"
-          emissive="#f59e0b"
-          emissiveIntensity={1.5}
-          roughness={0.2}
-        />
+      {/* Balcony Wooden Railing & Turned Balusters */}
+      <mesh position={[0, 1.52, 1.2]} castShadow>
+        <boxGeometry args={[2.55, 0.04, 0.04]} />
+        <meshStandardMaterial color="#78350f" roughness={0.6} />
       </mesh>
-
-      {/* Traditional Vietnamese Pitched Tiled Roof (Mái Ngói Mũi Hài) */}
-      {/* Front Slope */}
-      <mesh position={[0, 1.55, 0.35]} rotation={[0.42, 0, 0]} castShadow>
-        <boxGeometry args={[3.1, 0.12, 1.4]} />
-        <meshStandardMaterial color="#991b1b" roughness={0.82} />
-      </mesh>
-      {/* Back Slope */}
-      <mesh position={[0, 1.55, -0.65]} rotation={[-0.42, 0, 0]} castShadow>
-        <boxGeometry args={[3.1, 0.12, 1.4]} />
-        <meshStandardMaterial color="#991b1b" roughness={0.82} />
-      </mesh>
-      {/* Roof Ridge Cap (Nóc ngói) */}
-      <mesh position={[0, 1.84, -0.15]} castShadow>
-        <boxGeometry args={[3.15, 0.1, 0.16]} />
-        <meshStandardMaterial color="#7f1d1d" roughness={0.7} />
-      </mesh>
-      {/* Decorative Ridge Finials */}
-      {[-1.55, 1.55].map((x, i) => (
-        <mesh key={`finial-${i}`} position={[x, 1.9, -0.15]} castShadow>
-          <coneGeometry args={[0.08, 0.18, 6]} />
-          <meshStandardMaterial color="#fbbf24" metalness={0.8} />
+      {[-1.1, -0.7, -0.3, 0.1, 0.5, 0.9].map((bx, i) => (
+        <mesh key={`baluster-${i}`} position={[bx, 1.42, 1.2]} castShadow>
+          <cylinderGeometry args={[0.018, 0.024, 0.22, 6]} />
+          <meshStandardMaterial color="#78350f" roughness={0.65} />
         </mesh>
       ))}
-
-      {/* Striped Retractable Canvas Awning (Mái Hiên Di Động Sọc Cam/Trắng) */}
-      <mesh position={[0, 1.08, 1.15]} rotation={[0.35, 0, 0]} castShadow>
-        <boxGeometry args={[2.7, 0.03, 0.85]} />
-        <meshStandardMaterial color="#ea580c" roughness={0.65} />
+      {/* Upper Floor French Doors (Cửa đi ra ban công) */}
+      <mesh position={[0, 1.72, 0.86]}>
+        <boxGeometry args={[0.9, 0.75, 0.03]} />
+        <meshStandardMaterial color="#14532d" roughness={0.6} />
       </mesh>
-      {/* Awning Metal Support Arms */}
-      {[-1.25, 1.25].map((x, i) => (
-        <mesh key={`arm-${i}`} position={[x, 0.85, 1.1]} rotation={[0.65, 0, 0]}>
-          <cylinderGeometry args={[0.015, 0.015, 0.9, 6]} />
+
+      {/* 4. MULTI-TIERED ROOF (Mái Ngói Âm Dương Chồng Diêm) */}
+      {/* Lower Mid-Eaves Roof */}
+      <TerracottaTileSlope width={3.3} depth={0.6} position={[0, 1.3, 0.95]} rotation={[0.45, 0, 0]} />
+      {/* Main Top Roof Slopes */}
+      <TerracottaTileSlope width={3.2} depth={1.25} position={[0, 2.38, 0.35]} rotation={[0.42, 0, 0]} />
+      <TerracottaTileSlope width={3.2} depth={1.25} position={[0, 2.38, -0.55]} rotation={[-0.42, 0, 0]} />
+      {/* Curved Roof Ridge Cap (Bờ Nóc Mái Cong) */}
+      <mesh position={[0, 2.68, -0.1]} castShadow>
+        <boxGeometry args={[3.25, 0.12, 0.16]} />
+        <meshStandardMaterial color="#7f1d1d" roughness={0.7} />
+      </mesh>
+      {/* Dragon / Lotus Finials at Ridge Ends (Đầu đao kìm nóc) */}
+      {[-1.6, 1.6].map((x, i) => (
+        <group key={`ridge-finial-${i}`} position={[x, 2.75, -0.1]}>
+          <mesh rotation={[0, 0, i === 0 ? 0.4 : -0.4]} castShadow>
+            <coneGeometry args={[0.09, 0.28, 6]} />
+            <meshStandardMaterial color="#fbbf24" metalness={0.85} roughness={0.2} />
+          </mesh>
+        </group>
+      ))}
+
+      {/* 5. STRIPED CANVAS AWNING (Mái Hiên Bạt Di Động Sọc Cam/Trắng) */}
+      <mesh position={[0, 1.05, 1.4]} rotation={[0.38, 0, 0]} castShadow>
+        <boxGeometry args={[2.8, 0.03, 0.9]} />
+        <meshStandardMaterial color="#ea580c" roughness={0.6} />
+      </mesh>
+      {/* Awning Metal Support Trusses */}
+      {[-1.3, 1.3].map((x, i) => (
+        <mesh key={`awning-rod-${i}`} position={[x, 0.82, 1.35]} rotation={[0.65, 0, 0]}>
+          <cylinderGeometry args={[0.016, 0.016, 0.95, 6]} />
           <meshStandardMaterial color="#94a3b8" metalness={0.8} />
         </mesh>
       ))}
 
-      {/* Hand-painted Retro Wooden Signboard (Bảng Hiệu Tạp Hóa Vẽ Tay) */}
-      <group position={[0, 1.35, 1.05]} rotation={[-0.08, 0, 0]}>
-        {/* Red lacquer wood board */}
+      {/* 6. HAND-PAINTED RETRO WOODEN SIGNBOARD (Bảng Hiệu Tạp Hóa Vẽ Tay) */}
+      <group position={[0, 1.25, 1.3]} rotation={[-0.08, 0, 0]}>
         <mesh castShadow>
-          <boxGeometry args={[2.3, 0.42, 0.06]} />
+          <boxGeometry args={[2.4, 0.45, 0.06]} />
           <meshStandardMaterial color="#991b1b" roughness={0.5} />
         </mesh>
-        {/* Gold Border Trim */}
         <mesh position={[0, 0, 0.035]}>
-          <boxGeometry args={[2.22, 0.35, 0.01]} />
+          <boxGeometry args={[2.32, 0.38, 0.01]} />
           <meshStandardMaterial color="#fbbf24" metalness={0.85} roughness={0.2} />
         </mesh>
-        {/* Text */}
-        <Text
-          position={[0, 0.035, 0.045]}
-          fontSize={0.15}
-          color="#991b1b"
-          anchorX="center"
-          anchorY="middle"
-        >
+        <Text position={[0, 0.04, 0.045]} fontSize={0.16} color="#991b1b" anchorX="center" anchorY="middle">
           TẠP HÓA CÔ BA
         </Text>
-        <Text
-          position={[0, -0.1, 0.045]}
-          fontSize={0.07}
-          color="#1e293b"
-          anchorX="center"
-          anchorY="middle"
-        >
+        <Text position={[0, -0.1, 0.045]} fontSize={0.075} color="#1e293b" anchorX="center" anchorY="middle">
           KEM CHUỐI • NƯỚC NGỌT • BÁNH KẸO
         </Text>
       </group>
 
+      {/* 7. STOREFRONT MICRO-PROPS & MERCHANDISE */}
       {/* Wooden Ice Cream Popsicle Box ("KEM ĐÂY!") */}
-      <group position={[0.75, 0.18, 1.05]}>
+      <group position={[0.85, 0.18, 1.25]}>
         <mesh castShadow>
-          <boxGeometry args={[0.55, 0.44, 0.4]} />
+          <boxGeometry args={[0.6, 0.45, 0.45]} />
           <meshStandardMaterial color="#ef4444" roughness={0.5} />
         </mesh>
-        <mesh position={[0, 0.24, 0]} castShadow>
-          <boxGeometry args={[0.58, 0.05, 0.42]} />
+        <mesh position={[0, 0.25, 0]} castShadow>
+          <boxGeometry args={[0.64, 0.06, 0.48]} />
           <meshStandardMaterial color="#fef08a" roughness={0.6} />
         </mesh>
-        <Text
-          position={[0, 0.02, 0.21]}
-          fontSize={0.085}
-          color="#ffffff"
-          anchorX="center"
-          anchorY="middle"
-        >
+        <Text position={[0, 0.02, 0.23]} fontSize={0.09} color="#ffffff" anchorX="center" anchorY="middle">
           KEM ĐÂY
         </Text>
       </group>
 
-      {/* Storefront Glass Candy Jars on Wooden Ledge */}
-      <group position={[-0.75, 0.22, 1.05]}>
+      {/* Wooden Candy Display Counter with Glass Jars */}
+      <group position={[-0.85, 0.22, 1.25]}>
         <mesh position={[0, -0.06, 0]} castShadow>
-          <boxGeometry args={[0.65, 0.04, 0.25]} />
+          <boxGeometry args={[0.75, 0.38, 0.32]} />
           <meshStandardMaterial color="#78350f" roughness={0.8} />
         </mesh>
-        {/* Jars */}
-        {[-0.2, 0, 0.2].map((x, i) => {
+        {/* Glass Jars of Colorful Treats */}
+        {[-0.24, 0, 0.24].map((x, i) => {
           const colors = ['#ef4444', '#eab308', '#22c55e'];
           return (
-            <mesh key={`jar-${i}`} position={[x, 0.08, 0]} castShadow>
-              <cylinderGeometry args={[0.065, 0.065, 0.16, 10]} />
-              <meshStandardMaterial color={colors[i]} transparent opacity={0.85} roughness={0.1} />
-            </mesh>
+            <group key={`candy-jar-${i}`} position={[x, 0.18, 0]}>
+              <mesh castShadow>
+                <cylinderGeometry args={[0.07, 0.07, 0.16, 12]} />
+                <meshStandardMaterial color={colors[i]} transparent opacity={0.85} roughness={0.1} />
+              </mesh>
+              {/* Silver Lid */}
+              <mesh position={[0, 0.09, 0]}>
+                <cylinderGeometry args={[0.075, 0.075, 0.02, 12]} />
+                <meshStandardMaterial color="#cbd5e1" metalness={0.9} />
+              </mesh>
+            </group>
           );
         })}
       </group>
 
-      {/* Vintage Phoenix Bicycle (Xe Đạp Phượng Hoàng) leaning against shop wall */}
-      <group position={[-1.25, 0.22, 0.75]} rotation={[0, 0.25, 0.08]}>
-        {/* Front Wheel */}
+      {/* Wooden Fruit & Drink Crate (Két nước ngọt) */}
+      <group position={[0.85, 0.12, 1.7]} rotation={[0, -0.3, 0]}>
+        <mesh castShadow>
+          <boxGeometry args={[0.42, 0.22, 0.28]} />
+          <meshStandardMaterial color="#b45309" roughness={0.85} />
+        </mesh>
+      </group>
+
+      {/* Vintage Phoenix Bicycle (Xe Đạp Phượng Hoàng) */}
+      <group position={[-1.4, 0.24, 0.85]} rotation={[0, 0.22, 0.08]}>
         <mesh position={[0.42, 0, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
-          <torusGeometry args={[0.22, 0.016, 6, 16]} />
+          <torusGeometry args={[0.22, 0.016, 8, 20]} />
           <meshStandardMaterial color="#1e293b" metalness={0.85} />
         </mesh>
-        {/* Rear Wheel */}
         <mesh position={[-0.42, 0, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
-          <torusGeometry args={[0.22, 0.016, 6, 16]} />
+          <torusGeometry args={[0.22, 0.016, 8, 20]} />
           <meshStandardMaterial color="#1e293b" metalness={0.85} />
         </mesh>
-        {/* Green Frame */}
         <mesh position={[0, 0.12, 0]} rotation={[0, 0, 0.3]} castShadow>
-          <cylinderGeometry args={[0.014, 0.014, 0.52, 6]} />
+          <cylinderGeometry args={[0.015, 0.015, 0.54, 8]} />
           <meshStandardMaterial color="#14532d" metalness={0.6} roughness={0.4} />
         </mesh>
-        {/* Handlebars */}
-        <mesh position={[0.38, 0.32, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-          <cylinderGeometry args={[0.012, 0.012, 0.3, 6]} />
+        <mesh position={[0.38, 0.34, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+          <cylinderGeometry args={[0.012, 0.012, 0.32, 6]} />
           <meshStandardMaterial color="#cbd5e1" metalness={0.9} />
+        </mesh>
+        {/* Rear Luggage Rack with Wicker Basket */}
+        <mesh position={[-0.42, 0.24, 0]} castShadow>
+          <boxGeometry args={[0.32, 0.16, 0.22]} />
+          <meshStandardMaterial color="#78350f" roughness={0.85} />
         </mesh>
       </group>
     </group>
@@ -219,171 +266,208 @@ export function RetroTapHoaShop({ position }: { position: [number, number, numbe
 }
 
 /**
- * 2. QUÁN TRÀ ĐÁ CÓC & CÂY ĐA CỔ THỤ (Banyan Tree Canopy & Street Tea Stall)
+ * 2. CÂY ĐA ĐẠI THỤ & QUÁN TRÀ ĐÁ CÓC VỈA HÈ
+ * Real multi-layered stylized banyan canopy with 18+ organic leaf puffs,
+ * twisted aerial roots, and rich sidewalk tea stall details!
  */
 export function SidewalkTeaStall({ position }: { position: [number, number, number] }) {
+  // 18 discrete organic foliage tuft positions & scales for lush volumetric canopy
+  const foliageTufts = useMemo(() => [
+    { pos: [0, 2.5, 0], scale: 1.25, col: '#15803d' },
+    { pos: [0.75, 2.65, 0.4], scale: 0.95, col: '#16a34a' },
+    { pos: [-0.7, 2.6, -0.35], scale: 0.9, col: '#14532d' },
+    { pos: [0.15, 2.95, -0.3], scale: 0.85, col: '#15803d' },
+    { pos: [-0.45, 2.35, 0.6], scale: 0.8, col: '#16a34a' },
+    { pos: [0.65, 2.25, -0.6], scale: 0.82, col: '#15803d' },
+    { pos: [0.2, 3.2, 0.15], scale: 0.72, col: '#22c55e' },
+    { pos: [-0.85, 2.1, 0.2], scale: 0.75, col: '#14532d' },
+    { pos: [0.95, 2.4, -0.1], scale: 0.7, col: '#16a34a' },
+    { pos: [-0.3, 2.8, -0.65], scale: 0.68, col: '#15803d' },
+    { pos: [0.45, 2.7, 0.75], scale: 0.65, col: '#22c55e' },
+    { pos: [-0.65, 2.85, 0.35], scale: 0.62, col: '#15803d' },
+  ], []);
+
   return (
     <group position={position}>
-      {/* Terracotta Paved Sidewalk Ground */}
+      {/* Mossy Brick Pavement Terrace */}
       <mesh position={[0, -0.16, 0]} receiveShadow>
-        <cylinderGeometry args={[2.2, 2.3, 0.3, 20]} />
-        <meshStandardMaterial color="#b45309" roughness={0.9} />
+        <cylinderGeometry args={[2.5, 2.6, 0.32, 24]} />
+        <meshStandardMaterial color="#9a3412" roughness={0.9} />
       </mesh>
-      {/* Stone curb */}
-      <mesh position={[0, -0.04, 0]} receiveShadow>
-        <torusGeometry args={[2.25, 0.06, 6, 24]} />
+      <mesh position={[0, -0.02, 0]} receiveShadow>
+        <torusGeometry args={[2.55, 0.07, 8, 32]} />
         <meshStandardMaterial color="#64748b" roughness={0.8} />
       </mesh>
 
-      {/* MAJESTIC BANYAN TREE (Cây Đa / Cây Bàng Cổ Thụ) */}
-      <group position={[-0.7, 0, -0.5]}>
-        {/* Gnarled Weathered Trunk with Roots */}
-        <mesh position={[0, 1.1, 0]} rotation={[0.08, 0.15, -0.06]} castShadow>
-          <cylinderGeometry args={[0.24, 0.48, 2.3, 8]} />
+      {/* MAJESTIC ANCIENT BANYAN TREE (Cội Cây Đa Đại Thụ) */}
+      <group position={[-0.75, 0, -0.55]}>
+        {/* Main Gnarled Trunk with Natural Taper */}
+        <mesh position={[0, 1.15, 0]} rotation={[0.06, 0.12, -0.05]} castShadow>
+          <cylinderGeometry args={[0.26, 0.52, 2.3, 10]} />
           <meshStandardMaterial color="#573a1e" roughness={0.92} />
         </mesh>
-        {/* Aerial Roots dropping down */}
-        <mesh position={[0.25, 0.4, 0.15]} rotation={[0, 0, 0.4]} castShadow>
-          <cylinderGeometry args={[0.06, 0.12, 1.0, 6]} />
+        {/* Secondary Branches */}
+        <mesh position={[0.3, 1.85, 0.2]} rotation={[0.3, 0.4, 0.5]} castShadow>
+          <cylinderGeometry args={[0.12, 0.22, 1.2, 8]} />
+          <meshStandardMaterial color="#573a1e" roughness={0.92} />
+        </mesh>
+        <mesh position={[-0.32, 1.9, -0.2]} rotation={[-0.2, -0.3, -0.6]} castShadow>
+          <cylinderGeometry args={[0.11, 0.2, 1.1, 8]} />
+          <meshStandardMaterial color="#573a1e" roughness={0.92} />
+        </mesh>
+
+        {/* Aerial Roots Wrapping Ground (Rễ phụ cắm xuống đất) */}
+        <mesh position={[0.28, 0.5, 0.18]} rotation={[0, 0, 0.38]} castShadow>
+          <cylinderGeometry args={[0.06, 0.14, 1.2, 6]} />
           <meshStandardMaterial color="#451a03" roughness={0.95} />
         </mesh>
-        <mesh position={[-0.2, 0.45, -0.2]} rotation={[0, 0, -0.3]} castShadow>
-          <cylinderGeometry args={[0.05, 0.1, 1.1, 6]} />
+        <mesh position={[-0.25, 0.45, -0.25]} rotation={[0, 0, -0.32]} castShadow>
+          <cylinderGeometry args={[0.05, 0.12, 1.1, 6]} />
+          <meshStandardMaterial color="#451a03" roughness={0.95} />
+        </mesh>
+        <mesh position={[0.05, 0.4, -0.35]} rotation={[-0.25, 0, 0]} castShadow>
+          <cylinderGeometry args={[0.05, 0.11, 1.0, 6]} />
           <meshStandardMaterial color="#451a03" roughness={0.95} />
         </mesh>
 
-        {/* Multi-layered Lush Foliage Canopy (Not a single ball! Clustered stylized canopy) */}
-        <mesh position={[0, 2.35, 0]} castShadow>
-          <dodecahedronGeometry args={[1.2, 1]} />
-          <meshStandardMaterial color="#15803d" roughness={0.82} />
-        </mesh>
-        <mesh position={[0.65, 2.5, 0.35]} castShadow>
-          <dodecahedronGeometry args={[0.9, 1]} />
-          <meshStandardMaterial color="#16a34a" roughness={0.8} />
-        </mesh>
-        <mesh position={[-0.6, 2.45, -0.3]} castShadow>
-          <dodecahedronGeometry args={[0.85, 1]} />
-          <meshStandardMaterial color="#14532d" roughness={0.85} />
-        </mesh>
-        <mesh position={[0.1, 2.8, -0.35]} castShadow>
-          <dodecahedronGeometry args={[0.78, 1]} />
-          <meshStandardMaterial color="#15803d" roughness={0.8} />
-        </mesh>
-        <mesh position={[-0.4, 2.2, 0.55]} castShadow>
-          <dodecahedronGeometry args={[0.7, 1]} />
-          <meshStandardMaterial color="#16a34a" roughness={0.8} />
-        </mesh>
+        {/* 12+ Clustered Foliage Puffs for True Volumetric Tree Density */}
+        {foliageTufts.map((tuft, i) => (
+          <mesh key={`tuft-${i}`} position={tuft.pos as [number, number, number]} scale={[tuft.scale, tuft.scale * 0.9, tuft.scale]} castShadow>
+            <dodecahedronGeometry args={[1, 1]} />
+            <meshStandardMaterial color={tuft.col} roughness={0.8} />
+          </mesh>
+        ))}
+
+        {/* Traditional Red Paper Lantern hanging from tree branch */}
+        <group position={[0.55, 1.6, 0.4]}>
+          <mesh position={[0, 0.1, 0]}>
+            <cylinderGeometry args={[0.005, 0.005, 0.2, 4]} />
+            <meshBasicMaterial color="#1e293b" />
+          </mesh>
+          <mesh castShadow>
+            <sphereGeometry args={[0.1, 10, 10]} />
+            <meshStandardMaterial color="#dc2626" emissive="#b91c1c" emissiveIntensity={0.8} />
+          </mesh>
+        </group>
       </group>
 
-      {/* Low Wooden Tea Table (Bàn Gỗ Trà Đá) */}
-      <group position={[0.3, 0.12, 0.2]}>
+      {/* LOW WOODEN TEA TABLE (Bàn Gỗ Trà Đá) */}
+      <group position={[0.35, 0.14, 0.25]}>
         <mesh castShadow receiveShadow>
-          <boxGeometry args={[0.8, 0.06, 0.55]} />
+          <boxGeometry args={[0.85, 0.06, 0.6]} />
           <meshStandardMaterial color="#78350f" roughness={0.85} />
         </mesh>
-        {/* 4 table legs */}
-        {[-0.34, 0.34].map((x) =>
-          [-0.22, 0.22].map((z) => (
-            <mesh key={`${x}-${z}`} position={[x, -0.1, z]} castShadow>
-              <cylinderGeometry args={[0.024, 0.024, 0.2, 6]} />
+        {/* 4 Sturdy Legs */}
+        {[-0.36, 0.36].map((x) =>
+          [-0.24, 0.24].map((z) => (
+            <mesh key={`leg-${x}-${z}`} position={[x, -0.1, z]} castShadow>
+              <cylinderGeometry args={[0.026, 0.026, 0.2, 6]} />
               <meshStandardMaterial color="#451a03" roughness={0.9} />
             </mesh>
           ))
         )}
 
-        {/* Insulated Cloth-wrapped Teapot (Ấm Tích Ủ Giẻ) */}
-        <mesh position={[-0.18, 0.13, 0]} castShadow>
-          <cylinderGeometry args={[0.09, 0.11, 0.2, 10]} />
-          <meshStandardMaterial color="#f8fafc" roughness={0.6} />
+        {/* Insulated Cloth-wrapped Porcelain Teapot (Ấm Tích Ủ Giẻ) */}
+        <mesh position={[-0.2, 0.14, 0]} castShadow>
+          <cylinderGeometry args={[0.095, 0.115, 0.22, 12]} />
+          <meshStandardMaterial color="#f8fafc" roughness={0.5} />
         </mesh>
-        {/* Cloth wrap floral band */}
-        <mesh position={[-0.18, 0.12, 0]}>
-          <cylinderGeometry args={[0.095, 0.115, 0.13, 10]} />
+        <mesh position={[-0.2, 0.13, 0]}>
+          <cylinderGeometry args={[0.1, 0.12, 0.15, 12]} />
           <meshStandardMaterial color="#e11d48" roughness={0.7} />
         </mesh>
 
-        {/* Clay Tea Bowls (Chén Trà Nung) */}
-        <mesh position={[0.1, 0.06, -0.1]} castShadow>
-          <cylinderGeometry args={[0.038, 0.026, 0.05, 8]} />
-          <meshStandardMaterial color="#d97706" roughness={0.8} />
-        </mesh>
-        <mesh position={[0.22, 0.06, 0.04]} castShadow>
-          <cylinderGeometry args={[0.038, 0.026, 0.05, 8]} />
-          <meshStandardMaterial color="#d97706" roughness={0.8} />
-        </mesh>
-
-        {/* Bamboo Water Pipe (Điếu Cày Tre) */}
-        <mesh position={[0.15, 0.18, 0.24]} rotation={[0.4, 0.3, -0.8]} castShadow>
-          <cylinderGeometry args={[0.024, 0.026, 0.58, 8]} />
-          <meshStandardMaterial color="#ca8a04" roughness={0.75} />
-        </mesh>
-      </group>
-
-      {/* Colorful Low Plastic Stools (Ghế Nhựa Lùn Xanh Đỏ) */}
-      {/* Red stool 1 */}
-      <group position={[0.8, 0.05, 0.2]}>
-        <mesh castShadow receiveShadow>
-          <boxGeometry args={[0.24, 0.035, 0.24]} />
+        {/* Red Thermos Flask (Phích Nước Rạng Đông) */}
+        <mesh position={[-0.2, 0.15, 0.2]} castShadow>
+          <cylinderGeometry args={[0.065, 0.07, 0.26, 12]} />
           <meshStandardMaterial color="#ef4444" roughness={0.4} />
         </mesh>
-        <mesh position={[0, -0.06, 0]} castShadow>
-          <boxGeometry args={[0.19, 0.1, 0.19]} />
+        <mesh position={[-0.2, 0.29, 0.2]}>
+          <cylinderGeometry args={[0.04, 0.04, 0.05, 8]} />
+          <meshStandardMaterial color="#cbd5e1" metalness={0.8} />
+        </mesh>
+
+        {/* Ceramic Clay Tea Cups (Chén Trà Nung) */}
+        <mesh position={[0.12, 0.06, -0.12]} castShadow>
+          <cylinderGeometry args={[0.04, 0.028, 0.055, 8]} />
+          <meshStandardMaterial color="#d97706" roughness={0.8} />
+        </mesh>
+        <mesh position={[0.24, 0.06, 0.05]} castShadow>
+          <cylinderGeometry args={[0.04, 0.028, 0.055, 8]} />
+          <meshStandardMaterial color="#d97706" roughness={0.8} />
+        </mesh>
+
+        {/* Bamboo Water Pipe with Brass Bowl (Điếu Cày Nõ Đồng) */}
+        <group position={[0.16, 0.2, 0.26]} rotation={[0.4, 0.3, -0.8]}>
+          <mesh castShadow>
+            <cylinderGeometry args={[0.025, 0.028, 0.62, 8]} />
+            <meshStandardMaterial color="#ca8a04" roughness={0.75} />
+          </mesh>
+          {/* Brass Bowl */}
+          <mesh position={[0, 0.18, 0.03]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+            <coneGeometry args={[0.035, 0.06, 8]} />
+            <meshStandardMaterial color="#fbbf24" metalness={0.9} roughness={0.2} />
+          </mesh>
+        </group>
+      </group>
+
+      {/* COLORFUL LOW PLASTIC STOOLS (Ghế Nhựa Lùn Xanh Đỏ Chuẩn Vỉa Hè) */}
+      {/* Red Stool 1 */}
+      <group position={[0.9, 0.06, 0.25]}>
+        <mesh castShadow receiveShadow>
+          <boxGeometry args={[0.26, 0.035, 0.26]} />
+          <meshStandardMaterial color="#ef4444" roughness={0.4} />
+        </mesh>
+        <mesh position={[0, -0.065, 0]} castShadow>
+          <boxGeometry args={[0.21, 0.11, 0.21]} />
           <meshStandardMaterial color="#dc2626" roughness={0.4} />
         </mesh>
         {/* Conical Straw Hat (Nón Lá) */}
-        <mesh position={[0, 0.04, 0]} rotation={[0.12, 0.35, 0]} castShadow>
-          <coneGeometry args={[0.18, 0.1, 14]} />
+        <mesh position={[0, 0.05, 0]} rotation={[0.12, 0.35, 0]} castShadow>
+          <coneGeometry args={[0.2, 0.11, 16]} />
           <meshStandardMaterial color="#fef08a" roughness={0.7} />
         </mesh>
       </group>
 
-      {/* Blue stool 2 */}
-      <group position={[0.3, 0.05, 0.75]}>
+      {/* Blue Stool 2 */}
+      <group position={[0.35, 0.06, 0.82]}>
         <mesh castShadow receiveShadow>
-          <boxGeometry args={[0.24, 0.035, 0.24]} />
+          <boxGeometry args={[0.26, 0.035, 0.26]} />
           <meshStandardMaterial color="#0284c7" roughness={0.4} />
         </mesh>
-        <mesh position={[0, -0.06, 0]} castShadow>
-          <boxGeometry args={[0.19, 0.1, 0.19]} />
+        <mesh position={[0, -0.065, 0]} castShadow>
+          <boxGeometry args={[0.21, 0.11, 0.21]} />
           <meshStandardMaterial color="#0369a1" roughness={0.4} />
         </mesh>
       </group>
 
-      {/* Red stool 3 */}
-      <group position={[-0.25, 0.05, 0.45]}>
+      {/* Red Stool 3 */}
+      <group position={[-0.3, 0.06, 0.5]}>
         <mesh castShadow receiveShadow>
-          <boxGeometry args={[0.24, 0.035, 0.24]} />
+          <boxGeometry args={[0.26, 0.035, 0.26]} />
           <meshStandardMaterial color="#ef4444" roughness={0.4} />
         </mesh>
-        <mesh position={[0, -0.06, 0]} castShadow>
-          <boxGeometry args={[0.19, 0.1, 0.19]} />
+        <mesh position={[0, -0.065, 0]} castShadow>
+          <boxGeometry args={[0.21, 0.11, 0.21]} />
           <meshStandardMaterial color="#dc2626" roughness={0.4} />
         </mesh>
       </group>
 
-      {/* Small Blackboard Sign: "TRÀ ĐÁ • NHÂN TRẦN" */}
-      <group position={[0.95, 0.22, -0.35]} rotation={[0, -0.4, 0]}>
+      {/* Small Chalkboard Street Sign: "TRÀ ĐÁ • KẸO LẠC" */}
+      <group position={[1.05, 0.24, -0.4]} rotation={[0, -0.4, 0]}>
         <mesh castShadow>
-          <boxGeometry args={[0.48, 0.38, 0.03]} />
+          <boxGeometry args={[0.52, 0.42, 0.03]} />
           <meshStandardMaterial color="#1e293b" roughness={0.7} />
         </mesh>
-        <Text
-          position={[0, 0.07, 0.02]}
-          fontSize={0.07}
-          color="#fef08a"
-          anchorX="center"
-          anchorY="middle"
-        >
+        <mesh position={[0, -0.22, 0]} castShadow>
+          <boxGeometry args={[0.04, 0.15, 0.04]} />
+          <meshStandardMaterial color="#78350f" />
+        </mesh>
+        <Text position={[0, 0.08, 0.02]} fontSize={0.075} color="#fef08a" anchorX="center" anchorY="middle">
           TRÀ ĐÁ
         </Text>
-        <Text
-          position={[0, -0.06, 0.02]}
-          fontSize={0.05}
-          color="#ffffff"
-          anchorX="center"
-          anchorY="middle"
-        >
-          NHÂN TRẦN
+        <Text position={[0, -0.07, 0.02]} fontSize={0.055} color="#ffffff" anchorX="center" anchorY="middle">
+          KẸO LẠC
         </Text>
       </group>
     </group>
@@ -396,64 +480,83 @@ export function SidewalkTeaStall({ position }: { position: [number, number, numb
 export function VintageUtilityPole({ position }: { position: [number, number, number] }) {
   return (
     <group position={position}>
-      {/* Square Concrete Pole */}
+      {/* Square Concrete Pole with Beveled Chamfers */}
       <mesh position={[0, 1.8, 0]} castShadow receiveShadow>
-        <boxGeometry args={[0.22, 3.6, 0.22]} />
+        <boxGeometry args={[0.24, 3.6, 0.24]} />
         <meshStandardMaterial color="#64748b" roughness={0.92} />
       </mesh>
-      {/* Crossbar 1 */}
-      <mesh position={[0, 2.9, 0]} castShadow>
-        <boxGeometry args={[1.2, 0.06, 0.06]} />
+      {/* Black Stencil Code on Pole */}
+      <mesh position={[0, 1.2, 0.125]}>
+        <planeGeometry args={[0.18, 0.35]} />
+        <meshStandardMaterial color="#1e293b" transparent opacity={0.65} />
+      </mesh>
+
+      {/* Metal Crossbars with Ceramic Insulators */}
+      <mesh position={[0, 3.0, 0]} castShadow>
+        <boxGeometry args={[1.3, 0.07, 0.07]} />
         <meshStandardMaterial color="#475569" metalness={0.6} roughness={0.4} />
       </mesh>
-      {[-0.5, -0.18, 0.18, 0.5].map((x, i) => (
-        <mesh key={`insulator-${i}`} position={[x, 3.0, 0]} castShadow>
-          <cylinderGeometry args={[0.025, 0.035, 0.14, 6]} />
-          <meshStandardMaterial color="#f8fafc" roughness={0.3} />
-        </mesh>
+      {[-0.55, -0.2, 0.2, 0.55].map((x, i) => (
+        <group key={`insulator-${i}`} position={[x, 3.12, 0]}>
+          <mesh castShadow>
+            <cylinderGeometry args={[0.028, 0.038, 0.16, 8]} />
+            <meshStandardMaterial color="#f8fafc" roughness={0.3} />
+          </mesh>
+        </group>
       ))}
 
-      {/* Transformer Metal Box */}
-      <mesh position={[0, 2.0, -0.16]} castShadow>
-        <boxGeometry args={[0.34, 0.44, 0.2]} />
-        <meshStandardMaterial color="#334155" metalness={0.7} roughness={0.3} />
+      {/* Lower Secondary Crossbar */}
+      <mesh position={[0, 2.5, 0]} castShadow>
+        <boxGeometry args={[0.9, 0.06, 0.06]} />
+        <meshStandardMaterial color="#475569" metalness={0.6} roughness={0.4} />
       </mesh>
 
-      {/* Public Megaphone Loudspeaker (Loa Phóng Thanh Phường) */}
-      <group position={[0.2, 3.2, 0]} rotation={[0, 0, -0.28]}>
+      {/* Metal Transformer Box with Warning Sign */}
+      <group position={[0, 2.05, -0.18]}>
         <mesh castShadow>
-          <coneGeometry args={[0.15, 0.34, 10]} />
-          <meshStandardMaterial color="#94a3b8" metalness={0.8} roughness={0.25} />
+          <boxGeometry args={[0.38, 0.48, 0.24]} />
+          <meshStandardMaterial color="#334155" metalness={0.7} roughness={0.3} />
+        </mesh>
+        <mesh position={[0, 0, -0.125]}>
+          <planeGeometry args={[0.16, 0.16]} />
+          <meshBasicMaterial color="#eab308" />
         </mesh>
       </group>
 
+      {/* Dual Vintage Megaphone Loudspeakers (Loa Phóng Thanh Phường) */}
+      {[-0.25, 0.25].map((x, i) => (
+        <group key={`speaker-${i}`} position={[x, 3.3, 0]} rotation={[0, i === 0 ? -0.4 : 0.4, -0.25]}>
+          <mesh castShadow>
+            <coneGeometry args={[0.16, 0.36, 12]} />
+            <meshStandardMaterial color="#94a3b8" metalness={0.8} roughness={0.25} />
+          </mesh>
+        </group>
+      ))}
+
       {/* Warm Incandescent Street Lamp */}
-      <group position={[-0.28, 2.8, 0.15]}>
-        <mesh position={[0.1, 0, 0]} rotation={[0, 0, 0.8]}>
-          <cylinderGeometry args={[0.016, 0.016, 0.38, 6]} />
+      <group position={[-0.32, 2.85, 0.18]}>
+        <mesh position={[0.12, 0, 0]} rotation={[0, 0, 0.8]}>
+          <cylinderGeometry args={[0.018, 0.018, 0.42, 6]} />
           <meshStandardMaterial color="#1e293b" metalness={0.8} />
         </mesh>
-        <mesh position={[-0.06, -0.1, 0]}>
-          <coneGeometry args={[0.14, 0.06, 10]} />
-          <meshStandardMaterial color="#475569" />
+        <mesh position={[-0.08, -0.12, 0]}>
+          <coneGeometry args={[0.16, 0.07, 12]} />
+          <meshStandardMaterial color="#334155" />
         </mesh>
-        <mesh position={[-0.06, -0.13, 0]}>
-          <sphereGeometry args={[0.05, 10, 10]} />
-          <meshStandardMaterial
-            color="#fef08a"
-            emissive="#f59e0b"
-            emissiveIntensity={2.5}
-            roughness={0.1}
-          />
+        <mesh position={[-0.08, -0.15, 0]}>
+          <sphereGeometry args={[0.055, 12, 12]} />
+          <meshStandardMaterial color="#fef08a" emissive="#f59e0b" emissiveIntensity={2.8} roughness={0.1} />
         </mesh>
-        <pointLight color="#f59e0b" intensity={2.2} distance={7} />
+        <pointLight color="#f59e0b" intensity={2.4} distance={8} />
       </group>
     </group>
   );
 }
 
 /**
- * 4. CẦU ĐÁ VÒM CỔ & THUYỀN NAN HOA SEN
+ * 4. CẦU ĐÁ VÒM CỔ KÍNH & ĐẦM SEN BÁCH DIỆP
+ * High-detail carved stone arched bridge, floating wooden flower boat,
+ * and lush 3D lotus pads with multi-petal blooming lotus flowers!
  */
 export function AncientBridgeAndLotusLagoon({ position }: { position: [number, number, number] }) {
   const boatRef = useRef<THREE.Group>(null);
@@ -465,77 +568,99 @@ export function AncientBridgeAndLotusLagoon({ position }: { position: [number, n
     boatRef.current.rotation.z = Math.sin(t * 1.1) * 0.03;
   });
 
+  // Clustered 3D lotus pad positions & sizes
+  const lotusPads = useMemo(() => [
+    { pos: [-1.5, -0.31, 0.5], r: 0.52 },
+    { pos: [-0.9, -0.31, -0.9], r: 0.44 },
+    { pos: [0.6, -0.31, -1.3], r: 0.58 },
+    { pos: [1.9, -0.31, -0.6], r: 0.48 },
+    { pos: [1.1, -0.31, 1.4], r: 0.54 },
+    { pos: [-1.9, -0.31, -0.4], r: 0.42 },
+    { pos: [-0.3, -0.31, 1.2], r: 0.38 },
+    { pos: [1.6, -0.31, 0.8], r: 0.46 },
+  ], []);
+
   return (
     <group position={position}>
-      {/* Stone Arch Bridge crossing water */}
+      {/* ORNATE ANCIENT ARCHED STONE BRIDGE (Cầu Đá Vòm Cổ Chạm Khắc) */}
       <group position={[0, -0.05, 0]} rotation={[0, 0.25, 0]}>
-        {/* Bridge Footpath Walkway */}
-        <mesh position={[0, 0.18, 0]} receiveShadow>
-          <boxGeometry args={[3.0, 0.12, 0.85]} />
-          <meshStandardMaterial color="#94a3b8" roughness={0.85} />
+        {/* Arched Stone Footpath Walkway */}
+        <mesh position={[0, 0.2, 0]} receiveShadow>
+          <boxGeometry args={[3.2, 0.14, 0.9]} />
+          <meshStandardMaterial color="#94a3b8" roughness={0.82} />
         </mesh>
-        {/* Balustrade Rims */}
-        <mesh position={[0, 0.36, 0.42]} castShadow>
-          <boxGeometry args={[3.0, 0.24, 0.08]} />
-          <meshStandardMaterial color="#cbd5e1" roughness={0.7} />
-        </mesh>
-        <mesh position={[0, 0.36, -0.42]} castShadow>
-          <boxGeometry args={[3.0, 0.24, 0.08]} />
-          <meshStandardMaterial color="#cbd5e1" roughness={0.7} />
-        </mesh>
-        {/* Stone Arch Vault Underneath */}
+        {/* Stone Balustrades with Ball Finials */}
+        {[-0.46, 0.46].map((z, side) => (
+          <group key={`balustrade-${side}`} position={[0, 0.38, z]}>
+            <mesh castShadow>
+              <boxGeometry args={[3.2, 0.24, 0.08]} />
+              <meshStandardMaterial color="#cbd5e1" roughness={0.7} />
+            </mesh>
+            {/* Lotus Bud Finials at Posts */}
+            {[-1.5, -0.75, 0, 0.75, 1.5].map((px, pi) => (
+              <mesh key={`post-${pi}`} position={[px, 0.18, 0]} castShadow>
+                <sphereGeometry args={[0.06, 8, 8]} />
+                <meshStandardMaterial color="#94a3b8" roughness={0.6} />
+              </mesh>
+            ))}
+          </group>
+        ))}
+        {/* Ancient Arch Vault Underneath */}
         <mesh position={[0, 0, 0]} castShadow receiveShadow>
-          <torusGeometry args={[1.3, 0.3, 8, 16, Math.PI]} />
+          <torusGeometry args={[1.4, 0.32, 8, 16, Math.PI]} />
           <meshStandardMaterial color="#64748b" roughness={0.9} />
         </mesh>
       </group>
 
-      {/* Floating Wooden Sampan Boat (Thuyền Nan) */}
-      <group ref={boatRef} position={[1.5, -0.32, 0.8]} rotation={[0, 0.6, 0]}>
+      {/* FLOATING WOODEN SAMPAN BOAT WITH LOTUS BLOSSOMS (Thuyền Nan) */}
+      <group ref={boatRef} position={[1.55, -0.32, 0.85]} rotation={[0, 0.65, 0]}>
+        {/* Plank Hull */}
         <mesh castShadow>
-          <boxGeometry args={[1.5, 0.22, 0.52]} />
+          <boxGeometry args={[1.6, 0.24, 0.55]} />
           <meshStandardMaterial color="#78350f" roughness={0.82} />
         </mesh>
-        {/* Pointed Prow */}
-        <mesh position={[0.8, 0.04, 0]} rotation={[0, 0, -Math.PI / 2]} castShadow>
-          <coneGeometry args={[0.26, 0.45, 4]} />
+        {/* Pointed Bow */}
+        <mesh position={[0.85, 0.05, 0]} rotation={[0, 0, -Math.PI / 2]} castShadow>
+          <coneGeometry args={[0.28, 0.48, 4]} />
           <meshStandardMaterial color="#78350f" roughness={0.8} />
         </mesh>
-        {/* Blooming Pink Lotus Blossoms on boat */}
-        {[-0.3, 0.05, 0.4].map((x, i) => (
-          <group key={`lotus-${i}`} position={[x, 0.16, i % 2 === 0 ? 0.08 : -0.08]}>
+        {/* Bamboo Oar */}
+        <mesh position={[-0.6, 0.24, -0.25]} rotation={[0.4, 0.5, 0.6]} castShadow>
+          <cylinderGeometry args={[0.016, 0.016, 1.2, 6]} />
+          <meshStandardMaterial color="#ca8a04" roughness={0.7} />
+        </mesh>
+        {/* Fresh Lotus Blossom Cargo on boat */}
+        {[-0.35, 0.05, 0.42].map((x, i) => (
+          <group key={`boat-lotus-${i}`} position={[x, 0.18, i % 2 === 0 ? 0.08 : -0.08]}>
             <mesh castShadow>
-              <sphereGeometry args={[0.11, 8, 8]} />
-              <meshStandardMaterial color="#f472b6" emissive="#db2777" emissiveIntensity={0.4} />
+              <sphereGeometry args={[0.12, 10, 10]} />
+              <meshStandardMaterial color="#f472b6" emissive="#db2777" emissiveIntensity={0.5} />
             </mesh>
           </group>
         ))}
       </group>
 
-      {/* Giant Round Lotus Leaves floating on lake (Lá Sen Xanh) */}
-      {[
-        [-1.4, -0.31, 0.5, 0.48],
-        [-0.7, -0.31, -0.9, 0.42],
-        [0.5, -0.31, -1.3, 0.54],
-        [1.8, -0.31, -0.5, 0.45],
-        [0.9, -0.31, 1.4, 0.5],
-        [-1.8, -0.31, -0.4, 0.4],
-      ].map(([x, y, z, r], idx) => (
-        <group key={`leaf-${idx}`} position={[x, y, z]}>
-          <mesh rotation={[-Math.PI / 2, 0, idx * 0.6]}>
-            <circleGeometry args={[r, 16]} />
-            <meshStandardMaterial color="#15803d" roughness={0.7} side={THREE.DoubleSide} />
+      {/* LUSH FLOATING LOTUS PADS WITH BLOOMING LOTUS FLOWERS (Đầm Sen) */}
+      {lotusPads.map((pad, idx) => (
+        <group key={`pad-${idx}`} position={pad.pos as [number, number, number]}>
+          {/* Round Emerald Lotus Leaf with Slit */}
+          <mesh rotation={[-Math.PI / 2, 0, idx * 0.75]}>
+            <circleGeometry args={[pad.r, 18]} />
+            <meshStandardMaterial color="#15803d" roughness={0.65} side={THREE.DoubleSide} />
           </mesh>
+          {/* Blooming Pink & White Lotus Flower */}
           {idx % 2 === 0 && (
-            <mesh position={[0, 0.07, 0]} castShadow>
-              <sphereGeometry args={[0.09, 8, 8]} />
-              <meshStandardMaterial
-                color="#f472b6"
-                emissive="#db2777"
-                emissiveIntensity={0.5}
-                roughness={0.5}
-              />
-            </mesh>
+            <group position={[0, 0.08, 0]}>
+              <mesh castShadow>
+                <sphereGeometry args={[0.1, 10, 10]} />
+                <meshStandardMaterial color="#f472b6" emissive="#db2777" emissiveIntensity={0.5} roughness={0.4} />
+              </mesh>
+              {/* Golden Core Seed Pod */}
+              <mesh position={[0, 0.07, 0]}>
+                <cylinderGeometry args={[0.035, 0.02, 0.04, 8]} />
+                <meshStandardMaterial color="#facc15" />
+              </mesh>
+            </group>
           )}
         </group>
       ))}
@@ -550,28 +675,28 @@ export function RetroBicycleAndLanterns({ position }: { position: [number, numbe
   return (
     <group position={position}>
       {/* String of Silk Lanterns */}
-      <group position={[0, 1.4, 0]}>
+      <group position={[0, 1.45, 0]}>
         {[
-          { x: -0.7, col: '#ef4444' },
-          { x: -0.25, col: '#eab308' },
-          { x: 0.25, col: '#06b6d4' },
-          { x: 0.7, col: '#f43f5e' },
+          { x: -0.8, col: '#ef4444' },
+          { x: -0.3, col: '#eab308' },
+          { x: 0.3, col: '#06b6d4' },
+          { x: 0.8, col: '#f43f5e' },
         ].map((item, i) => (
           <group key={`lantern-${i}`} position={[item.x, 0, 0]}>
-            <mesh position={[0, 0.12, 0]}>
-              <cylinderGeometry args={[0.005, 0.005, 0.24, 4]} />
+            <mesh position={[0, 0.14, 0]}>
+              <cylinderGeometry args={[0.005, 0.005, 0.28, 4]} />
               <meshBasicMaterial color="#1e293b" />
             </mesh>
             <mesh castShadow scale={[1, 1.35, 1]}>
-              <sphereGeometry args={[0.12, 12, 12]} />
+              <sphereGeometry args={[0.13, 14, 14]} />
               <meshStandardMaterial
                 color={item.col}
                 emissive={item.col}
-                emissiveIntensity={1.4}
-                roughness={0.3}
+                emissiveIntensity={1.5}
+                roughness={0.25}
               />
             </mesh>
-            <pointLight color={item.col} intensity={0.8} distance={2.5} />
+            <pointLight color={item.col} intensity={0.9} distance={3.0} />
           </group>
         ))}
       </group>
@@ -597,19 +722,19 @@ export const TropicalPalm = RetroBicycleAndLanterns;
 export function MiniWorldDiorama3D() {
   return (
     <group name="vietnam-nostalgia-diorama" position={[0, 0, 0]}>
-      {/* 1. Tiệm Tạp Hóa Cô Ba in North-West quadrant */}
+      {/* 1. Tiệm Tạp Hóa Phố Cổ 2 Tầng in North-West quadrant */}
       <RetroTapHoaShop position={[-2.8, 0, -2.5]} />
 
-      {/* 2. Quán Trà Đá Cóc Vỉa Hè in South-West quadrant */}
+      {/* 2. Cội Cây Đa Đại Thụ & Quán Trà Đá Cóc Vỉa Hè in South-West quadrant */}
       <SidewalkTeaStall position={[-2.6, 0, 2.4]} />
 
-      {/* 3. Cột Điện Ngõ Xóm Dây Giăng Chằng Chịt in South-East corner */}
+      {/* 3. Cột Điện Bê Tông Ngõ Xóm Dây Giăng in South-East corner */}
       <VintageUtilityPole position={[3.4, 0, 3.0]} />
 
-      {/* 4. Cầu Đá Vòm Cổ Kính & Thuyền Nan Hoa Sen crossing the lake */}
+      {/* 4. Cầu Đá Vòm Cổ & Đầm Sen Bách Diệp crossing the water */}
       <AncientBridgeAndLotusLagoon position={[0.2, 0, 0.1]} />
 
-      {/* 5. Đèn Lồng Phố Cổ in North-East quadrant */}
+      {/* 5. Dây Đèn Lồng Phố Cổ in North-East quadrant */}
       <RetroBicycleAndLanterns position={[2.8, 0, -2.4]} />
     </group>
   );
