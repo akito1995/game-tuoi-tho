@@ -77,18 +77,19 @@ export function TropicalOceanWater() {
         <meshStandardMaterial color="#042f2e" roughness={0.9} map={causticTex} />
       </mesh>
 
-      {/* Central Translucent Jade-Emerald Lotus Water */}
+      {/* Central Translucent Jade-Emerald Lotus Water (No shadow-artifact blackening) */}
       <mesh
         ref={innerWaterRef}
         position={[0, -0.32, 0]}
         rotation={[-Math.PI / 2, 0, 0]}
-        receiveShadow
       >
         <planeGeometry args={[15.6, 15.6, 32, 32]} />
-        <meshStandardMaterial
-          color="#0d9488"
-          roughness={0.05}
-          metalness={0.4}
+        <meshPhysicalMaterial
+          color="#0891b2"
+          roughness={0.12}
+          metalness={0.2}
+          transmission={0.4}
+          ior={1.333}
           transparent
           opacity={0.88}
         />
@@ -142,13 +143,12 @@ export function TropicalOceanWater() {
         ref={outerWaterRef}
         position={[0, -0.55, 0]}
         rotation={[-Math.PI / 2, 0, 0]}
-        receiveShadow
       >
-        <planeGeometry args={[170, 170, 32, 32]} />
+        <planeGeometry args={[220, 220, 32, 32]} />
         <meshStandardMaterial
-          color="#0d2b45"
-          roughness={0.06}
-          metalness={0.4}
+          color="#0284c7"
+          roughness={0.15}
+          metalness={0.15}
           transparent
           opacity={0.92}
         />
@@ -230,6 +230,7 @@ export function BeachPalmTree({ position, scale = 0.9 }: { position: [number, nu
  */
 export function CruisingYacht({ initialRadius = 16, speed = 0.1 }: { initialRadius?: number; speed?: number }) {
   const groupRef = useRef<THREE.Group>(null);
+  const radarRef = useRef<THREE.Mesh>(null);
   const angleRef = useRef(0.4);
 
   useFrame((_, delta) => {
@@ -240,119 +241,226 @@ export function CruisingYacht({ initialRadius = 16, speed = 0.1 }: { initialRadi
     groupRef.current.position.set(x, -0.52 + Math.sin(angleRef.current * 8) * 0.012, z);
     groupRef.current.rotation.y = -angleRef.current + Math.PI;
     groupRef.current.rotation.z = Math.sin(angleRef.current * 6) * 0.025;
+
+    if (radarRef.current) {
+      radarRef.current.rotation.y += delta * 3.5;
+    }
   });
 
   return (
     <group ref={groupRef}>
-      {/* 1. LOWER HULL & WATERLINE STRIPE */}
-      <mesh position={[0, 0.06, 0]} castShadow receiveShadow>
-        <boxGeometry args={[0.62, 0.12, 2.4]} />
-        <meshStandardMaterial color="#0f172a" roughness={0.3} metalness={0.2} />
+      {/* 1. HYDRODYNAMIC DEEP-V COMPOSITE HULL */}
+      {/* Lower Hull Waterline Anti-Fouling Stripe (Deep Navy) */}
+      <mesh position={[0, 0.05, -0.15]} castShadow receiveShadow>
+        <boxGeometry args={[0.64, 0.1, 2.5]} />
+        <meshStandardMaterial color="#0f172a" roughness={0.35} metalness={0.25} />
       </mesh>
 
-      {/* 2. MAIN TOPSIDE HULL */}
-      <mesh position={[0, 0.2, 0]} castShadow receiveShadow>
-        <boxGeometry args={[0.68, 0.18, 2.35]} />
-        <meshStandardMaterial color="#f8fafc" roughness={0.25} metalness={0.15} />
-      </mesh>
-
-      {/* Raked Pointed Bow */}
-      <mesh position={[0, 0.22, 1.35]} rotation={[0.45, 0, 0]} castShadow>
-        <coneGeometry args={[0.38, 0.85, 4]} />
-        <meshStandardMaterial color="#f8fafc" roughness={0.25} metalness={0.15} />
-      </mesh>
-
-      {/* Polished Teak Foredeck */}
-      <mesh position={[0, 0.3, 0.85]} receiveShadow>
-        <boxGeometry args={[0.55, 0.02, 0.9]} />
-        <meshStandardMaterial color="#78350f" roughness={0.65} />
-      </mesh>
-
-      {/* Stainless Steel Bow Railing */}
-      <group position={[0, 0.42, 1.1]}>
-        <mesh castShadow>
-          <boxGeometry args={[0.5, 0.02, 0.02]} />
-          <meshStandardMaterial color="#e2e8f0" metalness={0.95} roughness={0.1} />
-        </mesh>
-        {[-0.24, 0.24].map((rx, ri) => (
-          <mesh key={`bow-post-${ri}`} position={[rx, -0.06, 0]} castShadow>
-            <cylinderGeometry args={[0.008, 0.008, 0.14, 6]} />
-            <meshStandardMaterial color="#cbd5e1" metalness={0.95} roughness={0.1} />
-          </mesh>
-        ))}
-      </group>
-
-      {/* 3. MAIN CABIN SALON SUPERSTRUCTURE */}
-      <mesh position={[0, 0.42, -0.1]} castShadow receiveShadow>
-        <boxGeometry args={[0.58, 0.26, 1.3]} />
-        <meshStandardMaterial color="#ffffff" roughness={0.3} metalness={0.1} />
-      </mesh>
-
-      {/* Wraparound Panoramic Dark Glass Windows */}
-      <mesh position={[0, 0.44, -0.08]}>
-        <boxGeometry args={[0.61, 0.16, 1.22]} />
-        <meshStandardMaterial
-          color="#090d16"
-          roughness={0.05}
-          metalness={0.85}
-          emissive="#0284c7"
-          emissiveIntensity={0.25}
+      {/* Main Hull Body (High-Gloss Gelcoat Pearl White) */}
+      <mesh position={[0, 0.18, -0.12]} castShadow receiveShadow>
+        <boxGeometry args={[0.72, 0.18, 2.45]} />
+        <meshPhysicalMaterial
+          color="#f8fafc"
+          roughness={0.18}
+          metalness={0.12}
+          clearcoat={0.85}
+          clearcoatRoughness={0.1}
         />
       </mesh>
 
-      {/* 4. UPPER FLYBRIDGE DECK */}
-      <mesh position={[0, 0.62, -0.22]} castShadow receiveShadow>
-        <boxGeometry args={[0.5, 0.14, 0.85]} />
-        <meshStandardMaterial color="#f8fafc" roughness={0.3} />
-      </mesh>
-
-      {/* Tinted Flybridge Windshield */}
-      <mesh position={[0, 0.72, 0.14]} rotation={[-0.35, 0, 0]}>
-        <boxGeometry args={[0.46, 0.12, 0.03]} />
-        <meshStandardMaterial color="#0284c7" transparent opacity={0.7} roughness={0.05} />
-      </mesh>
-
-      {/* Radar Arch & Dual Satellite Domes */}
-      <group position={[0, 0.82, -0.45]}>
-        <mesh castShadow>
-          <boxGeometry args={[0.48, 0.04, 0.1]} />
-          <meshStandardMaterial color="#ffffff" metalness={0.3} />
+      {/* Sleek Tapered Raked Clipper Bow (Replacing crude 4-sided pyramid) */}
+      <group position={[0, 0.18, 1.1]}>
+        {/* Tiered tapered prow blocks with smooth chamfered flare */}
+        <mesh position={[0, 0, 0.18]} castShadow>
+          <cylinderGeometry args={[0.26, 0.35, 0.18, 16, 1, false, 0, Math.PI]} />
+          <meshPhysicalMaterial color="#f8fafc" roughness={0.18} clearcoat={0.85} />
         </mesh>
-        {[-0.16, 0.16].map((dx, di) => (
-          <mesh key={`radome-${di}`} position={[dx, 0.08, 0]} castShadow>
-            <sphereGeometry args={[0.045, 10, 10]} />
-            <meshStandardMaterial color="#ffffff" roughness={0.2} />
-          </mesh>
-        ))}
-        <mesh position={[0, 0.12, 0]} castShadow>
-          <boxGeometry args={[0.22, 0.025, 0.04]} />
-          <meshStandardMaterial color="#1e293b" />
+        <mesh position={[0, 0, 0.38]} castShadow>
+          <cylinderGeometry args={[0.12, 0.26, 0.18, 16, 1, false, 0, Math.PI]} />
+          <meshPhysicalMaterial color="#f8fafc" roughness={0.18} clearcoat={0.85} />
+        </mesh>
+        <mesh position={[0, 0.04, 0.52]} rotation={[0.42, 0, 0]} castShadow>
+          <cylinderGeometry args={[0.02, 0.12, 0.28, 12]} />
+          <meshPhysicalMaterial color="#f8fafc" roughness={0.18} clearcoat={0.85} />
+        </mesh>
+        {/* Stainless Steel Stem Post (Cutwater) */}
+        <mesh position={[0, 0.05, 0.58]} rotation={[0.42, 0, 0]}>
+          <boxGeometry args={[0.015, 0.28, 0.02]} />
+          <meshStandardMaterial color="#e2e8f0" metalness={0.95} roughness={0.1} />
         </mesh>
       </group>
 
-      {/* 5. AFT COCKPIT & SWIM PLATFORM */}
-      <mesh position={[0, 0.24, -1.15]} receiveShadow>
-        <boxGeometry args={[0.62, 0.04, 0.45]} />
-        <meshStandardMaterial color="#78350f" roughness={0.7} />
-      </mesh>
-      <mesh position={[0, 0.18, -1.4]} receiveShadow>
-        <boxGeometry args={[0.58, 0.03, 0.16]} />
-        <meshStandardMaterial color="#f8fafc" roughness={0.3} />
+      {/* Luxury Metallic Gold Pinstripe */}
+      <mesh position={[0, 0.25, -0.05]}>
+        <boxGeometry args={[0.73, 0.015, 2.52]} />
+        <meshStandardMaterial color="#fbbf24" metalness={0.85} roughness={0.2} />
       </mesh>
 
-      {/* 6. V-SHAPED FOAMING WAKE ON WATER */}
-      <group position={[0, -0.02, -1.6]}>
+      {/* Polished Teak Foredeck with Inlaid Planks */}
+      <mesh position={[0, 0.28, 0.85]} receiveShadow>
+        <boxGeometry args={[0.58, 0.02, 0.95]} />
+        <meshStandardMaterial color="#78350f" roughness={0.65} />
+      </mesh>
+      {/* Foredeck Sunpad Cushion (White Leather) */}
+      <mesh position={[0, 0.31, 0.72]} castShadow receiveShadow>
+        <boxGeometry args={[0.42, 0.04, 0.55]} />
+        <meshStandardMaterial color="#f1f5f9" roughness={0.5} />
+      </mesh>
+
+      {/* Stainless Steel Bow Pulpit & Safety Stanchions */}
+      <group position={[0, 0.4, 1.1]}>
+        <mesh castShadow>
+          <boxGeometry args={[0.54, 0.02, 0.02]} />
+          <meshStandardMaterial color="#e2e8f0" metalness={0.95} roughness={0.1} />
+        </mesh>
+        {[-0.26, 0.26].map((rx, ri) => (
+          <group key={`bow-rail-side-${ri}`} position={[rx, 0, -0.2]}>
+            <mesh position={[0, -0.06, 0]} castShadow>
+              <cylinderGeometry args={[0.008, 0.008, 0.16, 6]} />
+              <meshStandardMaterial color="#cbd5e1" metalness={0.95} roughness={0.1} />
+            </mesh>
+            <mesh position={[0, 0, -0.2]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+              <cylinderGeometry args={[0.008, 0.008, 0.45, 6]} />
+              <meshStandardMaterial color="#e2e8f0" metalness={0.95} roughness={0.1} />
+            </mesh>
+          </group>
+        ))}
+      </group>
+
+      {/* 2. SWEPT-BACK AERODYNAMIC SALON SUPERSTRUCTURE */}
+      <mesh position={[0, 0.42, -0.12]} castShadow receiveShadow>
+        <boxGeometry args={[0.62, 0.26, 1.35]} />
+        <meshPhysicalMaterial
+          color="#ffffff"
+          roughness={0.22}
+          metalness={0.15}
+          clearcoat={0.9}
+        />
+      </mesh>
+
+      {/* Curved Aerodynamic Windshield Brow */}
+      <mesh position={[0, 0.45, 0.56]} rotation={[0.48, 0, 0]} castShadow>
+        <boxGeometry args={[0.6, 0.24, 0.06]} />
+        <meshPhysicalMaterial color="#ffffff" roughness={0.22} clearcoat={0.9} />
+      </mesh>
+
+      {/* Wraparound Panoramic Dark Sapphire Glass with Metallic Frames */}
+      <mesh position={[0, 0.44, -0.08]}>
+        <boxGeometry args={[0.64, 0.17, 1.25]} />
+        <meshPhysicalMaterial
+          color="#031024"
+          roughness={0.04}
+          metalness={0.9}
+          transmission={0.4}
+          ior={1.5}
+          emissive="#0284c7"
+          emissiveIntensity={0.35}
+        />
+      </mesh>
+      {/* Front Windshield Pane */}
+      <mesh position={[0, 0.48, 0.55]} rotation={[0.48, 0, 0]}>
+        <planeGeometry args={[0.56, 0.2]} />
+        <meshPhysicalMaterial
+          color="#031024"
+          roughness={0.04}
+          metalness={0.9}
+          emissive="#0284c7"
+          emissiveIntensity={0.4}
+        />
+      </mesh>
+
+      {/* 3. ELEVATED UPPER FLYBRIDGE DECK & HELM */}
+      <mesh position={[0, 0.62, -0.25]} castShadow receiveShadow>
+        <boxGeometry args={[0.54, 0.14, 0.9]} />
+        <meshPhysicalMaterial color="#f8fafc" roughness={0.25} clearcoat={0.85} />
+      </mesh>
+
+      {/* Tinted Flybridge Acrylic Wind Deflector */}
+      <mesh position={[0, 0.72, 0.16]} rotation={[-0.32, 0, 0]}>
+        <boxGeometry args={[0.48, 0.12, 0.03]} />
+        <meshStandardMaterial color="#0284c7" transparent opacity={0.7} roughness={0.05} />
+      </mesh>
+
+      {/* Flybridge Teak Deck & Lounge Seating */}
+      <mesh position={[0, 0.69, -0.25]} receiveShadow>
+        <boxGeometry args={[0.48, 0.02, 0.8]} />
+        <meshStandardMaterial color="#78350f" roughness={0.7} />
+      </mesh>
+      <mesh position={[0, 0.74, -0.35]} castShadow>
+        <boxGeometry args={[0.42, 0.08, 0.35]} />
+        <meshStandardMaterial color="#f1f5f9" roughness={0.5} />
+      </mesh>
+
+      {/* 4. SWEPT-BACK AERODYNAMIC RADAR ARCH (Forward-canted 18°) */}
+      <group position={[0, 0.82, -0.52]} rotation={[-0.32, 0, 0]}>
+        {/* Main Aerofoil Wing Arch */}
+        <mesh castShadow>
+          <boxGeometry args={[0.52, 0.05, 0.14]} />
+          <meshPhysicalMaterial color="#ffffff" roughness={0.2} metalness={0.3} clearcoat={0.9} />
+        </mesh>
+        {/* Angled Stanchion Legs */}
+        {[-0.24, 0.24].map((lx, li) => (
+          <mesh key={`arch-leg-${li}`} position={[lx, -0.1, 0]} rotation={[0, 0, li === 0 ? 0.22 : -0.22]} castShadow>
+            <cylinderGeometry args={[0.018, 0.022, 0.24, 8]} />
+            <meshStandardMaterial color="#ffffff" metalness={0.3} />
+          </mesh>
+        ))}
+
+        {/* Dual High-Tech Satellite Dome Radomes */}
+        {[-0.17, 0.17].map((dx, di) => (
+          <mesh key={`radome-${di}`} position={[dx, 0.09, 0]} castShadow>
+            <sphereGeometry args={[0.05, 12, 12]} />
+            <meshStandardMaterial color="#ffffff" roughness={0.2} />
+          </mesh>
+        ))}
+
+        {/* Rotating Open-Array Marine Radar Scanner */}
+        <mesh ref={radarRef} position={[0, 0.12, 0]} castShadow>
+          <boxGeometry args={[0.26, 0.025, 0.045]} />
+          <meshStandardMaterial color="#1e293b" metalness={0.8} roughness={0.3} />
+        </mesh>
+
+        {/* Whip Marine Communications Antenna */}
+        <mesh position={[0.22, 0.22, -0.02]} rotation={[0.1, 0, 0]}>
+          <cylinderGeometry args={[0.003, 0.006, 0.32, 6]} />
+          <meshStandardMaterial color="#cbd5e1" metalness={0.95} />
+        </mesh>
+      </group>
+
+      {/* 5. AFT COCKPIT, TEAK TRANSOM & SWIM PLATFORM */}
+      <mesh position={[0, 0.25, -1.18]} receiveShadow>
+        <boxGeometry args={[0.66, 0.04, 0.48]} />
+        <meshStandardMaterial color="#78350f" roughness={0.7} />
+      </mesh>
+      {/* Transom Steps & Extended Swim Platform */}
+      <mesh position={[0, 0.18, -1.45]} receiveShadow>
+        <boxGeometry args={[0.62, 0.035, 0.22]} />
+        <meshStandardMaterial color="#78350f" roughness={0.7} />
+      </mesh>
+      {/* Swim Ladder & Stainless Rails */}
+      <mesh position={[0.22, 0.19, -1.45]}>
+        <boxGeometry args={[0.12, 0.02, 0.18]} />
+        <meshStandardMaterial color="#e2e8f0" metalness={0.95} roughness={0.1} />
+      </mesh>
+      {/* Underwater Blue LED Accent Glow */}
+      <pointLight position={[0, 0.05, -1.5]} color="#06b6d4" intensity={1.8} distance={3.2} />
+
+      {/* 6. REALISTIC HYDRODYNAMIC KELVIN V-WAKE FOAM ON WATER */}
+      <group position={[0, -0.02, -1.65]}>
+        {/* Central Churning Propeller Wash */}
         <mesh rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[0.55, 1.6]} />
-          <meshBasicMaterial color="#ecfeff" transparent opacity={0.4} depthWrite={false} />
+          <planeGeometry args={[0.6, 2.2]} />
+          <meshBasicMaterial color="#ecfeff" transparent opacity={0.45} depthWrite={false} />
         </mesh>
-        <mesh position={[-0.35, 0, -0.6]} rotation={[-Math.PI / 2, 0, 0.28]}>
-          <planeGeometry args={[0.32, 1.4]} />
-          <meshBasicMaterial color="#cffafe" transparent opacity={0.28} depthWrite={false} />
+        {/* Expanding Port Wave Crest (19.47° Kelvin angle) */}
+        <mesh position={[-0.45, 0, -0.85]} rotation={[-Math.PI / 2, 0, 0.34]}>
+          <planeGeometry args={[0.38, 2.0]} />
+          <meshBasicMaterial color="#cffafe" transparent opacity={0.32} depthWrite={false} />
         </mesh>
-        <mesh position={[0.35, 0, -0.6]} rotation={[-Math.PI / 2, 0, -0.28]}>
-          <planeGeometry args={[0.32, 1.4]} />
-          <meshBasicMaterial color="#cffafe" transparent opacity={0.28} depthWrite={false} />
+        {/* Expanding Starboard Wave Crest */}
+        <mesh position={[0.45, 0, -0.85]} rotation={[-Math.PI / 2, 0, -0.34]}>
+          <planeGeometry args={[0.38, 2.0]} />
+          <meshBasicMaterial color="#cffafe" transparent opacity={0.32} depthWrite={false} />
         </mesh>
       </group>
     </group>

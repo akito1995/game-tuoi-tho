@@ -49,11 +49,13 @@ function AdaptiveCamera() {
     if (camera instanceof THREE.PerspectiveCamera) {
       const isPortraitOrNarrow = size.width < 768 || size.width / size.height < 1.05;
       if (isPortraitOrNarrow) {
-        camera.fov = 36;
-        camera.position.set(12.5, 15.5, 14.5);
+        // Mobile / narrow: wider FOV to reveal all 4 corners comfortably
+        camera.fov = 38;
+        camera.position.set(14.5, 18.5, 16.5);
       } else {
-        camera.fov = 28;
-        camera.position.set(10.5, 12.8, 12.5);
+        // Desktop widescreen: expansive isometric overview (reveals corners and horizon bridges)
+        camera.fov = 32;
+        camera.position.set(13.2, 16.2, 14.8);
       }
       camera.updateProjectionMatrix();
     }
@@ -125,12 +127,12 @@ export function BoardCanvas({
       const isNarrow =
         typeof window !== 'undefined' &&
         (window.innerWidth < 768 || window.innerWidth / window.innerHeight < 1.05);
-      const targetPos = isNarrow ? [12.5, 15.5, 14.5] : [10.5, 12.8, 12.5];
+      const targetPos = isNarrow ? [14.5, 18.5, 16.5] : [13.2, 16.2, 14.8];
       controlsRef.current.target.set(0, 0, 0);
       controlsRef.current.object.position.set(targetPos[0], targetPos[1], targetPos[2]);
       if ('fov' in controlsRef.current.object) {
         const cam = controlsRef.current.object as THREE.PerspectiveCamera;
-        cam.fov = isNarrow ? 36 : 28;
+        cam.fov = isNarrow ? 38 : 32;
         cam.updateProjectionMatrix();
       }
       controlsRef.current.update();
@@ -161,19 +163,20 @@ export function BoardCanvas({
     >
       <Canvas
         shadows="soft"
-        dpr={[1, 1.35]}
+        dpr={[1, 1.5]}
         gl={{
           antialias: true,
           alpha: true,
           powerPreference: 'high-performance',
           toneMapping: THREE.ACESFilmicToneMapping,
           toneMappingExposure: 1.25,
+          precision: 'highp',
         }}
         camera={{
-          position: [10.5, 12.8, 12.5],
-          fov: 28,
+          position: [13.2, 16.2, 14.8],
+          fov: 32,
           near: 0.1,
-          far: 180,
+          far: 220,
         }}
       >
         <AdaptiveDpr pixelated={false} />
@@ -195,13 +198,13 @@ export function BoardCanvas({
             color="#fbbf24"
           />
 
-          {/* Soft Ground Contact Shadows grounding the entire board & diorama */}
+          {/* Soft Ground Contact Shadows grounding the board viaduct base */}
           <ContactShadows
-            position={[0, -0.34, 0]}
-            opacity={0.45}
-            scale={36}
-            blur={2.0}
-            far={8}
+            position={[0, -0.65, 0]}
+            opacity={0.35}
+            scale={38}
+            blur={1.8}
+            far={6}
             color="#040d1a"
           />
 
@@ -239,11 +242,11 @@ export function BoardCanvas({
             ref={controlsRef}
             makeDefault
             enableDamping
-            dampingFactor={0.06}
-            minDistance={6}
-            maxDistance={24}
-            minPolarAngle={Math.PI / 4}
-            maxPolarAngle={Math.PI / 2.3}
+            dampingFactor={0.08}
+            minDistance={8}
+            maxDistance={32}
+            minPolarAngle={Math.PI / 4.5}
+            maxPolarAngle={Math.PI / 2.2}
             target={[0, 0, 0]}
           />
         )}

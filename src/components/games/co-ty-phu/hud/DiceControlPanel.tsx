@@ -185,31 +185,43 @@ export function DiceControlPanel({ className = '' }: DiceControlPanelProps) {
         {canRoll ? (
           <button
             onClick={handleRollDice}
-            className={`flex flex-1 items-center justify-center gap-2.5 rounded-2xl px-5 py-3.5 text-base font-black uppercase tracking-wider text-slate-950 cursor-pointer ${
-              !activePlayer?.isBot ? 'ring-4 ring-amber-300 shadow-2xl shadow-amber-400 animate-pulse' : ''
-            } ${isDouble ? 'btn-meta-double' : 'btn-meta-roll'}`}
+            className={`group relative flex flex-1 items-center justify-center gap-3 overflow-hidden rounded-2xl px-6 py-4 text-base font-black uppercase tracking-wider text-amber-950 transition-all duration-300 active:scale-95 cursor-pointer shadow-[0_10px_25px_-5px_rgba(245,158,11,0.5),0_8px_10px_-6px_rgba(245,158,11,0.5)] border-t border-amber-200/80 bg-gradient-to-b from-amber-200 via-amber-400 to-amber-600 hover:from-amber-100 hover:via-amber-300 hover:to-amber-500 ring-2 ring-amber-300/60 ${
+              !activePlayer?.isBot ? 'animate-pulse' : ''
+            }`}
           >
-            <Dices className="h-6 w-6 fill-slate-950 animate-bounce" />
-            <span>{!activePlayer?.isBot ? (isDouble ? '👉 ĐỔ TIẾP (SỐ ĐÔI)' : '👉 NHẤN ĐỔ XÚC XẮC') : '🤖 MÁY ĐANG ĐỔ...'}</span>
-            <Sparkles className="h-5 w-5 fill-slate-950 animate-spin" />
+            {/* Specular Shimmer Sweep Effect */}
+            <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/50 to-transparent transition-transform duration-1000 group-hover:translate-x-full ease-out" />
+            
+            {/* 3D Bevel Emboss Shadow */}
+            <div className="absolute inset-x-0 bottom-0 h-1.5 bg-amber-800/60 rounded-b-2xl" />
+
+            <Dices className="h-6 w-6 text-amber-950 fill-amber-950 drop-shadow-[0_1px_1px_rgba(255,255,255,0.6)] animate-bounce" />
+            <span className="relative z-10 text-lg font-black tracking-widest text-amber-950 drop-shadow-[0_1px_2px_rgba(255,255,255,0.7)]">
+              {!activePlayer?.isBot ? (isDouble ? '👉 ĐỔ TIẾP (SỐ ĐÔI)' : '👉 NHẤN ĐỔ XÚC XẮC') : '🤖 MÁY ĐANG ĐỔ...'}
+            </span>
+            <Sparkles className="h-5 w-5 text-amber-950 fill-amber-950 drop-shadow-[0_1px_1px_rgba(255,255,255,0.6)] animate-spin" />
           </button>
         ) : canEnd ? (
           <button
             onClick={handleEndTurn}
-            className={`flex flex-1 items-center justify-center gap-2.5 rounded-2xl px-5 py-3.5 text-base font-black uppercase tracking-wider text-slate-950 ${
-              isDouble && !activePlayer?.inJail ? 'btn-meta-double' : 'btn-meta-end'
-            }`}
+            className="group relative flex flex-1 items-center justify-center gap-3 overflow-hidden rounded-2xl px-6 py-4 text-base font-black uppercase tracking-wider text-slate-950 transition-all duration-300 active:scale-95 cursor-pointer shadow-[0_10px_25px_-5px_rgba(34,197,94,0.4)] border-t border-emerald-200/80 bg-gradient-to-b from-emerald-300 via-emerald-400 to-teal-500 hover:from-emerald-200 hover:via-emerald-300 hover:to-teal-400 ring-2 ring-emerald-300/60"
           >
+            <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/50 to-transparent transition-transform duration-1000 group-hover:translate-x-full ease-out" />
+            <div className="absolute inset-x-0 bottom-0 h-1.5 bg-emerald-800/60 rounded-b-2xl" />
             {isDouble && !activePlayer?.inJail ? (
               <>
-                <Dices className="h-6 w-6 fill-slate-950" />
-                <span>ĐỔ TIẾP (SỐ ĐÔI)</span>
-                <Sparkles className="h-5 w-5 fill-slate-950" />
+                <Dices className="h-6 w-6 text-slate-950 fill-slate-950 drop-shadow-[0_1px_1px_rgba(255,255,255,0.6)]" />
+                <span className="relative z-10 text-lg font-black tracking-widest text-slate-950 drop-shadow-[0_1px_2px_rgba(255,255,255,0.7)]">
+                  ĐỔ TIẾP (SỐ ĐÔI)
+                </span>
+                <Sparkles className="h-5 w-5 text-slate-950 fill-slate-950 drop-shadow-[0_1px_1px_rgba(255,255,255,0.6)]" />
               </>
             ) : (
               <>
-                <span>KẾT THÚC LƯỢT</span>
-                <ArrowRight className="h-6 w-6" />
+                <span className="relative z-10 text-lg font-black tracking-widest text-slate-950 drop-shadow-[0_1px_2px_rgba(255,255,255,0.7)]">
+                  KẾT THÚC LƯỢT
+                </span>
+                <ArrowRight className="h-6 w-6 text-slate-950 drop-shadow-[0_1px_1px_rgba(255,255,255,0.6)]" />
               </>
             )}
           </button>

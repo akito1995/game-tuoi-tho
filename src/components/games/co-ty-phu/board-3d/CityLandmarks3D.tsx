@@ -53,34 +53,77 @@ export function CaMauMonument() {
   );
 }
 
-// Tile 3: Chợ Nổi Cần Thơ (Ghe xuồng Cái Răng chở trái cây)
+// Tile 3: Chợ Nổi Cần Thơ (Ghe xuồng Cái Răng chở trái cây - Nghệ Thuật Điêu Khắc)
 export function CanThoFloatingMarket() {
   return (
     <group position={[0, 0.02, 0.25]} scale={[0.8, 0.8, 0.8]}>
-      {/* Blue Water Ripple Basin */}
+      {/* Translucent River Water Basin with Soft Rounded Edge */}
       <mesh position={[0, 0.02, 0]} receiveShadow>
-        <boxGeometry args={[0.78, 0.04, 0.48]} />
-        <meshStandardMaterial color="#0284c7" roughness={0.2} transparent opacity={0.85} />
+        <cylinderGeometry args={[0.42, 0.45, 0.04, 16]} />
+        <meshPhysicalMaterial color="#0284c7" roughness={0.15} transmission={0.6} transparent opacity={0.88} />
       </mesh>
-      {/* Traditional Wooden Sampan Boat (Xuồng Ba Lá) */}
-      <mesh position={[0, 0.08, 0]} rotation={[0, 0.2, 0]} castShadow>
-        <boxGeometry args={[0.62, 0.1, 0.24]} />
-        <meshStandardMaterial color="#78350f" roughness={0.8} />
-      </mesh>
-      {/* Fruit Baskets (Dưa Hấu, Bưởi, Chuối) */}
-      <mesh position={[-0.14, 0.16, 0]} castShadow>
-        <sphereGeometry args={[0.07, 8, 8]} />
-        <meshStandardMaterial color="#16a34a" roughness={0.4} />
-      </mesh>
-      <mesh position={[0.06, 0.16, 0]} castShadow>
-        <sphereGeometry args={[0.06, 8, 8]} />
-        <meshStandardMaterial color="#eab308" roughness={0.4} />
-      </mesh>
-      {/* Cây Bẹo Chào Hàng Trên Mũi Thuyền */}
-      <mesh position={[0.24, 0.26, 0]} castShadow>
-        <cylinderGeometry args={[0.015, 0.015, 0.38, 6]} />
-        <meshStandardMaterial color="#ca8a04" />
-      </mesh>
+      {/* Sculpted Cai Rang Wooden Sampan (Xuồng Ba Lá Uốn Cong) */}
+      <group position={[0, 0.07, 0]} rotation={[0, 0.25, 0]}>
+        {/* Curved Teak Hull */}
+        <mesh castShadow receiveShadow rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.13, 0.11, 0.65, 12, 1, false, 0, Math.PI]} />
+          <meshStandardMaterial color="#78350f" roughness={0.78} />
+        </mesh>
+        {/* Upswept Bow & Stern Prow */}
+        <mesh position={[0.34, 0.04, 0]} rotation={[0, 0, -0.35]} castShadow>
+          <boxGeometry args={[0.12, 0.08, 0.2]} />
+          <meshStandardMaterial color="#5c2e0b" roughness={0.8} />
+        </mesh>
+        <mesh position={[-0.34, 0.04, 0]} rotation={[0, 0, 0.35]} castShadow>
+          <boxGeometry args={[0.12, 0.08, 0.2]} />
+          <meshStandardMaterial color="#5c2e0b" roughness={0.8} />
+        </mesh>
+        {/* Mắt Thuyền (Painted Dragon Eyes) */}
+        {[-0.1, 0.1].map((z, s) => (
+          <mesh key={s} position={[0.38, 0.05, z]} rotation={[0, s === 0 ? -Math.PI / 2 : Math.PI / 2, 0]}>
+            <circleGeometry args={[0.015, 8]} />
+            <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
+          </mesh>
+        ))}
+        {/* Woven Baskets of Watermelon, Pomelo & Bananas */}
+        <group position={[-0.1, 0.08, 0]}>
+          <mesh castShadow>
+            <cylinderGeometry args={[0.08, 0.06, 0.06, 8]} />
+            <meshStandardMaterial color="#d97706" roughness={0.9} />
+          </mesh>
+          <mesh position={[0, 0.04, 0]} castShadow>
+            <sphereGeometry args={[0.055, 8, 8]} />
+            <meshStandardMaterial color="#15803d" roughness={0.4} />
+          </mesh>
+        </group>
+        <group position={[0.08, 0.08, 0]}>
+          <mesh castShadow>
+            <cylinderGeometry args={[0.07, 0.05, 0.06, 8]} />
+            <meshStandardMaterial color="#d97706" roughness={0.9} />
+          </mesh>
+          <mesh position={[0, 0.04, 0]} castShadow>
+            <sphereGeometry args={[0.05, 8, 8]} />
+            <meshStandardMaterial color="#eab308" roughness={0.4} />
+          </mesh>
+        </group>
+        {/* Cây Bẹo Chào Hàng Tre Trúc Vươn Cao */}
+        <group position={[0.22, 0.18, 0]}>
+          <mesh castShadow>
+            <cylinderGeometry args={[0.008, 0.008, 0.38, 6]} />
+            <meshStandardMaterial color="#ca8a04" roughness={0.6} />
+          </mesh>
+          {/* Sample Fruit Hanging on the Tip of the Beo Pole */}
+          <mesh position={[0, 0.18, 0.02]} castShadow>
+            <sphereGeometry args={[0.024, 6, 6]} />
+            <meshStandardMaterial color="#ef4444" roughness={0.3} />
+          </mesh>
+        </group>
+        {/* Conical Leaf Hat (Nón Lá) */}
+        <mesh position={[-0.24, 0.06, 0]} rotation={[0.2, 0, -0.3]} castShadow>
+          <coneGeometry args={[0.06, 0.035, 10]} />
+          <meshStandardMaterial color="#fef08a" roughness={0.8} />
+        </mesh>
+      </group>
     </group>
   );
 }
@@ -460,11 +503,26 @@ export function NinhBinhTrangAn() {
         <coneGeometry args={[0.18, 0.48, 5]} />
         <meshStandardMaterial color="#334155" roughness={0.92} flatShading />
       </mesh>
-      {/* Rowboat (Thuyền Nan Tham Quan) */}
-      <mesh position={[0.06, 0.08, 0.12]} rotation={[0, 0.3, 0]} castShadow>
-        <boxGeometry args={[0.22, 0.06, 0.1]} />
-        <meshStandardMaterial color="#78350f" />
-      </mesh>
+      {/* Sculpted Heritage Rowboat (Thuyền Nan Tràng An) */}
+      <group position={[0.06, 0.08, 0.12]} rotation={[0, 0.3, 0]}>
+        <mesh castShadow receiveShadow rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.05, 0.04, 0.26, 8, 1, false, 0, Math.PI]} />
+          <meshStandardMaterial color="#78350f" roughness={0.8} />
+        </mesh>
+        <mesh position={[0.13, 0.02, 0]} rotation={[0, 0, -0.3]}>
+          <boxGeometry args={[0.05, 0.04, 0.08]} />
+          <meshStandardMaterial color="#5c2e0b" />
+        </mesh>
+        <mesh position={[-0.13, 0.02, 0]} rotation={[0, 0, 0.3]}>
+          <boxGeometry args={[0.05, 0.04, 0.08]} />
+          <meshStandardMaterial color="#5c2e0b" />
+        </mesh>
+        {/* Conical Leaf Hat */}
+        <mesh position={[0, 0.035, 0]} rotation={[0.2, 0, 0]}>
+          <coneGeometry args={[0.035, 0.02, 8]} />
+          <meshStandardMaterial color="#fef08a" />
+        </mesh>
+      </group>
     </group>
   );
 }
@@ -521,11 +579,35 @@ export function HaLongTrongMai() {
         <coneGeometry args={[0.15, 0.54, 5]} />
         <meshStandardMaterial color="#334155" roughness={0.95} flatShading />
       </mesh>
-      {/* Traditional Junk Sailboat (Thuyền Buồm Đỏ) */}
-      <mesh position={[0, 0.1, 0.14]} rotation={[0, 0.4, 0]} castShadow>
-        <boxGeometry args={[0.18, 0.06, 0.08]} />
-        <meshStandardMaterial color="#991b1b" />
-      </mesh>
+      {/* Authentic Ha Long Batwing Junk Sailboat (Thuyền Buồm Cánh Dơi Đỏ) */}
+      <group position={[0, 0.08, 0.14]} rotation={[0, 0.4, 0]}>
+        {/* Curved Teak Hull with Upswept Bow */}
+        <mesh castShadow receiveShadow rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.055, 0.045, 0.28, 8, 1, false, 0, Math.PI]} />
+          <meshStandardMaterial color="#451a03" roughness={0.75} />
+        </mesh>
+        <mesh position={[0.14, 0.03, 0]} rotation={[0, 0, -0.35]}>
+          <boxGeometry args={[0.06, 0.04, 0.08]} />
+          <meshStandardMaterial color="#451a03" />
+        </mesh>
+        {/* Main Mast & Batwing Fan Sail */}
+        <mesh position={[0.02, 0.14, 0]}>
+          <cylinderGeometry args={[0.004, 0.005, 0.26, 4]} />
+          <meshStandardMaterial color="#ca8a04" />
+        </mesh>
+        {/* Fan-Shaped Ribbed Crimson Sail */}
+        <mesh position={[0.06, 0.15, 0.005]} rotation={[0, 0.15, 0]}>
+          <planeGeometry args={[0.15, 0.18]} />
+          <meshStandardMaterial color="#dc2626" roughness={0.6} side={THREE.DoubleSide} />
+        </mesh>
+        {/* Bamboo Sail Battens */}
+        {[-0.04, 0, 0.04].map((by, bi) => (
+          <mesh key={bi} position={[0.06, 0.15 + by, 0.006]}>
+            <boxGeometry args={[0.14, 0.006, 0.004]} />
+            <meshStandardMaterial color="#fbbf24" />
+          </mesh>
+        ))}
+      </group>
     </group>
   );
 }
@@ -550,19 +632,30 @@ export function HaiPhongPort() {
           <meshStandardMaterial color="#f8fafc" />
         </mesh>
       </group>
-      {/* Cargo Cargo Ship with Containers (Tàu Chở Hàng) */}
+      {/* Modern Container Cargo Ship (Tàu Chở Hàng Hải Phòng) */}
       <group position={[0.12, 0.1, 0.14]}>
+        {/* Sleek Dark Navy Hull with Raked Bow */}
         <mesh castShadow receiveShadow>
-          <boxGeometry args={[0.42, 0.1, 0.16]} />
-          <meshStandardMaterial color="#1e293b" />
+          <boxGeometry args={[0.44, 0.1, 0.16]} />
+          <meshStandardMaterial color="#0f172a" roughness={0.4} />
         </mesh>
-        <mesh position={[-0.06, 0.08, 0]}>
-          <boxGeometry args={[0.12, 0.08, 0.12]} />
-          <meshStandardMaterial color="#0284c7" />
+        <mesh position={[0.24, 0.02, 0]} rotation={[0, 0, -0.32]} castShadow>
+          <boxGeometry args={[0.08, 0.08, 0.14]} />
+          <meshStandardMaterial color="#0f172a" />
         </mesh>
-        <mesh position={[0.08, 0.08, 0]}>
-          <boxGeometry args={[0.12, 0.08, 0.12]} />
-          <meshStandardMaterial color="#ea580c" />
+        {/* Aft Bridge Superstructure */}
+        <mesh position={[-0.15, 0.12, 0]} castShadow>
+          <boxGeometry args={[0.08, 0.14, 0.13]} />
+          <meshStandardMaterial color="#ffffff" roughness={0.3} />
+        </mesh>
+        {/* Blue & Orange High-Cube Shipping Containers */}
+        <mesh position={[-0.04, 0.08, 0]} castShadow>
+          <boxGeometry args={[0.11, 0.07, 0.12]} />
+          <meshStandardMaterial color="#0284c7" roughness={0.5} />
+        </mesh>
+        <mesh position={[0.08, 0.08, 0]} castShadow>
+          <boxGeometry args={[0.11, 0.07, 0.12]} />
+          <meshStandardMaterial color="#ea580c" roughness={0.5} />
         </mesh>
       </group>
     </group>
