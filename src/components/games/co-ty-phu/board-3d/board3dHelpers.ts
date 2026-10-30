@@ -123,6 +123,49 @@ export function calculateHopPosition(
 }
 
 /**
+ * Kinematic Squash & Stretch helper for mascot pawn hopping.
+ * Preserves volume (scaleX * scaleY * scaleZ ~ 1.0) with classic animation timing:
+ * - p = 0 -> 0.15: takeoff anticipation (squashes Sy ~ 0.85, Sxz ~ 1.08)
+ * - p = 0.5: mid-air peak stretch (Sy ~ 1.25, Sxz ~ 0.89)
+ * - p = 0.85 -> 0.95 -> 1.0: landing touchdown impact (Sy ~ 0.75, Sxz ~ 1.15)
+ */
+export function calculateHopSquashStretch(progress: number): {
+  scaleX: number;
+  scaleY: number;
+  scaleZ: number;
+} {
+  const p = Math.max(0, Math.min(1, progress));
+  let sy = 1.0;
+
+  if (p < 0.15) {
+    // Takeoff anticipation: squashes Sy ~ 0.85, Sxz ~ 1.08
+    const u = p / 0.15;
+    sy = 1.0 - 0.15 * Math.sin(u * Math.PI);
+  } else if (p < 0.85) {
+    // Mid-air peak: stretches Sy ~ 1.25, Sxz ~ 0.89 at p = 0.5
+    const u = (p - 0.15) / 0.7;
+    sy = 1.0 + 0.25 * Math.sin(u * Math.PI);
+  } else if (p <= 0.95) {
+    // Touchdown impact compression: Sy drops to 0.75
+    const u = (p - 0.85) / 0.1;
+    sy = 1.0 - 0.25 * Math.sin(u * (Math.PI / 2));
+  } else {
+    // Post-impact settling at p = 0.95 -> 1.0 (Sy = 0.75 -> 0.80)
+    const u = (p - 0.95) / 0.05;
+    sy = 0.75 + 0.05 * u;
+  }
+
+  const scaleY = Number(sy.toFixed(4));
+  const sxz = Number((1 / Math.sqrt(scaleY)).toFixed(4));
+
+  return {
+    scaleX: sxz,
+    scaleY,
+    scaleZ: sxz,
+  };
+}
+
+/**
  * Computes 3D position for a building placed on the inner edge of a tile.
  * Shifts towards the center of the board (the island) so that pawns can walk freely.
  */
@@ -185,6 +228,19 @@ export function getBuildingTier(tile: {
   if (count === 2) return 2;
   if (count === 3) return 3;
   return 4;
+}
+
+/**
+ * Calculates the spring pop bounce scale factor for building appearance and upgrades.
+ * Progress is in [0, 1].
+ * Yields a lively pop bounce: 0 -> peak ~1.18 -> rebound ~0.97 -> settles at 1.0.
+ */
+export function calculateBuildingPopScale(progress: number): number {
+  if (progress <= 0) return 0;
+  if (progress >= 1) return 1;
+  const decay = Math.exp(-4.8 * progress);
+  const oscillation = Math.cos(8.6 * progress) + 0.25 * Math.sin(8.6 * progress);
+  return Number((1 - decay * oscillation).toFixed(4));
 }
 
 /**

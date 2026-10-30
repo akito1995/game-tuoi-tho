@@ -220,6 +220,37 @@ export class SoundManager {
   /**
    * Tactile subtle UI click
    */
+
+  /**
+   * Satisfying hollow wooden "cộc" sound when pawn hops onto a ceramic tile
+   */
+  public playHopSound(): void {
+    if (!this.settings.sfxEnabled) return;
+    const ctx = this.ensureAudioContext();
+    if (!ctx) return;
+
+    try {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const now = ctx.currentTime;
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(340, now);
+      osc.frequency.exponentialRampToValueAtTime(140, now + 0.045);
+
+      gain.gain.setValueAtTime(0.3 * this.settings.volume, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.045);
+    } catch {
+      // Safe fallback
+    }
+  }
+
   public playClickSound(): void {
     if (!this.settings.sfxEnabled) return;
     const ctx = this.ensureAudioContext();

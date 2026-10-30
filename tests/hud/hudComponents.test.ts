@@ -13,6 +13,20 @@ import {
 } from '@/components/games/co-ty-phu/hud/hudHelpers';
 import { Player, Tile } from '@/lib/game-engine/types';
 import { useGameStore } from '@/lib/game-engine/gameStore';
+import {
+  PropertyActionModal,
+  calculatePropertyTierDetails,
+  calculateRemainingBalance,
+} from '@/components/games/co-ty-phu/hud/PropertyActionModal';
+import {
+  ChanceCardModal,
+  getChanceCardCategoryDetails,
+} from '@/components/games/co-ty-phu/hud/ChanceCardModal';
+import { FlyingMoneyVFX } from '@/components/games/co-ty-phu/hud/FlyingMoneyVFX';
+import { CoTyPhuHUD } from '@/components/games/co-ty-phu/hud/CoTyPhuHUD';
+import { GameHeader } from '@/components/games/co-ty-phu/hud/GameHeader';
+import { PlayerListBar } from '@/components/games/co-ty-phu/hud/PlayerListBar';
+import { TurnTimerBar } from '@/components/games/co-ty-phu/hud/TurnTimerBar';
 
 describe('HUD Helpers and UI Logic Suite', () => {
   beforeEach(() => {
@@ -333,5 +347,264 @@ describe('HUD Helpers and UI Logic Suite', () => {
       expect(hud.DiceRevealOverlay).toBeDefined();
       expect(hud.PropertyInspectorModal).toBeDefined();
     }, 20000);
+  });
+
+  describe('PropertyActionModal & Land Deed Drawer Suite', () => {
+    const samplePropertyTile: Tile = {
+      id: 1,
+      name: 'Bến Ninh Kiều',
+      type: 'PROPERTY',
+      colorGroup: 'ME_KONG',
+      price: 100000,
+      housePrice: 60000,
+      baseRent: 10000,
+      rentMultiplier: [10000, 50000, 150000, 300000, 600000],
+      ownerId: null,
+      houseCount: 0,
+      hasResort: false,
+      isMortgaged: false,
+    };
+
+    const sampleTransportTile: Tile = {
+      id: 5,
+      name: 'Ga Sài Gòn',
+      type: 'TRANSPORT',
+      price: 200000,
+      baseRent: 25000,
+      rentMultiplier: [25000, 50000, 100000, 200000],
+      ownerId: null,
+      houseCount: 0,
+      hasResort: false,
+      isMortgaged: false,
+    };
+
+    it('exports PropertyActionModal component and tier helper calculations', () => {
+      expect(typeof PropertyActionModal).toBe('function');
+      expect(typeof calculatePropertyTierDetails).toBe('function');
+      expect(typeof calculateRemainingBalance).toBe('function');
+    });
+
+    it('calculates accurate construction tier costs for unowned property', () => {
+      const tiers = calculatePropertyTierDetails({
+        tile: samplePropertyTile,
+        currentTier: -1,
+        isUnowned: true,
+        currentRound: 2,
+        playerMoney: 500000,
+      });
+
+      expect(tiers.length).toBe(4);
+
+      // Tier 0: Đất nền = tilePrice = 100000
+      expect(tiers[0].tierIndex).toBe(0);
+      expect(tiers[0].name).toBe('Đất nền');
+      expect(tiers[0].cost).toBe(100000);
+      expect(tiers[0].isBuilt).toBe(false);
+      expect(tiers[0].isLocked).toBe(false);
+      expect(tiers[0].canAfford).toBe(true);
+
+      // Tier 1: Nhà phố = tilePrice + 1*housePrice = 160000
+      expect(tiers[1].tierIndex).toBe(1);
+      expect(tiers[1].name).toBe('Nhà phố');
+      expect(tiers[1].cost).toBe(160000);
+      expect(tiers[1].isBuilt).toBe(false);
+      expect(tiers[1].canAfford).toBe(true);
+
+      // Tier 2: Chung cư = tilePrice + 2*housePrice = 220000
+      expect(tiers[2].tierIndex).toBe(2);
+      expect(tiers[2].name).toBe('Chung cư');
+      expect(tiers[2].cost).toBe(220000);
+      expect(tiers[2].isBuilt).toBe(false);
+      expect(tiers[2].canAfford).toBe(true);
+
+      // Tier 3: Landmark 5 Sao = tilePrice + 3*housePrice = 280000
+      expect(tiers[3].tierIndex).toBe(3);
+      expect(tiers[3].name).toBe('Landmark 5 Sao');
+      expect(tiers[3].cost).toBe(280000);
+      expect(tiers[3].isBuilt).toBe(false);
+      expect(tiers[3].isLocked).toBe(false);
+      expect(tiers[3].canAfford).toBe(true);
+    });
+
+    it('calculates incremental upgrade costs for owned property across tiers', () => {
+      // Player already owns Tier 0 (land)
+      const tiersFromLand = calculatePropertyTierDetails({
+        tile: { ...samplePropertyTile, ownerId: 'p1' },
+        currentTier: 0,
+        isUnowned: false,
+        currentRound: 2,
+        playerMoney: 200000,
+      });
+
+      expect(tiersFromLand[0].cost).toBe(0);
+      expect(tiersFromLand[0].isBuilt).toBe(true);
+      expect(tiersFromLand[1].cost).toBe(60000); // 1 housePrice
+      expect(tiersFromLand[1].isBuilt).toBe(false);
+      expect(tiersFromLand[2].cost).toBe(120000); // 2 housePrice
+      expect(tiersFromLand[3].cost).toBe(180000); // 3 housePrice
+
+      // Player already has 1 house (Tier 1)
+      const tiersFromHouse1 = calculatePropertyTierDetails({
+        tile: { ...samplePropertyTile, ownerId: 'p1', houseCount: 1 },
+        currentTier: 1,
+        isUnowned: false,
+        currentRound: 2,
+        playerMoney: 200000,
+      });
+
+      expect(tiersFromHouse1[0].isBuilt).toBe(true);
+      expect(tiersFromHouse1[1].isBuilt).toBe(true);
+      expect(tiersFromHouse1[1].cost).toBe(0);
+      expect(tiersFromHouse1[2].cost).toBe(60000); // upgrade from 1 to 2
+      expect(tiersFromHouse1[3].cost).toBe(120000); // upgrade from 1 to 3
+
+      // Player already has Landmark (Tier 3)
+      const tiersFromLandmark = calculatePropertyTierDetails({
+        tile: { ...samplePropertyTile, ownerId: 'p1', houseCount: 3, hasResort: true },
+        currentTier: 3,
+        isUnowned: false,
+        currentRound: 2,
+        playerMoney: 200000,
+      });
+
+      expect(tiersFromLandmark.every((t) => t.isBuilt)).toBe(true);
+      expect(tiersFromLandmark.every((t) => t.cost === 0)).toBe(true);
+    });
+
+    it('locks Landmark in Round 1 and locks building upgrades on Transport/Utility tiles', () => {
+      // In Round 1, Landmark should be locked
+      const round1Tiers = calculatePropertyTierDetails({
+        tile: samplePropertyTile,
+        currentTier: -1,
+        isUnowned: true,
+        currentRound: 1,
+        playerMoney: 1000000,
+      });
+
+      expect(round1Tiers[3].isLocked).toBe(true);
+      expect(round1Tiers[3].lockMessage).toContain('vòng 1');
+
+      // In Round 2+, Landmark should be unlocked
+      const round2Tiers = calculatePropertyTierDetails({
+        tile: samplePropertyTile,
+        currentTier: -1,
+        isUnowned: true,
+        currentRound: 2,
+        playerMoney: 1000000,
+      });
+      expect(round2Tiers[3].isLocked).toBe(false);
+
+      // Transport tiles should lock tiers 1-3
+      const transportTiers = calculatePropertyTierDetails({
+        tile: sampleTransportTile,
+        currentTier: -1,
+        isUnowned: true,
+        currentRound: 2,
+        playerMoney: 1000000,
+      });
+
+      expect(transportTiers[0].isLocked).toBe(false);
+      expect(transportTiers[0].name).toBe('Sở hữu cơ bản');
+      expect(transportTiers[1].isLocked).toBe(true);
+      expect(transportTiers[2].isLocked).toBe(true);
+      expect(transportTiers[3].isLocked).toBe(true);
+    });
+
+    it('calculates rent progression and incorporates regional monopoly 2x multiplier', () => {
+      // Standard rent
+      const standardTiers = calculatePropertyTierDetails({
+        tile: samplePropertyTile,
+        currentTier: 0,
+        isUnowned: false,
+        currentRound: 2,
+        playerMoney: 500000,
+        hasMonopoly: false,
+      });
+
+      expect(standardTiers[0].rent).toBe(10000);
+      expect(standardTiers[1].rent).toBe(50000);
+      expect(standardTiers[2].rent).toBe(150000);
+      expect(standardTiers[3].rent).toBe(600000);
+
+      // Monopoly active: rent doubled (2x)
+      const monopolyTiers = calculatePropertyTierDetails({
+        tile: samplePropertyTile,
+        currentTier: 0,
+        isUnowned: false,
+        currentRound: 2,
+        playerMoney: 500000,
+        hasMonopoly: true,
+      });
+
+      expect(monopolyTiers[0].rent).toBe(20000);
+      expect(monopolyTiers[1].rent).toBe(100000);
+      expect(monopolyTiers[2].rent).toBe(300000);
+      expect(monopolyTiers[3].rent).toBe(1200000);
+    });
+
+    it('accurately resolves player affordability and remaining balance calculations', () => {
+      // Sufficient balance
+      const res1 = calculateRemainingBalance(1500000, 280000);
+      expect(res1.canAfford).toBe(true);
+      expect(res1.remainingCash).toBe(1220000);
+
+      // Exact balance
+      const res2 = calculateRemainingBalance(280000, 280000);
+      expect(res2.canAfford).toBe(true);
+      expect(res2.remainingCash).toBe(0);
+
+      // Insufficient balance
+      const res3 = calculateRemainingBalance(100000, 280000);
+      expect(res3.canAfford).toBe(false);
+      expect(res3.remainingCash).toBe(-180000);
+
+      // Cost 0 (already built tier)
+      const res4 = calculateRemainingBalance(500000, 0);
+      expect(res4.canAfford).toBe(false);
+      expect(res4.remainingCash).toBe(500000);
+    });
+  });
+
+  describe('Stage 5: Commercial Arcade HUD & Parabolic VFX Components', () => {
+    it('should export all key Stage 5 HUD and modal components', () => {
+      expect(typeof ChanceCardModal).toBe('function');
+      expect(typeof FlyingMoneyVFX).toBe('function');
+      expect(typeof CoTyPhuHUD).toBe('function');
+      expect(typeof GameHeader).toBe('function');
+      expect(typeof PlayerListBar).toBe('function');
+      expect(typeof TurnTimerBar).toBe('function');
+    });
+
+    it('should properly configure Chance Card (Cơ Hội) details with gold theme and rewards', () => {
+      const details = getChanceCardCategoryDetails({
+        id: 'test-card-1',
+        title: 'Cơ Hội Vàng',
+        description: 'Nhận tiền thưởng sinh nhật 200.000đ',
+        type: 'CASH_GAIN',
+        amount: 200000,
+      });
+
+      expect(details.isFate).toBe(false);
+      expect(details.categoryName).toBe('CƠ HỘI PHÁT TÀI');
+      expect(details.badgeText).toContain('200.000đ');
+      expect(details.borderColor).toBe('border-amber-400');
+      expect(details.artIcon).toBe('💰');
+    });
+
+    it('should properly distinguish Fate Card (Khí Vận) with amethyst theme and penalties', () => {
+      const details = getChanceCardCategoryDetails({
+        id: 'test-fate-1',
+        title: 'Khí Vận Định Mệnh',
+        description: 'Nộp phạt vi phạm tốc độ 100.000đ',
+        type: 'CASH_LOSS',
+        amount: 100000,
+      });
+
+      expect(details.isFate).toBe(true);
+      expect(details.categoryName).toBe('KHÍ VẬN ĐỊNH MỆNH');
+      expect(details.badgeText).toContain('100.000đ');
+      expect(details.borderColor).toBe('border-purple-400');
+      expect(details.artIcon).toBe('⚖️');
+    });
   });
 });

@@ -3,13 +3,58 @@ import {
   getPlayerTileOffset,
   calculatePathTiles,
   calculateHopPosition,
+  calculateHopSquashStretch,
   getTileBuildingPosition,
   getBuildingTier,
+  calculateBuildingPopScale,
   getDiceFaceNormal,
   getDiceTargetEuler,
   rotateVectorByEuler,
   MASCOT_PALETTES,
 } from '@/components/games/co-ty-phu/board-3d/board3dHelpers';
+import {
+  PigMesh,
+  FoxMesh,
+  CatMesh,
+  BuffaloMesh,
+  MascotModel,
+  LandingDustRing,
+} from '@/components/games/co-ty-phu/board-3d/MascotPawns3D';
+import {
+  DieMesh,
+  Dice3D,
+} from '@/components/games/co-ty-phu/board-3d/Dice3D';
+import {
+  FlagStructure,
+  VillageHouse1Structure,
+  VillageHouse2Structure,
+  LuxuryVillaStructure,
+  GrandGoldenResortStructure,
+  BuildingUpgradeSparkles,
+} from '@/components/games/co-ty-phu/board-3d/Buildings3D';
+import {
+  CaMauMonument,
+  CanThoFloatingMarket,
+  PowerPlant,
+  BusStation,
+  VungTauLighthouse,
+  NhaTrangTramHuongTower,
+  PhuQuocIsland,
+  BuonMaThuotNhaRong,
+  AirportLandmark,
+  DaLatStation,
+  HueNgoMonGate,
+  HoiAnChuaCau,
+  DaNangDragonBridge,
+  WaterPlant,
+  NinhBinhTrangAn,
+  SaPaStoneChurch,
+  HaLongTrongMai,
+  HaiPhongPort,
+  HaNoiTurtleTower,
+  HCMCBenThanhLandmark,
+  CityLandmark3D,
+} from '@/components/games/co-ty-phu/board-3d/CityLandmarks3D';
 import { TILE_SURFACE_Y, TILE_CENTER_OFFSET } from '@/components/games/co-ty-phu/board-3d/tilePositions';
 
 describe('Mascots and Buildings 3D Helpers', () => {
@@ -110,6 +155,65 @@ describe('Mascots and Buildings 3D Helpers', () => {
     });
   });
 
+  describe('Kinematic Squash and Stretch (calculateHopSquashStretch)', () => {
+    it('should stretch vertically at mid-air peak progress 0.5 (scaleY > 1.0, scaleX < 1.0)', () => {
+      const mid = calculateHopSquashStretch(0.5);
+      expect(mid.scaleY).toBeGreaterThan(1.0);
+      expect(mid.scaleX).toBeLessThan(1.0);
+      expect(mid.scaleZ).toBeLessThan(1.0);
+      expect(mid.scaleY).toBeCloseTo(1.25, 2);
+      expect(mid.scaleX).toBeCloseTo(0.89, 2);
+    });
+
+    it('should squash vertically at touchdown impact progress 0.95 (scaleY < 1.0, scaleX > 1.0)', () => {
+      const touchdown = calculateHopSquashStretch(0.95);
+      expect(touchdown.scaleY).toBeLessThan(1.0);
+      expect(touchdown.scaleX).toBeGreaterThan(1.0);
+      expect(touchdown.scaleZ).toBeGreaterThan(1.0);
+      expect(touchdown.scaleY).toBeCloseTo(0.75, 2);
+      expect(touchdown.scaleX).toBeCloseTo(1.15, 2);
+    });
+
+    it('should squash during takeoff anticipation (progress 0.075)', () => {
+      const takeoff = calculateHopSquashStretch(0.075);
+      expect(takeoff.scaleY).toBeLessThan(1.0);
+      expect(takeoff.scaleX).toBeGreaterThan(1.0);
+      expect(takeoff.scaleY).toBeCloseTo(0.85, 2);
+    });
+
+    it('should maintain defined, finite, and volume-preserving dimensions at p = 0 and p = 1', () => {
+      const at0 = calculateHopSquashStretch(0);
+      const at1 = calculateHopSquashStretch(1);
+
+      // Check values are defined and finite
+      expect(Number.isFinite(at0.scaleX)).toBe(true);
+      expect(Number.isFinite(at0.scaleY)).toBe(true);
+      expect(Number.isFinite(at0.scaleZ)).toBe(true);
+
+      expect(Number.isFinite(at1.scaleX)).toBe(true);
+      expect(Number.isFinite(at1.scaleY)).toBe(true);
+      expect(Number.isFinite(at1.scaleZ)).toBe(true);
+
+      // Volume preservation: scaleX * scaleY * scaleZ ≈ 1.0 ± 0.15
+      const vol0 = at0.scaleX * at0.scaleY * at0.scaleZ;
+      const vol1 = at1.scaleX * at1.scaleY * at1.scaleZ;
+
+      expect(Math.abs(vol0 - 1.0)).toBeLessThan(0.15);
+      expect(Math.abs(vol1 - 1.0)).toBeLessThan(0.15);
+    });
+
+    it('should safely clamp out-of-range progress < 0 or > 1 without NaN or infinity', () => {
+      const under = calculateHopSquashStretch(-0.5);
+      const over = calculateHopSquashStretch(2.0);
+
+      const at0 = calculateHopSquashStretch(0);
+      const at1 = calculateHopSquashStretch(1);
+
+      expect(under).toEqual(at0);
+      expect(over).toEqual(at1);
+    });
+  });
+
   describe('Building Tile Positions and Tiers', () => {
     it('should place buildings on inner board edge facing towards island center', () => {
       // South tile (e.g. tile 3): z is decreased inwards
@@ -188,7 +292,7 @@ describe('Mascots and Buildings 3D Helpers', () => {
     });
   });
 
-  describe('Mascot Palettes', () => {
+  describe('Mascot Palettes and Models', () => {
     it('should define distinct color palettes for all 4 mascots', () => {
       const mascots = ['PIG', 'FOX', 'CAT', 'BUFFALO'] as const;
       for (const m of mascots) {
@@ -198,6 +302,124 @@ describe('Mascots and Buildings 3D Helpers', () => {
         expect(palette.secondary).toMatch(/^#[0-9a-fA-F]{6}$/);
         expect(palette.name).toBeTruthy();
       }
+    });
+
+    it('should export all 4 mascot meshes, model dispatcher and landing shockwave', () => {
+      expect(typeof PigMesh).toBe('function');
+      expect(typeof FoxMesh).toBe('function');
+      expect(typeof CatMesh).toBe('function');
+      expect(typeof BuffaloMesh).toBe('function');
+      expect(typeof MascotModel).toBe('function');
+      expect(typeof LandingDustRing).toBe('function');
+    });
+
+    it('should export DieMesh and Dice3D physics dice components', () => {
+      expect(typeof DieMesh).toBe('function');
+      expect(typeof Dice3D).toBe('function');
+    });
+  });
+
+  describe('5-Tier Architectural Building Components & Metropolis Landmarks', () => {
+    it('should export all 5 procedural building tier components and upgrade sparkles', () => {
+      expect(typeof FlagStructure).toBe('function');
+      expect(typeof VillageHouse1Structure).toBe('function');
+      expect(typeof VillageHouse2Structure).toBe('function');
+      expect(typeof LuxuryVillaStructure).toBe('function');
+      expect(typeof GrandGoldenResortStructure).toBe('function');
+      expect(typeof BuildingUpgradeSparkles).toBe('function');
+    });
+
+    it('should export Metropolis iconic landmark components', () => {
+      expect(typeof HaNoiTurtleTower).toBe('function');
+      expect(typeof HCMCBenThanhLandmark).toBe('function');
+      expect(typeof HaiPhongPort).toBe('function');
+      expect(typeof CityLandmark3D).toBe('function');
+    });
+
+    it('should correctly map property ownership and house levels across all 5 tiers', () => {
+      // Tier -1: Unowned
+      expect(getBuildingTier({ ownerId: null, houseCount: 0 })).toBe(-1);
+      expect(getBuildingTier({})).toBe(-1);
+
+      // Tier 0: Claim Flag (owned, 0 houses)
+      expect(getBuildingTier({ ownerId: 'player_red', houseCount: 0 })).toBe(0);
+
+      // Tier 1: Village House 1 (Nhà ngói 3 gian)
+      expect(getBuildingTier({ ownerId: 'player_blue', houseCount: 1 })).toBe(1);
+
+      // Tier 2: Village House 2 (Lầu 2 tầng)
+      expect(getBuildingTier({ ownerId: 'player_gold', houseCount: 2 })).toBe(2);
+
+      // Tier 3: Luxury Villa (Biệt thự nghỉ dưỡng)
+      expect(getBuildingTier({ ownerId: 'player_green', houseCount: 3 })).toBe(3);
+
+      // Tier 4: Grand Golden Resort (4 houses or hasResort)
+      expect(getBuildingTier({ ownerId: 'player_red', houseCount: 4 })).toBe(4);
+      expect(getBuildingTier({ ownerId: 'player_red', houseCount: 2, hasResort: true })).toBe(4);
+      expect(getBuildingTier({ ownerId: 'player_red', houseCount: 0, hasResort: true })).toBe(4);
+    });
+
+    it('should calculate spring pop bounce scale curve (0 -> 1.18 -> 0.97 -> 1.0)', () => {
+      // At start (0 progress): scale = 0
+      expect(calculateBuildingPopScale(0)).toBe(0);
+      expect(calculateBuildingPopScale(-0.5)).toBe(0);
+
+      // Peak overshoot around progress 0.25 - 0.30 reaches ~1.18
+      const peakScale = calculateBuildingPopScale(0.28);
+      expect(peakScale).toBeGreaterThanOrEqual(1.15);
+      expect(peakScale).toBeLessThanOrEqual(1.22);
+
+      // Rebound undershoot around progress 0.60 - 0.70 dips below 1.0 (settling rebound)
+      const reboundScale = calculateBuildingPopScale(0.65);
+      expect(reboundScale).toBeLessThan(1.0);
+      expect(reboundScale).toBeGreaterThanOrEqual(0.95);
+
+      // At completion (1.0 progress): scale = 1.0
+      expect(calculateBuildingPopScale(1.0)).toBe(1.0);
+      expect(calculateBuildingPopScale(1.5)).toBe(1.0);
+    });
+
+    it('should export all 20 Vietnamese city and infrastructure landmark components', () => {
+      const landmarks = [
+        CaMauMonument,
+        CanThoFloatingMarket,
+        PowerPlant,
+        BusStation,
+        VungTauLighthouse,
+        NhaTrangTramHuongTower,
+        PhuQuocIsland,
+        BuonMaThuotNhaRong,
+        AirportLandmark,
+        DaLatStation,
+        HueNgoMonGate,
+        HoiAnChuaCau,
+        DaNangDragonBridge,
+        WaterPlant,
+        NinhBinhTrangAn,
+        SaPaStoneChurch,
+        HaLongTrongMai,
+        HaiPhongPort,
+        HaNoiTurtleTower,
+        HCMCBenThanhLandmark,
+      ];
+      for (const lm of landmarks) {
+        expect(typeof lm).toBe('function');
+      }
+    });
+
+    it('should correctly dispatch bespoke 3D landmarks for all 22 purchasable tiles', () => {
+      const mappedTileIds = [
+        1, 3, 4, 5, 6, 9, 10, 11, 12, 13, 15, 17, 19, 20, 21, 22, 23, 25, 27, 28, 30, 31,
+      ];
+      for (const id of mappedTileIds) {
+        const landmark = CityLandmark3D({ tileId: id });
+        expect(landmark).not.toBeNull();
+        expect(typeof landmark?.type).toBe('function');
+      }
+
+      // Unmapped tile should return null
+      const unmapped = CityLandmark3D({ tileId: 999 });
+      expect(unmapped).toBeNull();
     });
   });
 });

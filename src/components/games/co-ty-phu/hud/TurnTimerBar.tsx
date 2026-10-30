@@ -26,9 +26,18 @@ export function TurnTimerBar({ turnTimeLimitSeconds = 60 }: TurnTimerBarProps) {
     autoRollTriggeredRef.current = false;
   }, [activePlayerIndex, turnTimeLimitSeconds]);
 
-  // 60-Second Countdown Timer for Human Players (BUG-05: auto-expire and advance turn if modal or action stalled)
+  // 60-Second Countdown Timer for Human Players (gated to action phases only per G7)
   useEffect(() => {
-    if (isBot || gamePhase === 'GAME_OVER' || gamePhase === 'FESTIVAL_GAME' || gamePhase === 'LUCKY_WHEEL') {
+    const isActionPhase =
+      gamePhase === 'WAITING' ||
+      gamePhase === 'AWAIT_ROLL' ||
+      gamePhase === 'ACTION_REQUIRED' ||
+      gamePhase === 'ACTION' ||
+      gamePhase === 'AWAIT_DECISION' ||
+      gamePhase === 'CARD_DRAWN' ||
+      gamePhase === 'TURN_END';
+
+    if (isBot || !isActionPhase) {
       return;
     }
 
@@ -40,9 +49,13 @@ export function TurnTimerBar({ turnTimeLimitSeconds = 60 }: TurnTimerBarProps) {
             autoRollTriggeredRef.current = true;
             try {
               const currentPhase = useGameStore.getState().gamePhase;
-              if (currentPhase === 'WAITING') {
+              if (currentPhase === 'WAITING' || currentPhase === 'AWAIT_ROLL') {
                 rollDice();
-              } else if (currentPhase === 'ACTION_REQUIRED' || currentPhase === 'ACTION') {
+              } else if (
+                currentPhase === 'ACTION_REQUIRED' ||
+                currentPhase === 'ACTION' ||
+                currentPhase === 'AWAIT_DECISION'
+              ) {
                 useGameStore.getState().setGamePhase('TURN_END');
                 useGameStore.getState().endTurn();
               } else if (currentPhase === 'CARD_DRAWN') {

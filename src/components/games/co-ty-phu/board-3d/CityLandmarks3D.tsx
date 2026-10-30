@@ -164,6 +164,8 @@ export function VungTauLighthouse() {
         <sphereGeometry args={[0.07, 8, 8]} />
         <meshStandardMaterial color="#fef08a" emissive="#fef08a" emissiveIntensity={1.4} />
       </mesh>
+      {/* Lighthouse Beacon Light */}
+      <pointLight position={[0, 0.82, 0]} color="#fef08a" intensity={1.2} distance={3} />
       {/* Ocean Beach Strip */}
       <mesh position={[0, 0.02, 0.22]} receiveShadow>
         <boxGeometry args={[0.65, 0.03, 0.16]} />
@@ -191,11 +193,12 @@ export function NhaTrangTramHuongTower() {
         <coneGeometry args={[0.18, 0.32, 5]} />
         <meshStandardMaterial color="#fb923c" roughness={0.3} />
       </mesh>
-      {/* Top Beacon Ball */}
+      {/* Top Beacon Ball with Warm Light */}
       <mesh position={[0, 0.72, 0]}>
         <sphereGeometry args={[0.06, 8, 8]} />
         <meshStandardMaterial color="#fef08a" emissive="#fef08a" emissiveIntensity={1.0} />
       </mesh>
+      <pointLight position={[0, 0.72, 0]} color="#fef08a" intensity={1.0} distance={2.5} />
     </group>
   );
 }
@@ -384,6 +387,7 @@ export function HoiAnChuaCau() {
           <meshStandardMaterial color="#f43f5e" emissive="#f43f5e" emissiveIntensity={1.2} />
         </mesh>
       ))}
+      <pointLight position={[0, 0.24, 0.18]} color="#f43f5e" intensity={0.9} distance={2.5} />
     </group>
   );
 }
@@ -414,6 +418,8 @@ export function DaNangDragonBridge() {
         <coneGeometry args={[0.07, 0.18, 4]} />
         <meshStandardMaterial color="#f59e0b" metalness={0.8} roughness={0.2} />
       </mesh>
+      {/* Dragon Fire Breath Beacon Light */}
+      <pointLight position={[0.34, 0.26, 0]} color="#ea580c" intensity={1.1} distance={2.5} />
     </group>
   );
 }
@@ -490,6 +496,8 @@ export function SaPaStoneChurch() {
         <coneGeometry args={[0.14, 0.24, 4]} />
         <meshStandardMaterial color="#991b1b" roughness={0.6} />
       </mesh>
+      {/* Warm Cathedral Bell Tower Glow */}
+      <pointLight position={[0.18, 0.45, 0]} color="#f59e0b" intensity={0.8} distance={2.5} />
     </group>
   );
 }
@@ -565,36 +573,168 @@ export function HaiPhongPort() {
 export function HaNoiTurtleTower() {
   return (
     <group position={[0, 0.02, 0.25]} scale={[0.75, 0.75, 0.75]}>
-      {/* Hồ Gươm Green Water Surface */}
+      {/* Stone Basin Border of Hoàn Kiếm Lake */}
       <mesh position={[0, 0.02, 0]} receiveShadow>
-        <boxGeometry args={[0.76, 0.04, 0.46]} />
-        <meshStandardMaterial color="#047857" roughness={0.25} />
+        <boxGeometry args={[0.8, 0.04, 0.5]} />
+        <meshStandardMaterial color="#475569" roughness={0.85} />
       </mesh>
-      {/* Grass Mound Island in Lake */}
-      <mesh position={[0, 0.06, 0]} receiveShadow>
-        <boxGeometry args={[0.56, 0.06, 0.34]} />
-        <meshStandardMaterial color="#4d7c0f" roughness={0.8} />
+
+      {/* Emerald Hoàn Kiếm Lake Water Basin */}
+      <mesh position={[0, 0.028, 0]} receiveShadow>
+        <boxGeometry args={[0.76, 0.038, 0.46]} />
+        <meshStandardMaterial
+          color="#059669"
+          roughness={0.15}
+          metalness={0.12}
+          transparent
+          opacity={0.88}
+        />
       </mesh>
-      {/* Tháp Rùa Tier 1 Base */}
-      <mesh position={[0, 0.18, 0]} castShadow receiveShadow>
-        <boxGeometry args={[0.44, 0.18, 0.26]} />
-        <meshStandardMaterial color="#e2e8f0" roughness={0.8} />
+
+      {/* Lush Green Grass Island in the Lake */}
+      <mesh position={[-0.06, 0.06, 0]} receiveShadow>
+        <cylinderGeometry args={[0.26, 0.3, 0.05, 16]} />
+        <meshStandardMaterial color="#15803d" roughness={0.85} />
       </mesh>
-      {/* Tháp Rùa Tier 2 */}
-      <mesh position={[0, 0.34, 0]} castShadow>
-        <boxGeometry args={[0.32, 0.16, 0.2]} />
-        <meshStandardMaterial color="#e2e8f0" roughness={0.8} />
-      </mesh>
-      {/* Tháp Rùa Tier 3 Top & Star Peak */}
-      <mesh position={[0, 0.48, 0]} castShadow>
-        <boxGeometry args={[0.2, 0.12, 0.14]} />
-        <meshStandardMaterial color="#ca8a04" roughness={0.4} />
-      </mesh>
-      {/* Cầu Thê Húc Red Arched Bridge Hint */}
-      <mesh position={[0.26, 0.08, 0.12]} rotation={[0, 0.4, 0]} castShadow>
-        <boxGeometry args={[0.18, 0.04, 0.08]} />
-        <meshStandardMaterial color="#dc2626" />
-      </mesh>
+      {/* Small Weeping Willow Bonsai by Lake Shore */}
+      <group position={[-0.26, 0.08, -0.08]} rotation={[0.1, 0, -0.2]}>
+        <mesh castShadow>
+          <cylinderGeometry args={[0.015, 0.025, 0.2, 6]} />
+          <meshStandardMaterial color="#78350f" roughness={0.8} />
+        </mesh>
+        <mesh position={[0, 0.12, 0]} castShadow>
+          <dodecahedronGeometry args={[0.08, 0]} />
+          <meshStandardMaterial color="#166534" roughness={0.9} />
+        </mesh>
+      </group>
+
+      {/* Detailed 3-Tiered Weathered Stone Tower (Tháp Rùa Cổ Kính) */}
+      <group position={[-0.05, 0.08, 0]}>
+        {/* Tier 1 Base Platform */}
+        <mesh position={[0, 0.01, 0]} castShadow receiveShadow>
+          <boxGeometry args={[0.42, 0.03, 0.28]} />
+          <meshStandardMaterial color="#64748b" roughness={0.9} />
+        </mesh>
+
+        {/* Tier 1 Body with Arched French-Vietnamese Doors */}
+        <mesh position={[0, 0.11, 0]} castShadow receiveShadow>
+          <boxGeometry args={[0.38, 0.18, 0.24]} />
+          <meshStandardMaterial color="#cbd5e1" roughness={0.8} />
+        </mesh>
+        {/* 3 Arched Doors on Front Face */}
+        {[-0.11, 0, 0.11].map((dx, i) => (
+          <group key={`t1-door-${i}`} position={[dx, 0.09, 0.122]}>
+            <mesh>
+              <cylinderGeometry args={[0.025, 0.025, 0.1, 8, 1, false, 0, Math.PI]} />
+              <meshBasicMaterial color="#1e293b" />
+            </mesh>
+            <mesh position={[0, -0.03, 0]}>
+              <planeGeometry args={[0.05, 0.06]} />
+              <meshBasicMaterial color="#0f172a" />
+            </mesh>
+          </group>
+        ))}
+        {/* Tier 1 Molded Cornice */}
+        <mesh position={[0, 0.205, 0]} castShadow>
+          <boxGeometry args={[0.4, 0.02, 0.26]} />
+          <meshStandardMaterial color="#94a3b8" roughness={0.7} />
+        </mesh>
+
+        {/* Tier 2 Body with Arched Windows */}
+        <mesh position={[0, 0.29, 0]} castShadow receiveShadow>
+          <boxGeometry args={[0.28, 0.15, 0.18]} />
+          <meshStandardMaterial color="#cbd5e1" roughness={0.8} />
+        </mesh>
+        {/* 3 Arched Windows on Front Face */}
+        {[-0.08, 0, 0.08].map((wx, i) => (
+          <mesh key={`t2-win-${i}`} position={[wx, 0.29, 0.092]}>
+            <cylinderGeometry args={[0.018, 0.018, 0.07, 8, 1, false, 0, Math.PI]} />
+            <meshBasicMaterial color="#1e293b" />
+          </mesh>
+        ))}
+        {/* Tier 2 Molded Cornice */}
+        <mesh position={[0, 0.37, 0]} castShadow>
+          <boxGeometry args={[0.3, 0.018, 0.2]} />
+          <meshStandardMaterial color="#94a3b8" roughness={0.7} />
+        </mesh>
+
+        {/* Tier 3 Top Level (Vọng Lâu) */}
+        <mesh position={[0, 0.435, 0]} castShadow receiveShadow>
+          <boxGeometry args={[0.18, 0.11, 0.13]} />
+          <meshStandardMaterial color="#cbd5e1" roughness={0.8} />
+        </mesh>
+        {/* Arched Window on Top Level */}
+        <mesh position={[0, 0.435, 0.066]}>
+          <cylinderGeometry args={[0.016, 0.016, 0.06, 8, 1, false, 0, Math.PI]} />
+          <meshBasicMaterial color="#1e293b" />
+        </mesh>
+        {/* Curved Roof Cap */}
+        <mesh position={[0, 0.495, 0]} castShadow>
+          <boxGeometry args={[0.2, 0.02, 0.15]} />
+          <meshStandardMaterial color="#64748b" roughness={0.6} />
+        </mesh>
+
+        {/* Top Golden Finial Stupa */}
+        <mesh position={[0, 0.54, 0]} castShadow>
+          <coneGeometry args={[0.03, 0.08, 6]} />
+          <meshStandardMaterial color="#fbbf24" metalness={0.92} roughness={0.15} />
+        </mesh>
+
+        {/* Flagpole & Mini Red Vietnamese National Flag with Gold Star */}
+        <group position={[0, 0.58, 0]}>
+          {/* Brass Flagpole */}
+          <mesh position={[0, 0.06, 0]} castShadow>
+            <cylinderGeometry args={[0.005, 0.005, 0.14, 6]} />
+            <meshStandardMaterial color="#fbbf24" metalness={0.9} />
+          </mesh>
+          {/* Red Flag Pennant */}
+          <mesh position={[0.045, 0.09, 0]} castShadow>
+            <boxGeometry args={[0.09, 0.06, 0.004]} />
+            <meshStandardMaterial color="#dc2626" roughness={0.3} />
+          </mesh>
+          {/* Gold Star on Front & Back */}
+          <mesh position={[0.045, 0.09, 0.003]}>
+            <circleGeometry args={[0.016, 5]} />
+            <meshBasicMaterial color="#facc15" side={THREE.DoubleSide} />
+          </mesh>
+          <mesh position={[0.045, 0.09, -0.003]} rotation={[0, Math.PI, 0]}>
+            <circleGeometry args={[0.016, 5]} />
+            <meshBasicMaterial color="#facc15" side={THREE.DoubleSide} />
+          </mesh>
+        </group>
+      </group>
+
+      {/* Detailed Red Arched Cầu Thê Húc Bridge with Side Railings */}
+      <group position={[0.22, 0.06, 0.08]} rotation={[0, 0.35, 0]}>
+        {/* Curved Wooden Bridge Deck */}
+        <mesh position={[0, 0.02, 0]} castShadow receiveShadow>
+          <boxGeometry args={[0.26, 0.025, 0.08]} />
+          <meshStandardMaterial color="#dc2626" roughness={0.5} />
+        </mesh>
+        {/* Left Red Railing */}
+        <mesh position={[0, 0.05, 0.038]} castShadow>
+          <boxGeometry args={[0.26, 0.035, 0.008]} />
+          <meshStandardMaterial color="#b91c1c" roughness={0.6} />
+        </mesh>
+        {/* Right Red Railing */}
+        <mesh position={[0, 0.05, -0.038]} castShadow>
+          <boxGeometry args={[0.26, 0.035, 0.008]} />
+          <meshStandardMaterial color="#b91c1c" roughness={0.6} />
+        </mesh>
+        {/* Bridge Posts */}
+        {[-0.11, 0, 0.11].map((px, i) => (
+          <group key={`bridge-post-${i}`} position={[px, 0.045, 0]}>
+            <mesh position={[0, 0, 0.038]}>
+              <cylinderGeometry args={[0.006, 0.006, 0.05, 6]} />
+              <meshStandardMaterial color="#991b1b" />
+            </mesh>
+            <mesh position={[0, 0, -0.038]}>
+              <cylinderGeometry args={[0.006, 0.006, 0.05, 6]} />
+              <meshStandardMaterial color="#991b1b" />
+            </mesh>
+          </group>
+        ))}
+      </group>
     </group>
   );
 }
@@ -603,36 +743,199 @@ export function HaNoiTurtleTower() {
 export function HCMCBenThanhLandmark() {
   return (
     <group position={[0, 0.02, 0.25]} scale={[0.75, 0.75, 0.75]}>
-      {/* Quách Thị Trang Roundabout Plaza */}
-      <mesh position={[0, 0.03, 0]} receiveShadow>
-        <boxGeometry args={[0.76, 0.04, 0.46]} />
-        <meshStandardMaterial color="#94a3b8" roughness={0.8} />
+      {/* Paved Plaza Roundabout Base (Quảng trường Quách Thị Trang) */}
+      <mesh position={[0, 0.02, 0]} receiveShadow>
+        <boxGeometry args={[0.82, 0.04, 0.52]} />
+        <meshStandardMaterial color="#475569" roughness={0.85} />
       </mesh>
-      {/* Chợ Bến Thành Main Hall */}
-      <mesh position={[-0.14, 0.16, 0]} castShadow receiveShadow>
+      {/* Paved Pedestrian Concourse */}
+      <mesh position={[0, 0.025, 0]} receiveShadow>
+        <boxGeometry args={[0.78, 0.038, 0.48]} />
+        <meshStandardMaterial color="#94a3b8" roughness={0.75} />
+      </mesh>
+      {/* Roundabout Central Garden Greenery */}
+      <mesh position={[-0.14, 0.046, 0.18]} receiveShadow>
+        <cylinderGeometry args={[0.15, 0.17, 0.02, 16]} />
+        <meshStandardMaterial color="#15803d" roughness={0.8} />
+      </mesh>
+      {/* White Pedestrian Crosswalk Stripes (Vạch Kẻ Đi Bộ) */}
+      {[-0.08, -0.04, 0, 0.04].map((sz, i) => (
+        <mesh
+          key={`crosswalk-${i}`}
+          position={[0.24, 0.046, 0.14 + sz]}
+          rotation={[-Math.PI / 2, 0, 0]}
+        >
+          <planeGeometry args={[0.06, 0.02]} />
+          <meshBasicMaterial color="#f8fafc" side={THREE.DoubleSide} />
+        </mesh>
+      ))}
+
+      {/* Chợ Bến Thành Main Hall Pavilion */}
+      <mesh position={[-0.14, 0.14, -0.06]} castShadow receiveShadow>
         <boxGeometry args={[0.42, 0.22, 0.32]} />
         <meshStandardMaterial color="#fef3c7" roughness={0.7} />
       </mesh>
-      {/* Iconic Clock Tower (Tháp Đồng Hồ 4 Mặt Chợ Bến Thành) */}
-      <mesh position={[-0.14, 0.38, 0.08]} castShadow>
-        <boxGeometry args={[0.16, 0.26, 0.16]} />
-        <meshStandardMaterial color="#fef3c7" roughness={0.7} />
-      </mesh>
-      {/* Slanted Red Shingle Roof */}
-      <mesh position={[-0.14, 0.54, 0.08]} castShadow>
-        <coneGeometry args={[0.13, 0.14, 4]} />
+      {/* Terracotta Main Hall Roof */}
+      <mesh position={[-0.14, 0.29, -0.06]} rotation={[0, Math.PI / 4, 0]} castShadow>
+        <coneGeometry args={[0.32, 0.12, 4]} />
         <meshStandardMaterial color="#b91c1c" roughness={0.4} />
       </mesh>
-      {/* Clock Face Circle */}
-      <mesh position={[-0.14, 0.42, 0.162]}>
-        <circleGeometry args={[0.04, 12]} />
-        <meshBasicMaterial color="#ffffff" />
-      </mesh>
-      {/* Modern Skyscraper Silhouette (Biểu Tượng Đô Thị Năng Động) */}
-      <mesh position={[0.22, 0.46, -0.06]} castShadow>
-        <boxGeometry args={[0.18, 0.88, 0.18]} />
-        <meshStandardMaterial color="#0284c7" metalness={0.6} roughness={0.2} />
-      </mesh>
+
+      {/* Iconic Bến Thành Market Clock Tower Structure */}
+      <group position={[-0.14, 0, 0.08]}>
+        {/* Tower Base Block with Arched Market Entrance */}
+        <mesh position={[0, 0.13, 0]} castShadow receiveShadow>
+          <boxGeometry args={[0.2, 0.22, 0.18]} />
+          <meshStandardMaterial color="#fef3c7" roughness={0.7} />
+        </mesh>
+        {/* Arched Entrance Door (Cửa Nam Chợ Bến Thành) */}
+        <mesh position={[0, 0.08, 0.092]}>
+          <cylinderGeometry args={[0.045, 0.045, 0.12, 8, 1, false, 0, Math.PI]} />
+          <meshBasicMaterial color="#1e293b" />
+        </mesh>
+        {/* Golden Inscription Banner Frame ("CHỢ BẾN THÀNH") */}
+        <mesh position={[0, 0.165, 0.092]}>
+          <boxGeometry args={[0.13, 0.022, 0.006]} />
+          <meshStandardMaterial color="#f59e0b" metalness={0.9} roughness={0.2} />
+        </mesh>
+
+        {/* Tower Shaft */}
+        <mesh position={[0, 0.34, 0]} castShadow>
+          <boxGeometry args={[0.16, 0.22, 0.16]} />
+          <meshStandardMaterial color="#fef3c7" roughness={0.7} />
+        </mesh>
+        {/* Clock Cornice Molding */}
+        <mesh position={[0, 0.455, 0]} castShadow>
+          <boxGeometry args={[0.18, 0.015, 0.18]} />
+          <meshStandardMaterial color="#fbbf24" metalness={0.8} roughness={0.25} />
+        </mesh>
+
+        {/* 3 Distinct Clock Faces (Front, Left, Right) */}
+        {/* 1. Front Clock Face */}
+        <group position={[0, 0.38, 0.082]}>
+          {/* Dial Face */}
+          <mesh>
+            <circleGeometry args={[0.042, 16]} />
+            <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
+          </mesh>
+          {/* Golden Clock Rim */}
+          <mesh position={[0, 0, 0.001]}>
+            <ringGeometry args={[0.04, 0.046, 16]} />
+            <meshBasicMaterial color="#f59e0b" side={THREE.DoubleSide} />
+          </mesh>
+          {/* Black Clock Hands */}
+          <mesh position={[0.008, 0.008, 0.002]} rotation={[0, 0, -0.6]}>
+            <boxGeometry args={[0.024, 0.004, 0.001]} />
+            <meshBasicMaterial color="#0f172a" />
+          </mesh>
+          <mesh position={[-0.006, 0.012, 0.002]} rotation={[0, 0, 0.8]}>
+            <boxGeometry args={[0.018, 0.004, 0.001]} />
+            <meshBasicMaterial color="#0f172a" />
+          </mesh>
+        </group>
+
+        {/* 2. Left Clock Face */}
+        <group position={[-0.082, 0.38, 0]} rotation={[0, -Math.PI / 2, 0]}>
+          <mesh>
+            <circleGeometry args={[0.04, 16]} />
+            <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
+          </mesh>
+          <mesh position={[0, 0, 0.001]}>
+            <ringGeometry args={[0.038, 0.044, 16]} />
+            <meshBasicMaterial color="#f59e0b" side={THREE.DoubleSide} />
+          </mesh>
+          <mesh position={[0.008, 0.008, 0.002]} rotation={[0, 0, -0.6]}>
+            <boxGeometry args={[0.022, 0.004, 0.001]} />
+            <meshBasicMaterial color="#0f172a" />
+          </mesh>
+        </group>
+
+        {/* 3. Right Clock Face */}
+        <group position={[0.082, 0.38, 0]} rotation={[0, Math.PI / 2, 0]}>
+          <mesh>
+            <circleGeometry args={[0.04, 16]} />
+            <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
+          </mesh>
+          <mesh position={[0, 0, 0.001]}>
+            <ringGeometry args={[0.038, 0.044, 16]} />
+            <meshBasicMaterial color="#f59e0b" side={THREE.DoubleSide} />
+          </mesh>
+          <mesh position={[0.008, 0.008, 0.002]} rotation={[0, 0, -0.6]}>
+            <boxGeometry args={[0.022, 0.004, 0.001]} />
+            <meshBasicMaterial color="#0f172a" />
+          </mesh>
+        </group>
+
+        {/* Terracotta 4-Sided Roof (Mái Chóp 4 Mặt Màu Ngói Đỏ) */}
+        <mesh position={[0, 0.54, 0]} rotation={[0, Math.PI / 4, 0]} castShadow>
+          <coneGeometry args={[0.14, 0.16, 4]} />
+          <meshStandardMaterial color="#b91c1c" roughness={0.35} />
+        </mesh>
+        {/* Top Golden Finial Pin */}
+        <mesh position={[0, 0.63, 0]} castShadow>
+          <cylinderGeometry args={[0.008, 0.008, 0.04, 6]} />
+          <meshStandardMaterial color="#fbbf24" metalness={0.92} />
+        </mesh>
+      </group>
+
+      {/* Sleek Modern Metropolis Skyscraper Tower beside the Market */}
+      <group position={[0.22, 0, -0.04]}>
+        {/* Tower Lower Shaft (Glass & Steel Facade) */}
+        <mesh position={[0, 0.28, 0]} castShadow receiveShadow>
+          <boxGeometry args={[0.2, 0.52, 0.2]} />
+          <meshStandardMaterial
+            color="#0284c7"
+            metalness={0.75}
+            roughness={0.12}
+          />
+        </mesh>
+        {/* Horizontal Floor Window Bands */}
+        {[-0.12, 0, 0.12].map((by, i) => (
+          <mesh key={`band-${i}`} position={[0, 0.28 + by, 0]}>
+            <boxGeometry args={[0.204, 0.015, 0.204]} />
+            <meshStandardMaterial color="#e0f2fe" metalness={0.9} roughness={0.1} />
+          </mesh>
+        ))}
+
+        {/* Tower Upper Setback Shaft */}
+        <mesh position={[0, 0.68, 0]} castShadow receiveShadow>
+          <boxGeometry args={[0.15, 0.38, 0.15]} />
+          <meshStandardMaterial
+            color="#0369a1"
+            metalness={0.8}
+            roughness={0.1}
+          />
+        </mesh>
+        {/* Upper Floor Bands */}
+        {[-0.08, 0.08].map((by, i) => (
+          <mesh key={`up-band-${i}`} position={[0, 0.68 + by, 0]}>
+            <boxGeometry args={[0.154, 0.012, 0.154]} />
+            <meshStandardMaterial color="#e0f2fe" metalness={0.9} />
+          </mesh>
+        ))}
+
+        {/* Tower Angled Crown */}
+        <mesh position={[0, 0.91, 0]} castShadow>
+          <boxGeometry args={[0.11, 0.09, 0.11]} />
+          <meshStandardMaterial color="#0284c7" metalness={0.85} roughness={0.15} />
+        </mesh>
+
+        {/* Illuminated Communications Spire */}
+        <mesh position={[0, 1.05, 0]} castShadow>
+          <cylinderGeometry args={[0.008, 0.018, 0.22, 8]} />
+          <meshStandardMaterial color="#f8fafc" metalness={0.95} roughness={0.1} />
+        </mesh>
+        {/* Radiant Spire Beacon Ball */}
+        <mesh position={[0, 1.17, 0]}>
+          <sphereGeometry args={[0.024, 10, 10]} />
+          <meshStandardMaterial
+            color="#38bdf8"
+            emissive="#38bdf8"
+            emissiveIntensity={1.6}
+            metalness={0.5}
+          />
+        </mesh>
+      </group>
     </group>
   );
 }

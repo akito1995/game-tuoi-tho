@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import { OrbitControls, ContactShadows, Sparkles } from '@react-three/drei';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import * as THREE from 'three';
 import { Tile } from '@/lib/game-engine/types';
@@ -49,11 +49,11 @@ function AdaptiveCamera() {
     if (camera instanceof THREE.PerspectiveCamera) {
       const isPortraitOrNarrow = size.width < 768 || size.width / size.height < 1.05;
       if (isPortraitOrNarrow) {
-        camera.fov = 42;
-        camera.position.set(14, 22.5, 16);
+        camera.fov = 44;
+        camera.position.set(15.5, 24.5, 18.5);
       } else {
-        camera.fov = 32;
-        camera.position.set(13, 18, 15);
+        camera.fov = 34;
+        camera.position.set(14.5, 21.5, 17.5);
       }
       camera.updateProjectionMatrix();
     }
@@ -62,7 +62,7 @@ function AdaptiveCamera() {
   const threeState = useThree();
   useFrame((_, delta) => {
     if (!camera) return;
-    const isMoving = gamePhase === 'MOVING' || gamePhase === 'ROLLING';
+    const isMoving = gamePhase === 'MOVING' || gamePhase === 'ROLLING' || gamePhase === 'TOKEN_MOVING' || gamePhase === 'DICE_ROLLING';
     const pawnTilePos = activePlayer ? getTile3DPosition(activePlayer.position) : [0, 0, 0];
     const targetX = isMoving ? pawnTilePos[0] * 0.2 : 0;
     const targetZ = isMoving ? pawnTilePos[2] * 0.2 : 0;
@@ -123,7 +123,7 @@ export function BoardCanvas({
   const handleResetCamera = () => {
     if (controlsRef.current) {
       controlsRef.current.reset();
-      controlsRef.current.object.position.set(13, 18, 15);
+      controlsRef.current.object.position.set(14.5, 21.5, 17.5);
       controlsRef.current.target.set(0, 0, 0);
       controlsRef.current.update();
     }
@@ -146,23 +146,23 @@ export function BoardCanvas({
 
   return (
     <div
-      className={`relative overflow-hidden select-none bg-gradient-to-b from-[#0284c7] via-[#38bdf8] to-[#bae6fd] ${className}`}
+      className={`relative overflow-hidden select-none bg-gradient-to-b from-[#0369a1] via-[#0284c7] to-[#38bdf8] ${className}`}
     >
-
-
       <Canvas
-        shadows
-        dpr={[1, 1.5]}
+        shadows="soft"
+        dpr={[1, 2]}
         gl={{
           antialias: true,
           alpha: true,
           powerPreference: 'high-performance',
+          toneMapping: THREE.ACESFilmicToneMapping,
+          toneMappingExposure: 1.15,
         }}
         camera={{
-          position: [13, 18, 15],
-          fov: 32,
+          position: [14.5, 21.5, 17.5],
+          fov: 34,
           near: 0.1,
-          far: 160,
+          far: 180,
         }}
       >
         <Suspense fallback={null}>
@@ -171,6 +171,26 @@ export function BoardCanvas({
 
           {/* Meta World Cinematic Tropical Lighting & Sunny Sky Atmosphere */}
           <Environment3D />
+
+          {/* Golden Ambient Particle Dust floating over the island */}
+          <Sparkles
+            count={45}
+            scale={28}
+            size={3.5}
+            speed={0.4}
+            opacity={0.55}
+            color="#fbbf24"
+          />
+
+          {/* Soft Ground Contact Shadows grounding the entire board & diorama */}
+          <ContactShadows
+            position={[0, -0.06, 0]}
+            opacity={0.68}
+            scale={34}
+            blur={1.8}
+            far={6}
+            color="#040d1a"
+          />
 
           {/* Meta World Floating Tropical Pearl Island Base & Sparkling Ocean */}
           <BoardTableFrame />

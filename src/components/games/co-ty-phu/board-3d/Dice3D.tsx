@@ -2,12 +2,13 @@
 
 import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
+import { Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
 import { useGameStore } from '@/lib/game-engine/gameStore';
 import { getDiceTargetEuler } from './board3dHelpers';
 
 /* =========================================================================
-   3D PROCEDURAL DIE MESH (Ivory body with Asian-style red 1 & red 4 pips)
+   3D PROCEDURAL DIE MESH (Ivory Resin Body with Asian-Style Red 1 & Red 4 Pips)
    ========================================================================= */
 
 interface DieMeshProps {
@@ -18,39 +19,41 @@ export function DieMesh({ size = 0.42 }: DieMeshProps) {
   const H = size / 2;
   const pipR = 0.038;
   const bigPipR = 0.058;
-  const pipThickness = 0.004;
   const offset = 0.085;
 
   return (
     <group>
-      {/* Ivory Die Cube with Beveled Edges */}
+      {/* Ivory Die Cube with Beveled Edges & Physical Sheen */}
       <mesh castShadow receiveShadow>
         <boxGeometry args={[size, size, size]} />
-        <meshStandardMaterial
-          color="#fdfbf7"
-          roughness={0.25}
+        <meshPhysicalMaterial
+          color="#fffbeb"
+          roughness={0.16}
           metalness={0.05}
+          clearcoat={0.65}
+          clearcoatRoughness={0.08}
         />
       </mesh>
 
       {/* Internal Core for Soft Shadow / Edge Definition */}
       <mesh>
         <boxGeometry args={[size * 0.96, size * 0.96, size * 0.96]} />
-        <meshStandardMaterial color="#f1ede4" roughness={0.3} />
+        <meshStandardMaterial color="#fef3c7" roughness={0.3} />
       </mesh>
 
       {/* ================= FACE 1: TOP (+Y) ================= */}
-      {/* Iconic Big Red Central Pip */}
-      <mesh
-        position={[0, H + 0.001, 0]}
-        rotation={[-Math.PI / 2, 0, 0]}
-      >
-        <circleGeometry args={[bigPipR, 20]} />
+      {/* Iconic Big Red Central Pip with 24k Gold Foil Trim */}
+      <mesh position={[0, H + 0.001, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[bigPipR, 24]} />
         <meshBasicMaterial color="#dc2626" side={THREE.DoubleSide} />
+      </mesh>
+      <mesh position={[0, H + 0.0012, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[bigPipR * 0.98, bigPipR * 1.15, 24]} />
+        <meshStandardMaterial color="#fbbf24" metalness={0.94} roughness={0.14} side={THREE.DoubleSide} />
       </mesh>
 
       {/* ================= FACE 6: BOTTOM (-Y) ================= */}
-      {/* 6 Dark Slate Pips (2 columns of 3) */}
+      {/* 6 Dark Slate Pips (2 columns of 3) with Gold Inlays */}
       {[
         [-offset, -H - 0.001, -offset],
         [-offset, -H - 0.001, 0],
@@ -59,30 +62,38 @@ export function DieMesh({ size = 0.42 }: DieMeshProps) {
         [offset, -H - 0.001, 0],
         [offset, -H - 0.001, offset],
       ].map(([px, py, pz], idx) => (
-        <mesh
-          key={`f6-${idx}`}
-          position={[px, py, pz]}
-          rotation={[Math.PI / 2, 0, 0]}
-        >
-          <circleGeometry args={[pipR, 14]} />
-          <meshBasicMaterial color="#0f172a" side={THREE.DoubleSide} />
-        </mesh>
+        <group key={`f6-${idx}`} position={[px, py, pz]} rotation={[Math.PI / 2, 0, 0]}>
+          <mesh>
+            <circleGeometry args={[pipR, 16]} />
+            <meshBasicMaterial color="#0f172a" side={THREE.DoubleSide} />
+          </mesh>
+          <mesh position={[0, 0, 0.0002]}>
+            <ringGeometry args={[pipR * 0.98, pipR * 1.14, 16]} />
+            <meshStandardMaterial color="#f59e0b" metalness={0.9} roughness={0.18} side={THREE.DoubleSide} />
+          </mesh>
+        </group>
       ))}
 
       {/* ================= FACE 2: FRONT (+Z) ================= */}
-      {/* 2 Diagonal Dark Pips */}
+      {/* 2 Diagonal Dark Pips with Gold Inlays */}
       {[
         [-offset, -offset, H + 0.001],
         [offset, offset, H + 0.001],
       ].map(([px, py, pz], idx) => (
-        <mesh key={`f2-${idx}`} position={[px, py, pz]}>
-          <circleGeometry args={[pipR, 14]} />
-          <meshBasicMaterial color="#0f172a" side={THREE.DoubleSide} />
-        </mesh>
+        <group key={`f2-${idx}`} position={[px, py, pz]}>
+          <mesh>
+            <circleGeometry args={[pipR, 16]} />
+            <meshBasicMaterial color="#0f172a" side={THREE.DoubleSide} />
+          </mesh>
+          <mesh position={[0, 0, 0.0002]}>
+            <ringGeometry args={[pipR * 0.98, pipR * 1.14, 16]} />
+            <meshStandardMaterial color="#f59e0b" metalness={0.9} roughness={0.18} side={THREE.DoubleSide} />
+          </mesh>
+        </group>
       ))}
 
       {/* ================= FACE 5: BACK (-Z) ================= */}
-      {/* 5 Dark Pips (4 corners + center) */}
+      {/* 5 Dark Pips (4 corners + center) with Gold Inlays */}
       {[
         [0, 0, -H - 0.001],
         [-offset, -offset, -H - 0.001],
@@ -90,49 +101,55 @@ export function DieMesh({ size = 0.42 }: DieMeshProps) {
         [-offset, offset, -H - 0.001],
         [offset, offset, -H - 0.001],
       ].map(([px, py, pz], idx) => (
-        <mesh
-          key={`f5-${idx}`}
-          position={[px, py, pz]}
-          rotation={[0, Math.PI, 0]}
-        >
-          <circleGeometry args={[pipR, 14]} />
-          <meshBasicMaterial color="#0f172a" side={THREE.DoubleSide} />
-        </mesh>
+        <group key={`f5-${idx}`} position={[px, py, pz]} rotation={[0, Math.PI, 0]}>
+          <mesh>
+            <circleGeometry args={[pipR, 16]} />
+            <meshBasicMaterial color="#0f172a" side={THREE.DoubleSide} />
+          </mesh>
+          <mesh position={[0, 0, 0.0002]}>
+            <ringGeometry args={[pipR * 0.98, pipR * 1.14, 16]} />
+            <meshStandardMaterial color="#f59e0b" metalness={0.9} roughness={0.18} side={THREE.DoubleSide} />
+          </mesh>
+        </group>
       ))}
 
       {/* ================= FACE 3: RIGHT (+X) ================= */}
-      {/* 3 Diagonal Dark Pips */}
+      {/* 3 Diagonal Dark Pips with Gold Inlays */}
       {[
         [H + 0.001, -offset, -offset],
         [H + 0.001, 0, 0],
         [H + 0.001, offset, offset],
       ].map(([px, py, pz], idx) => (
-        <mesh
-          key={`f3-${idx}`}
-          position={[px, py, pz]}
-          rotation={[0, Math.PI / 2, 0]}
-        >
-          <circleGeometry args={[pipR, 14]} />
-          <meshBasicMaterial color="#0f172a" side={THREE.DoubleSide} />
-        </mesh>
+        <group key={`f3-${idx}`} position={[px, py, pz]} rotation={[0, Math.PI / 2, 0]}>
+          <mesh>
+            <circleGeometry args={[pipR, 16]} />
+            <meshBasicMaterial color="#0f172a" side={THREE.DoubleSide} />
+          </mesh>
+          <mesh position={[0, 0, 0.0002]}>
+            <ringGeometry args={[pipR * 0.98, pipR * 1.14, 16]} />
+            <meshStandardMaterial color="#f59e0b" metalness={0.9} roughness={0.18} side={THREE.DoubleSide} />
+          </mesh>
+        </group>
       ))}
 
       {/* ================= FACE 4: LEFT (-X) ================= */}
-      {/* 4 Red Pips in 4 corners (Asian tradition) */}
+      {/* 4 Red Pips in 4 corners (Asian tradition) with 24k Gold Foil Rims */}
       {[
         [-H - 0.001, -offset, -offset],
         [-H - 0.001, -offset, offset],
         [-H - 0.001, offset, -offset],
         [-H - 0.001, offset, offset],
       ].map(([px, py, pz], idx) => (
-        <mesh
-          key={`f4-${idx}`}
-          position={[px, py, pz]}
-          rotation={[0, -Math.PI / 2, 0]}
-        >
-          <circleGeometry args={[pipR, 14]} />
-          <meshBasicMaterial color="#dc2626" side={THREE.DoubleSide} />
-        </mesh>
+        <group key={`f4-${idx}`} position={[px, py, pz]} rotation={[0, -Math.PI / 2, 0]}>
+          <mesh>
+            <circleGeometry args={[pipR, 16]} />
+            <meshBasicMaterial color="#dc2626" side={THREE.DoubleSide} />
+          </mesh>
+          <mesh position={[0, 0, 0.0002]}>
+            <ringGeometry args={[pipR * 0.98, pipR * 1.15, 16]} />
+            <meshStandardMaterial color="#fbbf24" metalness={0.94} roughness={0.14} side={THREE.DoubleSide} />
+          </mesh>
+        </group>
       ))}
     </group>
   );
@@ -228,8 +245,6 @@ function SingleDie({
       } else {
         // Settling phase (0.65 -> 1.0): descend & slerp to target orientation
         const settleProgress = (s.tumbleProgress - 0.65) / 0.35;
-        // Ease out quadratic
-        const ease = 1 - Math.pow(1 - settleProgress, 2);
 
         // Descend with a tiny bounce
         const bounce = Math.sin(settleProgress * Math.PI) * 0.15 * (1 - settleProgress);
@@ -253,9 +268,22 @@ function SingleDie({
     }
   });
 
+  const isTumbling = isRolling || stateRef.current.tumbleProgress < 0.85;
+
   return (
     <group ref={meshRef} position={basePosition}>
       <DieMesh />
+      {/* Dynamic Golden Particle Dust Trail during tumble */}
+      {isTumbling && (
+        <Sparkles
+          count={14}
+          scale={1.2}
+          size={2.5}
+          speed={0.8}
+          color="#fef08a"
+          opacity={0.7}
+        />
+      )}
     </group>
   );
 }
@@ -365,9 +393,9 @@ export function Dice3D({
   const isRolling =
     propsIsRolling !== undefined
       ? propsIsRolling
-      : storeGamePhase === 'ROLLING';
+      : storeGamePhase === 'ROLLING' || storeGamePhase === 'DICE_ROLLING';
 
-  const canClickToRoll = storeGamePhase === 'WAITING';
+  const canClickToRoll = storeGamePhase === 'WAITING' || storeGamePhase === 'AWAIT_ROLL';
 
   const handleRollClick = () => {
     if (propsOnClick) {

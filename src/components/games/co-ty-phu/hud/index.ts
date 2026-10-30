@@ -12,4 +12,5 @@ export * from './EmoteWheel';
 export * from './TurnTimerBar';
 export * from './DiceRevealOverlay';
 export * from './PropertyInspectorModal';
+export * from './FlyingMoneyVFX';
 export * from './CoTyPhuHUD';
