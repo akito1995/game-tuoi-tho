@@ -3,12 +3,18 @@
 import React, { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { createCobblestoneTexture, createWaterCausticTexture } from './proceduralTextures';
 
 /* =========================================================================
-   BOARD TABLE FRAME COMPONENT - VIETNAMESE NOSTALGIA ELEVATED VIADUCT
-   Inspired by Meta World's elevated viaduct structure, tailored with rich
-   Vietnamese nostalgic heritage: ancient weathered brick arches, mossy stone
-   piers, vintage balustrades, and a sunken central lotus lagoon (Hồ Sen Cổ Kính).
+   BOARD TABLE FRAME COMPONENT - META WORLD HERITAGE VIADUCT PROMENADE
+   
+   High-density architectural viaduct frame:
+   1. Emerald-Green & Weathered Stone Viaduct Promenade with Cobblestone Texture
+   2. Ornate Corner Bastions with Molded Stone Plinths & Antiqued Bronze Bosses
+   3. Victorian Wrought-Iron Balustrades & Vintage Gas Street Lamps with Amber Glow
+   4. Sunken Lotus Lagoon with Animated Caustics & Pulsing Shoreline Wave Foam
+   5. Streamlined Luxury Cruise Yacht with Panoramic Glass Salon & Foaming V-Wake
+   6. Multi-Tiered Ha Long Karst Limestone Pillars on the Horizon
    ========================================================================= */
 
 export const FRAME_DIMENSIONS = {
@@ -27,14 +33,20 @@ export interface BoardTableFrameProps {
 
 /**
  * Serene Sunken Lotus Pond & Surrounding Water Surface
- * Perfectly positioned just below the board level (-0.32) so the water is
- * gleaming, translucent, and filled with vibrant life!
  */
 export function TropicalOceanWater() {
   const innerWaterRef = useRef<THREE.Mesh>(null);
   const ripplePlaneRef = useRef<THREE.Mesh>(null);
   const outerWaterRef = useRef<THREE.Mesh>(null);
   const foamRef = useRef<THREE.Mesh>(null);
+
+  const causticTex = useMemo(() => createWaterCausticTexture(), []);
+
+  useEffect(() => {
+    return () => {
+      causticTex.dispose();
+    };
+  }, [causticTex]);
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
@@ -62,7 +74,7 @@ export function TropicalOceanWater() {
       {/* Lake bed silt & river stones */}
       <mesh position={[0, -0.9, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[16.0, 16.0]} />
-        <meshStandardMaterial color="#042f2e" roughness={0.9} />
+        <meshStandardMaterial color="#042f2e" roughness={0.9} map={causticTex} />
       </mesh>
 
       {/* Central Translucent Jade-Emerald Lotus Water */}
@@ -75,8 +87,8 @@ export function TropicalOceanWater() {
         <planeGeometry args={[15.6, 15.6, 32, 32]} />
         <meshStandardMaterial
           color="#0d9488"
-          roughness={0.06}
-          metalness={0.35}
+          roughness={0.05}
+          metalness={0.4}
           transparent
           opacity={0.88}
         />
@@ -91,10 +103,10 @@ export function TropicalOceanWater() {
         <planeGeometry args={[15.4, 15.4, 16, 16]} />
         <meshStandardMaterial
           color="#2dd4bf"
-          roughness={0.12}
-          metalness={0.5}
+          roughness={0.1}
+          metalness={0.6}
           transparent
-          opacity={0.32}
+          opacity={0.35}
           depthWrite={false}
         />
       </mesh>
@@ -109,7 +121,7 @@ export function TropicalOceanWater() {
         <meshBasicMaterial
           color="#ecfeff"
           transparent
-          opacity={0.3}
+          opacity={0.32}
           depthWrite={false}
         />
       </mesh>
@@ -153,7 +165,6 @@ export function TropicalOceanWater() {
 
 /**
  * Distant Karst Limestone Mountain Peak (Vịnh Hạ Long Peak) on horizon
- * Multi-tiered faceted limestone cliffs with vertical rock fissures and lush jungle caps.
  */
 export function DistantIslandAtoll({
   position,
@@ -216,12 +227,6 @@ export function BeachPalmTree({ position, scale = 0.9 }: { position: [number, nu
 
 /**
  * Luxury River Cruise Yacht (Du Thuyền Sang Trọng Vịnh Hạ Long / Meta World Style)
- * Meticulously modeled multi-deck luxury cruiser:
- * - Sleek aerodynamic raked hull with navy waterline stripe
- * - Panoramic tinted salon windows with sky reflection
- * - Flybridge upper sun-deck with radar arch, antennas, and navigation bridge
- * - Teak aft cockpit with lounge seating and swim platform
- * - Stainless steel bow railings and realistic foaming V-wake
  */
 export function CruisingYacht({ initialRadius = 16, speed = 0.1 }: { initialRadius?: number; speed?: number }) {
   const groupRef = useRef<THREE.Group>(null);
@@ -239,32 +244,31 @@ export function CruisingYacht({ initialRadius = 16, speed = 0.1 }: { initialRadi
 
   return (
     <group ref={groupRef}>
-      {/* 1. LOWER HULL & WATERLINE STRIPE (Thân tàu dưới nước) */}
-      {/* Navy Waterline Keel */}
+      {/* 1. LOWER HULL & WATERLINE STRIPE */}
       <mesh position={[0, 0.06, 0]} castShadow receiveShadow>
         <boxGeometry args={[0.62, 0.12, 2.4]} />
         <meshStandardMaterial color="#0f172a" roughness={0.3} metalness={0.2} />
       </mesh>
 
-      {/* 2. MAIN TOPSIDE HULL (Thân vỏ trắng ngọc trai khí động học) */}
+      {/* 2. MAIN TOPSIDE HULL */}
       <mesh position={[0, 0.2, 0]} castShadow receiveShadow>
         <boxGeometry args={[0.68, 0.18, 2.35]} />
         <meshStandardMaterial color="#f8fafc" roughness={0.25} metalness={0.15} />
       </mesh>
 
-      {/* Raked Pointed Bow (Mũi tàu vát nhọn lướt sóng) */}
+      {/* Raked Pointed Bow */}
       <mesh position={[0, 0.22, 1.35]} rotation={[0.45, 0, 0]} castShadow>
         <coneGeometry args={[0.38, 0.85, 4]} />
         <meshStandardMaterial color="#f8fafc" roughness={0.25} metalness={0.15} />
       </mesh>
 
-      {/* Polished Teak Foredeck (Sàn gỗ Teak mũi tàu) */}
+      {/* Polished Teak Foredeck */}
       <mesh position={[0, 0.3, 0.85]} receiveShadow>
         <boxGeometry args={[0.55, 0.02, 0.9]} />
         <meshStandardMaterial color="#78350f" roughness={0.65} />
       </mesh>
 
-      {/* Stainless Steel Bow Railing (Lan can inox sáng bóng) */}
+      {/* Stainless Steel Bow Railing */}
       <group position={[0, 0.42, 1.1]}>
         <mesh castShadow>
           <boxGeometry args={[0.5, 0.02, 0.02]} />
@@ -278,13 +282,13 @@ export function CruisingYacht({ initialRadius = 16, speed = 0.1 }: { initialRadi
         ))}
       </group>
 
-      {/* 3. MAIN CABIN SALON SUPERSTRUCTURE (Cabin phòng khách kính vòm) */}
+      {/* 3. MAIN CABIN SALON SUPERSTRUCTURE */}
       <mesh position={[0, 0.42, -0.1]} castShadow receiveShadow>
         <boxGeometry args={[0.58, 0.26, 1.3]} />
         <meshStandardMaterial color="#ffffff" roughness={0.3} metalness={0.1} />
       </mesh>
 
-      {/* Wraparound Panoramic Dark Glass Windows (Kính cabin phản chiếu bầu trời) */}
+      {/* Wraparound Panoramic Dark Glass Windows */}
       <mesh position={[0, 0.44, -0.08]}>
         <boxGeometry args={[0.61, 0.16, 1.22]} />
         <meshStandardMaterial
@@ -296,7 +300,7 @@ export function CruisingYacht({ initialRadius = 16, speed = 0.1 }: { initialRadi
         />
       </mesh>
 
-      {/* 4. UPPER FLYBRIDGE DECK (Tầng thượng ngắm cảnh & buồng lái) */}
+      {/* 4. UPPER FLYBRIDGE DECK */}
       <mesh position={[0, 0.62, -0.22]} castShadow receiveShadow>
         <boxGeometry args={[0.5, 0.14, 0.85]} />
         <meshStandardMaterial color="#f8fafc" roughness={0.3} />
@@ -308,28 +312,25 @@ export function CruisingYacht({ initialRadius = 16, speed = 0.1 }: { initialRadi
         <meshStandardMaterial color="#0284c7" transparent opacity={0.7} roughness={0.05} />
       </mesh>
 
-      {/* Radar Arch & Dual Satellite Domes (Cột radar viễn thông hiện đại) */}
+      {/* Radar Arch & Dual Satellite Domes */}
       <group position={[0, 0.82, -0.45]}>
-        {/* Arch crossbar */}
         <mesh castShadow>
           <boxGeometry args={[0.48, 0.04, 0.1]} />
           <meshStandardMaterial color="#ffffff" metalness={0.3} />
         </mesh>
-        {/* Left & right satellite radomes */}
         {[-0.16, 0.16].map((dx, di) => (
           <mesh key={`radome-${di}`} position={[dx, 0.08, 0]} castShadow>
             <sphereGeometry args={[0.045, 10, 10]} />
             <meshStandardMaterial color="#ffffff" roughness={0.2} />
           </mesh>
         ))}
-        {/* Radar Scanner Antenna */}
         <mesh position={[0, 0.12, 0]} castShadow>
           <boxGeometry args={[0.22, 0.025, 0.04]} />
           <meshStandardMaterial color="#1e293b" />
         </mesh>
       </group>
 
-      {/* 5. AFT COCKPIT & SWIM PLATFORM (Boong sau & bậc thang bơi) */}
+      {/* 5. AFT COCKPIT & SWIM PLATFORM */}
       <mesh position={[0, 0.24, -1.15]} receiveShadow>
         <boxGeometry args={[0.62, 0.04, 0.45]} />
         <meshStandardMaterial color="#78350f" roughness={0.7} />
@@ -339,19 +340,16 @@ export function CruisingYacht({ initialRadius = 16, speed = 0.1 }: { initialRadi
         <meshStandardMaterial color="#f8fafc" roughness={0.3} />
       </mesh>
 
-      {/* 6. REALISTIC V-SHAPED FOAMING WAKE ON WATER (Vệt bọt nước rẽ sóng chữ V) */}
+      {/* 6. V-SHAPED FOAMING WAKE ON WATER */}
       <group position={[0, -0.02, -1.6]}>
-        {/* Central trailing bubble wake */}
         <mesh rotation={[-Math.PI / 2, 0, 0]}>
           <planeGeometry args={[0.55, 1.6]} />
           <meshBasicMaterial color="#ecfeff" transparent opacity={0.4} depthWrite={false} />
         </mesh>
-        {/* Left expanding wake wing */}
         <mesh position={[-0.35, 0, -0.6]} rotation={[-Math.PI / 2, 0, 0.28]}>
           <planeGeometry args={[0.32, 1.4]} />
           <meshBasicMaterial color="#cffafe" transparent opacity={0.28} depthWrite={false} />
         </mesh>
-        {/* Right expanding wake wing */}
         <mesh position={[0.35, 0, -0.6]} rotation={[-Math.PI / 2, 0, -0.28]}>
           <planeGeometry args={[0.32, 1.4]} />
           <meshBasicMaterial color="#cffafe" transparent opacity={0.28} depthWrite={false} />
@@ -363,7 +361,6 @@ export function CruisingYacht({ initialRadius = 16, speed = 0.1 }: { initialRadi
 
 /**
  * Ancient Brick Viaduct Recessed Arch Niche in the retaining embankment wall
- * Safely embedded below board level (Y between -0.15 and -0.75) with deep shadowed cavity.
  */
 function ViaductArchSegment({
   position,
@@ -408,22 +405,19 @@ function ViaductArchSegment({
 }
 
 /**
- * Terraced Stone Quay Steps (Bờ Kè Đá Tam Cấp) leading from the board into the water
+ * Terraced Stone Quay Steps (Bờ Kè Đá Tam Cấp)
  */
 function StoneQuaySteps({ length, position, rotation }: { length: number; position: [number, number, number]; rotation?: [number, number, number] }) {
   return (
     <group position={position} rotation={rotation}>
-      {/* Step 1 (Highest, near tiles) */}
       <mesh position={[0, -0.08, 0.12]} receiveShadow>
         <boxGeometry args={[length, 0.08, 0.32]} />
         <meshStandardMaterial color="#64748b" roughness={0.85} />
       </mesh>
-      {/* Step 2 (Mid) */}
       <mesh position={[0, -0.16, 0.34]} receiveShadow>
         <boxGeometry args={[length, 0.08, 0.32]} />
         <meshStandardMaterial color="#475569" roughness={0.9} />
       </mesh>
-      {/* Step 3 (Water level quay) */}
       <mesh position={[0, -0.24, 0.56]} receiveShadow>
         <boxGeometry args={[length, 0.08, 0.32]} />
         <meshStandardMaterial color="#334155" roughness={0.95} />
@@ -433,7 +427,7 @@ function StoneQuaySteps({ length, position, rotation }: { length: number; positi
 }
 
 /**
- * Vintage Stone Balustrade along the board edge
+ * Vintage Victorian Wrought-Iron Balustrade Row
  */
 function RetroBalustradeRow({
   startPos,
@@ -484,6 +478,71 @@ function RetroBalustradeRow({
   );
 }
 
+/**
+ * Classic Vintage Gas Street Lamp with Warm Glowing Glass Globe & Point Light
+ */
+function VintageStreetLamp({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position}>
+      {/* Cast Iron Base Pedestal */}
+      <mesh position={[0, 0.12, 0]} castShadow>
+        <cylinderGeometry args={[0.08, 0.12, 0.24, 8]} />
+        <meshStandardMaterial color="#1e293b" metalness={0.8} roughness={0.3} />
+      </mesh>
+      {/* Slender Fluted Lamp Post */}
+      <mesh position={[0, 0.58, 0]} castShadow>
+        <cylinderGeometry args={[0.035, 0.045, 0.72, 8]} />
+        <meshStandardMaterial color="#1e293b" metalness={0.8} roughness={0.3} />
+      </mesh>
+      {/* Ornate Octagonal Lantern Fixture */}
+      <group position={[0, 0.98, 0]}>
+        <mesh castShadow>
+          <cylinderGeometry args={[0.1, 0.07, 0.18, 6]} />
+          <meshStandardMaterial color="#0f172a" metalness={0.9} roughness={0.2} />
+        </mesh>
+        {/* Glowing Amber Glass Bulb Core */}
+        <mesh>
+          <sphereGeometry args={[0.065, 10, 10]} />
+          <meshStandardMaterial
+            color="#fef08a"
+            emissive="#f59e0b"
+            emissiveIntensity={2.5}
+            roughness={0.1}
+          />
+        </mesh>
+        <pointLight color="#f59e0b" intensity={1.6} distance={6.0} />
+      </group>
+    </group>
+  );
+}
+
+/**
+ * Ornate Corner Bastion Tower with Molded Pedestal & Antiqued Bronze Boss
+ */
+function CornerBastionTower({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position}>
+      {/* Molded Octagonal Stone Bastion Plinth */}
+      <mesh position={[0, 0.22, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[1.15, 1.25, 0.44, 8]} />
+        <meshStandardMaterial color="#334155" roughness={0.85} />
+      </mesh>
+      {/* Beveled Granite Quoin Ring */}
+      <mesh position={[0, 0.45, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[1.2, 1.15, 0.08, 8]} />
+        <meshStandardMaterial color="#475569" roughness={0.8} />
+      </mesh>
+      {/* Antiqued Bronze Imperial Crest Boss */}
+      <mesh position={[0, 0.52, 0]} castShadow>
+        <boxGeometry args={[1.1, 0.06, 1.1]} />
+        <meshStandardMaterial color="#f59e0b" metalness={0.88} roughness={0.25} />
+      </mesh>
+      {/* Ornate Corner Street Lamp on top of bastion */}
+      <VintageStreetLamp position={[0, 0.55, 0]} />
+    </group>
+  );
+}
+
 export function BoardTableFrame({
   outerSize = FRAME_DIMENSIONS.outerSize,
   innerSize = FRAME_DIMENSIONS.innerSize,
@@ -493,19 +552,9 @@ export function BoardTableFrame({
   const mossyStoneMaterial = useMemo(
     () =>
       new THREE.MeshStandardMaterial({
-        color: '#334155',
+        color: '#1b2a26',
         roughness: 0.88,
-        metalness: 0.1,
-      }),
-    []
-  );
-
-  const goldFiligreeMaterial = useMemo(
-    () =>
-      new THREE.MeshStandardMaterial({
-        color: '#f59e0b',
-        roughness: 0.25,
-        metalness: 0.85,
+        metalness: 0.15,
       }),
     []
   );
@@ -513,19 +562,32 @@ export function BoardTableFrame({
   const curbStoneMaterial = useMemo(
     () =>
       new THREE.MeshStandardMaterial({
-        color: '#64748b',
+        color: '#475569',
         roughness: 0.78,
       }),
     []
   );
 
+  const cobblestoneTex = useMemo(() => createCobblestoneTexture(), []);
+
+  const viaductDeckMaterial = useMemo(
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: '#64748b',
+        roughness: 0.82,
+        map: cobblestoneTex,
+      }),
+    [cobblestoneTex]
+  );
+
   useEffect(() => {
     return () => {
       mossyStoneMaterial.dispose();
-      goldFiligreeMaterial.dispose();
       curbStoneMaterial.dispose();
+      viaductDeckMaterial.dispose();
+      cobblestoneTex.dispose();
     };
-  }, [mossyStoneMaterial, goldFiligreeMaterial, curbStoneMaterial]);
+  }, [mossyStoneMaterial, curbStoneMaterial, viaductDeckMaterial, cobblestoneTex]);
 
   const rimWidth = (outerSize - innerSize) / 2;
   const halfOuter = outerSize / 2;
@@ -553,7 +615,7 @@ export function BoardTableFrame({
       {/* ================= 1. VIBRANT LOTUS WATER & OCEAN ================= */}
       <TropicalOceanWater />
 
-      {/* ================= 2. CRUISING RIVER BOATS ================= */}
+      {/* ================= 2. CRUISING LUXURY RIVER YACHTS ================= */}
       <CruisingYacht initialRadius={16.5} speed={0.15} />
       <CruisingYacht initialRadius={21.0} speed={-0.12} />
 
@@ -564,47 +626,43 @@ export function BoardTableFrame({
       <DistantIslandAtoll position={[28, 0, 26]} scale={1.3} />
 
       {/* ================= 4. ELEVATED VIADUCT FOUNDATION PIERS ================= */}
-      {/* Viaduct perimeter chassis (hollowed in center, so center water is fully visible!) */}
-      {/* North Wall */}
+      {/* Viaduct perimeter chassis */}
       <mesh position={[0, -baseDepth / 2, -rimCenterOffset]} receiveShadow castShadow material={mossyStoneMaterial}>
         <boxGeometry args={[outerSize + 0.4, baseDepth, rimWidth + 0.4]} />
       </mesh>
-      {/* South Wall */}
       <mesh position={[0, -baseDepth / 2, rimCenterOffset]} receiveShadow castShadow material={mossyStoneMaterial}>
         <boxGeometry args={[outerSize + 0.4, baseDepth, rimWidth + 0.4]} />
       </mesh>
-      {/* East Wall */}
       <mesh position={[rimCenterOffset, -baseDepth / 2, 0]} receiveShadow castShadow material={mossyStoneMaterial}>
         <boxGeometry args={[rimWidth + 0.4, baseDepth, innerSize]} />
       </mesh>
-      {/* West Wall */}
       <mesh position={[-rimCenterOffset, -baseDepth / 2, 0]} receiveShadow castShadow material={mossyStoneMaterial}>
         <boxGeometry args={[rimWidth + 0.4, baseDepth, innerSize]} />
       </mesh>
 
-      {/* Terraced Stone Steps (Bờ Kè Đá Tam Cấp) inside each wall */}
+      {/* Terraced Stone Steps (Bờ Kè Đá Tam Cấp) */}
       <StoneQuaySteps length={innerSize - 2.8} position={[0, 0, -halfInner + 0.35]} rotation={[0, 0, 0]} />
       <StoneQuaySteps length={innerSize - 2.8} position={[0, 0, halfInner - 0.35]} rotation={[0, Math.PI, 0]} />
       <StoneQuaySteps length={innerSize - 2.8} position={[halfInner - 0.35, 0, 0]} rotation={[0, -Math.PI / 2, 0]} />
       <StoneQuaySteps length={innerSize - 2.8} position={[-halfInner + 0.35, 0, 0]} rotation={[0, Math.PI / 2, 0]} />
 
-      {/* Ancient Brick Arches underneath */}
+      {/* Ancient Brick Arches embedded in embankment */}
       {archPositions.map((arch, idx) => (
         <ViaductArchSegment
           key={`viaduct-arch-${idx}`}
           position={arch.pos}
           rotation={arch.rot}
           width={2.2}
-          height={0.65}
+          height={0.55}
         />
       ))}
 
-      {/* ================= 5. CURB RIMS ================= */}
+      {/* ================= 5. COBBLESTONE PROMENADE WALKWAY DECK ================= */}
       <mesh
         position={[0, rimHeight / 2, rimCenterOffset]}
         castShadow
         receiveShadow
-        material={curbStoneMaterial}
+        material={viaductDeckMaterial}
       >
         <boxGeometry args={[outerSize, rimHeight, rimWidth]} />
       </mesh>
@@ -612,7 +670,7 @@ export function BoardTableFrame({
         position={[0, rimHeight / 2, -rimCenterOffset]}
         castShadow
         receiveShadow
-        material={curbStoneMaterial}
+        material={viaductDeckMaterial}
       >
         <boxGeometry args={[outerSize, rimHeight, rimWidth]} />
       </mesh>
@@ -620,7 +678,7 @@ export function BoardTableFrame({
         position={[rimCenterOffset, rimHeight / 2, 0]}
         castShadow
         receiveShadow
-        material={curbStoneMaterial}
+        material={viaductDeckMaterial}
       >
         <boxGeometry args={[rimWidth, rimHeight, innerSize]} />
       </mesh>
@@ -628,29 +686,22 @@ export function BoardTableFrame({
         position={[-rimCenterOffset, rimHeight / 2, 0]}
         castShadow
         receiveShadow
-        material={curbStoneMaterial}
+        material={viaductDeckMaterial}
       >
         <boxGeometry args={[rimWidth, rimHeight, innerSize]} />
       </mesh>
 
-      {/* 4 Golden Antiqued Bronze Corner Bosses */}
+      {/* ================= 6. ORNATE CORNER BASTION TOWERS ================= */}
       {[
         [-halfOuter + rimWidth / 2, halfOuter - rimWidth / 2],
         [halfOuter - rimWidth / 2, halfOuter - rimWidth / 2],
         [-halfOuter + rimWidth / 2, -halfOuter + rimWidth / 2],
         [halfOuter - rimWidth / 2, -halfOuter + rimWidth / 2],
       ].map(([cx, cz], i) => (
-        <mesh
-          key={`corner-${i}`}
-          position={[cx, rimHeight + 0.03, cz]}
-          castShadow
-          material={goldFiligreeMaterial}
-        >
-          <boxGeometry args={[rimWidth * 1.02, 0.06, rimWidth * 1.02]} />
-        </mesh>
+        <CornerBastionTower key={`corner-bastion-${i}`} position={[cx, 0, cz]} />
       ))}
 
-      {/* ================= 6. VINTAGE BALUSTRADES ================= */}
+      {/* ================= 7. VINTAGE BALUSTRADES ================= */}
       <RetroBalustradeRow
         startPos={[-halfInner + 1.2, rimHeight, -halfInner + 0.08]}
         length={innerSize - 2.4}
