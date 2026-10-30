@@ -11,7 +11,7 @@ interface CloudProps {
 }
 
 /**
- * Stylized Golden Twilight Cloud floating slowly in evening sky
+ * Stylized Fluffy Golden Twilight Cloud floating slowly in sky
  */
 export function GoldenSunsetCloud({ initialPosition, scale = 1, speed = 0.015 }: CloudProps) {
   const groupRef = useRef<THREE.Group>(null);
@@ -37,24 +37,24 @@ export function GoldenSunsetCloud({ initialPosition, scale = 1, speed = 0.015 }:
       <mesh castShadow={false}>
         <sphereGeometry args={[2.2, 10, 10]} />
         <meshStandardMaterial
-          color="#fef08a"
-          roughness={0.8}
-          opacity={0.82}
+          color="#ffffff"
+          roughness={0.7}
+          opacity={0.9}
           transparent
         />
       </mesh>
-      {/* Sunset rosy-amber puffs */}
+      {/* Golden accent puffs */}
       <mesh position={[-1.6, -0.2, 0.3]} castShadow={false}>
         <sphereGeometry args={[1.6, 8, 8]} />
-        <meshStandardMaterial color="#fed7aa" roughness={0.8} opacity={0.82} transparent />
+        <meshStandardMaterial color="#fef08a" roughness={0.7} opacity={0.85} transparent />
       </mesh>
       <mesh position={[1.7, -0.15, -0.3]} castShadow={false}>
         <sphereGeometry args={[1.7, 8, 8]} />
-        <meshStandardMaterial color="#fcd34d" roughness={0.8} opacity={0.82} transparent />
+        <meshStandardMaterial color="#fed7aa" roughness={0.7} opacity={0.85} transparent />
       </mesh>
       <mesh position={[0.4, 0.9, 0.1]} castShadow={false}>
         <sphereGeometry args={[1.3, 8, 8]} />
-        <meshStandardMaterial color="#ffedd5" roughness={0.8} opacity={0.85} transparent />
+        <meshStandardMaterial color="#ffffff" roughness={0.7} opacity={0.92} transparent />
       </mesh>
     </group>
   );
@@ -63,35 +63,34 @@ export function GoldenSunsetCloud({ initialPosition, scale = 1, speed = 0.015 }:
 export const FluffyTropicalCloud = GoldenSunsetCloud;
 
 /**
- * 3D Vietnamese Twilight / Golden Hour Environment:
- * - Warm late afternoon sunset key light casting long dramatic shadows
- * - Soft evening indigo/violet sky fill
- * - Central lotus lagoon jade bounce light
- * - Distant sunset horizon gradient
+ * 3D Vietnamese Heritage Environment:
+ * - Crisp vibrant sky with atmospheric depth (Never dull or murky black)
+ * - Warm late afternoon golden sunlight casting long artistic shadows
+ * - Soft sky fill & turquoise water bounce
  */
 export function Environment3D() {
   const dirLightRef = useRef<THREE.DirectionalLight>(null);
 
   return (
-    <group name="vietnam-twilight-environment">
-      {/* Warm evening dusk atmospheric haze */}
-      <fog attach="fog" args={['#1e1b4b', 65, 145]} />
+    <group name="vietnam-heritage-environment">
+      {/* Clean, vibrant tropical/twilight sky haze (Never murky black) */}
+      <fog attach="fog" args={['#0284c7', 70, 160]} />
 
       {/* Balanced baseline ambient light */}
-      <ambientLight color="#fef3c7" intensity={0.65} />
+      <ambientLight color="#ffffff" intensity={0.82} />
 
-      {/* Hemisphere Light: Twilight Indigo Sky Top & Warm Clay Ground Bounce */}
+      {/* Hemisphere Light: Vivid Sky Blue Top & Warm Earth Ground Bounce */}
       <hemisphereLight
-        color="#818cf8"
-        groundColor="#78350f"
-        intensity={0.75}
+        color="#38bdf8"
+        groundColor="#d97706"
+        intensity={0.85}
       />
 
       {/* Primary Key Sunlight (Cinematic late-afternoon golden hour angle) */}
       <directionalLight
         ref={dirLightRef}
-        position={[-16, 24, -12]}
-        color="#fbbf24"
+        position={[-16, 26, -12]}
+        color="#fffbeb"
         intensity={2.8}
         castShadow
         shadow-mapSize-width={2048}
@@ -106,21 +105,21 @@ export function Environment3D() {
         shadow-normalBias={0.03}
       />
 
-      {/* Secondary Fill Light: Soft Twilight Lavender Glow on opposite faces */}
+      {/* Secondary Fill Light: Soft Warm Amber Glow on shaded faces */}
       <directionalLight
-        position={[14, 18, 14]}
-        color="#c4b5fd"
-        intensity={0.9}
+        position={[16, 20, 16]}
+        color="#fed7aa"
+        intensity={0.95}
       />
 
-      {/* Central Lotus Lagoon Jade Bounce Light */}
+      {/* Central Lotus Lagoon Turquoise Bounce Light */}
       <directionalLight
         position={[0, -10, 0]}
-        color="#2dd4bf"
-        intensity={0.5}
+        color="#06b6d4"
+        intensity={0.55}
       />
 
-      {/* Sunset Twilight Clouds in high sky */}
+      {/* Sunset Clouds in high sky */}
       <GoldenSunsetCloud initialPosition={[-24, 22, -18]} scale={1.4} speed={0.018} />
       <GoldenSunsetCloud initialPosition={[26, 25, 20]} scale={1.6} speed={0.015} />
       <GoldenSunsetCloud initialPosition={[-18, 20, 24]} scale={1.2} speed={0.02} />
