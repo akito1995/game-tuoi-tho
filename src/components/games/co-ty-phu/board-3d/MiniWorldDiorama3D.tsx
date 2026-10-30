@@ -468,22 +468,20 @@ export function SidewalkTeaStall({ position }: { position: [number, number, numb
             <cylinderGeometry args={[0.005, 0.005, 0.16, 4]} />
             <meshBasicMaterial color="#1e293b" />
           </mesh>
-          <mesh castShadow>
+          <mesh>
             <sphereGeometry args={[0.1, 10, 10]} />
-            <meshStandardMaterial color="#dc2626" emissive="#b91c1c" emissiveIntensity={1.5} />
+            <meshStandardMaterial color="#dc2626" emissive="#b91c1c" emissiveIntensity={2.5} />
           </mesh>
-          <pointLight color="#ef4444" intensity={1.5} distance={3.8} />
         </group>
         <group position={[-0.45, 1.75, 0.18]}>
           <mesh position={[0, 0.08, 0]}>
             <cylinderGeometry args={[0.005, 0.005, 0.16, 4]} />
             <meshBasicMaterial color="#1e293b" />
           </mesh>
-          <mesh castShadow>
+          <mesh>
             <sphereGeometry args={[0.09, 10, 10]} />
-            <meshStandardMaterial color="#f59e0b" emissive="#d97706" emissiveIntensity={1.5} />
+            <meshStandardMaterial color="#f59e0b" emissive="#d97706" emissiveIntensity={2.5} />
           </mesh>
-          <pointLight color="#f59e0b" intensity={1.2} distance={3.2} />
         </group>
       </group>
 
@@ -648,10 +646,9 @@ export function VintageUtilityPole({ position }: { position: [number, number, nu
           <meshStandardMaterial color="#334155" />
         </mesh>
         <mesh position={[-0.08, -0.15, 0]}>
-          <sphereGeometry args={[0.055, 12, 12]} />
-          <meshStandardMaterial color="#fef08a" emissive="#f59e0b" emissiveIntensity={2.8} roughness={0.1} />
+          <sphereGeometry args={[0.065, 12, 12]} />
+          <meshStandardMaterial color="#fef08a" emissive="#f59e0b" emissiveIntensity={3.5} roughness={0.1} />
         </mesh>
-        <pointLight color="#f59e0b" intensity={2.4} distance={8} />
       </group>
     </group>
   );
@@ -975,11 +972,11 @@ export function AncientBridgeAndLotusLagoon({ position }: { position: [number, n
             <ringGeometry args={[0.04, pad.r * 0.75, 12]} />
             <meshBasicMaterial color="#4ade80" transparent opacity={0.35} side={THREE.DoubleSide} />
           </mesh>
-          {/* Glassy Water Bead Droplet on Leaf Center */}
-          <mesh position={[0.04, 0.025, 0.02]}>
-            <sphereGeometry args={[0.022, 8, 8]} />
-            <meshPhysicalMaterial color="#ffffff" roughness={0.05} transmission={0.9} ior={1.33} />
-          </mesh>
+        {/* Glassy Water Bead Droplet on Leaf Center (Lightweight without transmission pass) */}
+        <mesh position={[0.04, 0.025, 0.02]}>
+          <sphereGeometry args={[0.022, 8, 8]} />
+          <meshStandardMaterial color="#ecfeff" roughness={0.08} metalness={0.7} transparent opacity={0.85} />
+        </mesh>
 
           {/* 3D Sculpted Multi-Tiered Pink Lotus Blossom (Hoa Sen Bách Diệp) */}
           {idx % 2 === 0 && (
@@ -1058,16 +1055,15 @@ export function RetroBicycleAndLanterns({ position }: { position: [number, numbe
               <cylinderGeometry args={[0.005, 0.005, 0.28, 4]} />
               <meshBasicMaterial color="#1e293b" />
             </mesh>
-            <mesh castShadow scale={[1, 1.35, 1]}>
+            <mesh scale={[1, 1.35, 1]}>
               <sphereGeometry args={[0.13, 14, 14]} />
               <meshStandardMaterial
                 color={item.col}
                 emissive={item.col}
-                emissiveIntensity={1.5}
+                emissiveIntensity={2.8}
                 roughness={0.25}
               />
             </mesh>
-            <pointLight color={item.col} intensity={0.9} distance={3.0} />
           </group>
         ))}
       </group>

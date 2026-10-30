@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
-import { OrbitControls, ContactShadows, Sparkles } from '@react-three/drei';
+import { OrbitControls, ContactShadows, Sparkles, AdaptiveDpr, AdaptiveEvents } from '@react-three/drei';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import * as THREE from 'three';
 import { Tile } from '@/lib/game-engine/types';
@@ -161,7 +161,7 @@ export function BoardCanvas({
     >
       <Canvas
         shadows="soft"
-        dpr={[1, 2]}
+        dpr={[1, 1.35]}
         gl={{
           antialias: true,
           alpha: true,
@@ -176,6 +176,8 @@ export function BoardCanvas({
           far: 180,
         }}
       >
+        <AdaptiveDpr pixelated={false} />
+        <AdaptiveEvents />
         <Suspense fallback={null}>
           {/* Auto-responsive camera for mobile & desktop */}
           <AdaptiveCamera />

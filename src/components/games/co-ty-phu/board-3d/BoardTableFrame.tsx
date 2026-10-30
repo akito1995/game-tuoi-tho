@@ -524,10 +524,9 @@ function VintageRailwayTrain({ position }: { position: [number, number, number] 
       {[-1.2, -0.6, 0, 0.6, 1.2].map((wx, wi) => (
         <mesh key={`train-win-${wi}`} position={[wx, 0.28, 0.265]}>
           <planeGeometry args={[0.34, 0.26]} />
-          <meshStandardMaterial color="#fef08a" emissive="#f59e0b" emissiveIntensity={1.8} />
+          <meshStandardMaterial color="#fef08a" emissive="#f59e0b" emissiveIntensity={2.5} />
         </mesh>
       ))}
-      <pointLight position={[0, 0.3, 0.4]} color="#fbbf24" intensity={1.8} distance={5.0} />
     </group>
   );
 }
@@ -610,9 +609,8 @@ function HeritageStationPavilion({ position }: { position: [number, number, numb
       {/* Glowing Warm Station Clock Tower */}
       <mesh position={[0, 2.0, 0.68]}>
         <circleGeometry args={[0.22, 16]} />
-        <meshStandardMaterial color="#fef08a" emissive="#f59e0b" emissiveIntensity={2.5} />
+        <meshStandardMaterial color="#fef08a" emissive="#f59e0b" emissiveIntensity={3.0} />
       </mesh>
-      <pointLight position={[0, 1.6, 0.9]} color="#fbbf24" intensity={2.2} distance={6.0} />
     </group>
   );
 }
@@ -639,17 +637,16 @@ function VintageStreetLamp({ position }: { position: [number, number, number] })
           <cylinderGeometry args={[0.1, 0.07, 0.18, 6]} />
           <meshStandardMaterial color="#0f172a" metalness={0.9} roughness={0.2} />
         </mesh>
-        {/* Glowing Amber Glass Bulb Core */}
+        {/* Glowing Amber Glass Bulb Core (Emissive material looks radiant without pointLight cost) */}
         <mesh>
-          <sphereGeometry args={[0.065, 10, 10]} />
+          <sphereGeometry args={[0.075, 10, 10]} />
           <meshStandardMaterial
             color="#fef08a"
             emissive="#f59e0b"
-            emissiveIntensity={2.5}
+            emissiveIntensity={3.2}
             roughness={0.1}
           />
         </mesh>
-        <pointLight color="#f59e0b" intensity={1.6} distance={6.0} />
       </group>
     </group>
   );
