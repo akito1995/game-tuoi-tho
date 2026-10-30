@@ -449,16 +449,21 @@ export function SidewalkTeaStall({ position }: { position: [number, number, numb
           </mesh>
         ))}
 
-        {/* 24 Faceted Multi-Tiered Tonal Foliage Clusters (Faceted Gemstone-like Clouds) */}
+        {/* 24 Lush Organic Foliage Clouds (Tán Lá Đa Xum Xuê Tự Nhiên - No Poly Facets) */}
         {BANYAN_CANOPY_TUFTS.map((puff, i) => (
           <mesh
             key={`banyan-tuft-${i}`}
             position={puff.pos as [number, number, number]}
-            scale={puff.scale as [number, number, number]}
-            castShadow
+            scale={[puff.scale[0] * 1.16, puff.scale[1] * 0.76, puff.scale[2] * 1.16]}
+            castShadow={i < 4 || i === 8 || i === 12}
+            receiveShadow
           >
-            <dodecahedronGeometry args={[1, 0]} />
-            <meshStandardMaterial color={puff.col} roughness={0.75} metalness={0.05} />
+            <sphereGeometry args={[1, 16, 14]} />
+            <meshStandardMaterial
+              color={puff.col}
+              roughness={0.82}
+              metalness={0.04}
+            />
           </mesh>
         ))}
 

@@ -159,14 +159,14 @@ export function BoardCanvas({
 
   return (
     <div
-      className={`relative overflow-hidden select-none bg-gradient-to-b from-[#0a0f1d] via-[#1e1b4b] to-[#312e81] ${className}`}
+      className={`relative overflow-hidden select-none bg-gradient-to-b from-[#0284c7] via-[#0ea5e9] to-[#38bdf8] ${className}`}
     >
       <Canvas
         shadows="soft"
         dpr={[1, 1.5]}
         gl={{
           antialias: true,
-          alpha: true,
+          alpha: false,
           powerPreference: 'high-performance',
           toneMapping: THREE.ACESFilmicToneMapping,
           toneMappingExposure: 1.25,
@@ -198,8 +198,10 @@ export function BoardCanvas({
             color="#fbbf24"
           />
 
-          {/* Soft Ground Contact Shadows grounding the board viaduct base */}
+          {/* Pre-baked Soft Ground Contact Shadows: frames={1} eliminates 120 FPS render pass stalls */}
           <ContactShadows
+            frames={1}
+            resolution={1024}
             position={[0, -0.65, 0]}
             opacity={0.35}
             scale={38}

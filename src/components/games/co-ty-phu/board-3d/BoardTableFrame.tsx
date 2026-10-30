@@ -175,29 +175,29 @@ export function DistantIslandAtoll({
 }) {
   return (
     <group position={[position[0], position[1] - 1.2, position[2]]} scale={[scale, scale, scale]}>
-      {/* Main Karst Limestone Pillar Tower */}
-      <mesh position={[0, 2.8, 0]} castShadow>
-        <cylinderGeometry args={[1.8, 3.4, 5.8, 7]} />
-        <meshStandardMaterial color="#334155" roughness={0.94} />
+      {/* Main Karst Limestone Pillar Tower (Authentic Ha Long Bay Karst) */}
+      <mesh position={[0, 2.8, 0]}>
+        <cylinderGeometry args={[1.8, 3.2, 5.8, 10]} />
+        <meshStandardMaterial color="#475569" roughness={0.9} />
       </mesh>
       {/* Secondary Cliff Shoulder Crag */}
-      <mesh position={[1.4, 1.8, 0.4]} rotation={[0.1, 0.4, -0.1]} castShadow>
-        <cylinderGeometry args={[1.1, 2.0, 4.2, 6]} />
-        <meshStandardMaterial color="#475569" roughness={0.92} />
+      <mesh position={[1.4, 1.8, 0.4]} rotation={[0.1, 0.4, -0.1]}>
+        <cylinderGeometry args={[1.1, 1.9, 4.2, 8]} />
+        <meshStandardMaterial color="#64748b" roughness={0.88} />
       </mesh>
       {/* Weathered Undercut Sea-Notch Base */}
-      <mesh position={[0, 0.3, 0]} castShadow>
-        <cylinderGeometry args={[3.2, 3.6, 1.0, 8]} />
-        <meshStandardMaterial color="#1e293b" roughness={0.96} />
+      <mesh position={[0, 0.3, 0]}>
+        <cylinderGeometry args={[3.0, 3.4, 1.0, 12]} />
+        <meshStandardMaterial color="#334155" roughness={0.92} />
       </mesh>
-      {/* Crown of Dense Tropical Jungle */}
-      <mesh position={[0, 5.4, 0]} scale={[1.2, 0.8, 1.2]} castShadow>
-        <dodecahedronGeometry args={[2.0, 1]} />
-        <meshStandardMaterial color="#14532d" roughness={0.85} />
+      {/* Crown of Dense Tropical Jungle (Lush Greenery) */}
+      <mesh position={[0, 5.4, 0]} scale={[1.2, 0.75, 1.2]}>
+        <sphereGeometry args={[2.0, 12, 10]} />
+        <meshStandardMaterial color="#15803d" roughness={0.82} />
       </mesh>
-      <mesh position={[1.2, 3.8, 0.3]} scale={[0.9, 0.6, 0.9]} castShadow>
-        <dodecahedronGeometry args={[1.5, 1]} />
-        <meshStandardMaterial color="#15803d" roughness={0.85} />
+      <mesh position={[1.2, 3.8, 0.3]} scale={[0.9, 0.6, 0.9]}>
+        <sphereGeometry args={[1.5, 10, 10]} />
+        <meshStandardMaterial color="#16a34a" roughness={0.82} />
       </mesh>
     </group>
   );
@@ -685,40 +685,113 @@ function GrandSuspensionBridgeTowers({ position }: { position: [number, number, 
 function HeritageStationPavilion({ position }: { position: [number, number, number] }) {
   return (
     <group position={position}>
-      {/* Granite Plinth Base */}
-      <mesh position={[0, 0.3, 0]} castShadow receiveShadow>
-        <boxGeometry args={[3.2, 0.6, 1.4]} />
-        <meshStandardMaterial color="#64748b" roughness={0.8} />
+      {/* 1. Stepped Rusticated Granite Plinth Base */}
+      <mesh position={[0, 0.18, 0]} receiveShadow>
+        <boxGeometry args={[3.4, 0.36, 1.6]} />
+        <meshStandardMaterial color="#475569" roughness={0.88} />
       </mesh>
-      {/* Classical Portico Facade with Stone Columns */}
-      <mesh position={[0, 1.1, 0.35]} castShadow receiveShadow>
-        <boxGeometry args={[2.8, 1.0, 0.6]} />
-        <meshStandardMaterial color="#f1f5f9" roughness={0.65} />
+      <mesh position={[0, 0.38, 0.1]} receiveShadow>
+        <boxGeometry args={[3.2, 0.12, 1.4]} />
+        <meshStandardMaterial color="#64748b" roughness={0.82} />
       </mesh>
-      {/* Arched Portico Windows */}
-      {[-0.8, 0, 0.8].map((ax, ai) => (
-        <group key={`station-arch-${ai}`} position={[ax, 1.0, 0.66]}>
-          <mesh>
-            <planeGeometry args={[0.45, 0.7]} />
-            <meshStandardMaterial color="#fef08a" emissive="#f59e0b" emissiveIntensity={1.8} />
+
+      {/* 2. French-Colonial Central Terminal Hall (Warm Ochre Facade) */}
+      <mesh position={[0, 1.15, 0]} castShadow receiveShadow>
+        <boxGeometry args={[2.9, 1.4, 1.25]} />
+        <meshStandardMaterial color="#d97706" roughness={0.78} />
+      </mesh>
+
+      {/* Classical Limestone Architectural Moldings & Cornices */}
+      <mesh position={[0, 1.88, 0.05]} castShadow>
+        <boxGeometry args={[3.05, 0.12, 1.35]} />
+        <meshStandardMaterial color="#f8fafc" roughness={0.65} />
+      </mesh>
+      <mesh position={[0, 0.46, 0.05]}>
+        <boxGeometry args={[3.02, 0.08, 1.32]} />
+        <meshStandardMaterial color="#f8fafc" roughness={0.65} />
+      </mesh>
+
+      {/* 3. Arched Grand Portico Colonnade (4 Classical Pillars) */}
+      {[-1.05, -0.35, 0.35, 1.05].map((px, pi) => (
+        <group key={`station-pillar-${pi}`} position={[px, 1.15, 0.65]}>
+          <mesh castShadow>
+            <cylinderGeometry args={[0.075, 0.085, 1.38, 12]} />
+            <meshStandardMaterial color="#f8fafc" roughness={0.6} />
+          </mesh>
+          {/* Pillar Capital & Plinth */}
+          <mesh position={[0, 0.7, 0]}>
+            <boxGeometry args={[0.2, 0.06, 0.2]} />
+            <meshStandardMaterial color="#f1f5f9" roughness={0.5} />
+          </mesh>
+          <mesh position={[0, -0.7, 0]}>
+            <boxGeometry args={[0.2, 0.06, 0.2]} />
+            <meshStandardMaterial color="#64748b" roughness={0.8} />
           </mesh>
         </group>
       ))}
-      {/* Classical Triangular Pediment */}
-      <mesh position={[0, 1.85, 0.35]} rotation={[0, 0, Math.PI / 4]} castShadow>
-        <boxGeometry args={[1.5, 1.5, 0.65]} />
-        <meshStandardMaterial color="#f8fafc" roughness={0.6} />
-      </mesh>
-      {/* Central Verdigris Copper Dome */}
-      <mesh position={[0, 2.3, -0.1]} castShadow>
-        <sphereGeometry args={[0.85, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
-        <meshStandardMaterial color="#0d9488" metalness={0.65} roughness={0.4} />
-      </mesh>
-      {/* Glowing Warm Station Clock Tower */}
-      <mesh position={[0, 2.0, 0.68]}>
-        <circleGeometry args={[0.22, 16]} />
-        <meshStandardMaterial color="#fef08a" emissive="#f59e0b" emissiveIntensity={3.0} />
-      </mesh>
+
+      {/* Arched French Glass Windows with Warm Interior Light Spill */}
+      {[-0.7, 0, 0.7].map((ax, ai) => (
+        <group key={`station-window-${ai}`} position={[ax, 1.18, 0.63]}>
+          {/* Arched Window Reveal */}
+          <mesh>
+            <planeGeometry args={[0.48, 0.85]} />
+            <meshStandardMaterial color="#fef08a" emissive="#f59e0b" emissiveIntensity={2.2} roughness={0.2} />
+          </mesh>
+          {/* Dark Green Louver Mullions */}
+          <mesh position={[0, 0, 0.005]}>
+            <boxGeometry args={[0.02, 0.85, 0.01]} />
+            <meshStandardMaterial color="#14532d" />
+          </mesh>
+          <mesh position={[0, 0.1, 0.005]}>
+            <boxGeometry args={[0.48, 0.02, 0.01]} />
+            <meshStandardMaterial color="#14532d" />
+          </mesh>
+        </group>
+      ))}
+
+      {/* 4. Classical French Mansard Slate Roof (Replacing crude rotated box) */}
+      <group position={[0, 2.32, 0]}>
+        {/* Slanted Mansard Roof Base */}
+        <mesh castShadow rotation={[0, Math.PI / 4, 0]}>
+          <cylinderGeometry args={[1.1, 1.5, 0.75, 4]} />
+          <meshStandardMaterial color="#334155" roughness={0.72} />
+        </mesh>
+        {/* Roof Cresting Trim */}
+        <mesh position={[0, 0.4, 0]}>
+          <boxGeometry args={[1.55, 0.06, 1.55]} />
+          <meshStandardMaterial color="#cbd5e1" metalness={0.8} roughness={0.25} />
+        </mesh>
+      </group>
+
+      {/* 5. Sculpted Central Clock Tower & Gilded Spire */}
+      <group position={[0, 2.1, 0.65]}>
+        {/* Molded Clock Gable Pediment */}
+        <mesh position={[0, 0, -0.05]} castShadow>
+          <boxGeometry args={[0.95, 0.72, 0.18]} />
+          <meshStandardMaterial color="#f8fafc" roughness={0.65} />
+        </mesh>
+        {/* Curved Triangular Pediment Brow */}
+        <mesh position={[0, 0.42, -0.05]}>
+          <cylinderGeometry args={[0.48, 0.48, 0.18, 16, 1, false, 0, Math.PI]} />
+          <meshStandardMaterial color="#f8fafc" roughness={0.65} />
+        </mesh>
+        {/* Luminous Enamel Clock Face */}
+        <mesh position={[0, 0.08, 0.06]}>
+          <circleGeometry args={[0.22, 24]} />
+          <meshStandardMaterial color="#fef08a" emissive="#fbbf24" emissiveIntensity={2.8} />
+        </mesh>
+        {/* Bronze Clock Rim */}
+        <mesh position={[0, 0.08, 0.065]}>
+          <ringGeometry args={[0.21, 0.24, 24]} />
+          <meshStandardMaterial color="#b45309" metalness={0.9} roughness={0.2} />
+        </mesh>
+        {/* Central Golden Terminal Spire */}
+        <mesh position={[0, 0.85, -0.05]} castShadow>
+          <coneGeometry args={[0.06, 0.52, 8]} />
+          <meshStandardMaterial color="#fbbf24" metalness={0.9} roughness={0.2} />
+        </mesh>
+      </group>
     </group>
   );
 }

@@ -1251,12 +1251,11 @@ export function SingleTile3D({
         }
       }}
     >
-      {/* 3D Base Slab with High-Gloss Tactile Porcelain Finish */}
+      {/* 3D Base Slab with High-Gloss Tactile Porcelain Finish (Optimized for 120 FPS) */}
       <RoundedBox
         args={[localWidth - 0.06, TILE_THICKNESS, localDepth - 0.06]}
         radius={0.045}
         smoothness={4}
-        castShadow
         receiveShadow
         position={[0, -TILE_THICKNESS / 2, 0]}
       >
@@ -1289,7 +1288,7 @@ export function SingleTile3D({
       {!layout.isCorner && (
         <group position={[0, 0.005, localDepth / 2 - 0.22]}>
           {/* Raised Sidewalk Curb Stone */}
-          <mesh position={[0, 0.016, -0.21]} castShadow receiveShadow>
+          <mesh position={[0, 0.016, -0.21]} receiveShadow>
             <boxGeometry args={[localWidth - 0.06, 0.024, 0.05]} />
             <meshStandardMaterial
               color="#cbd5e1"
