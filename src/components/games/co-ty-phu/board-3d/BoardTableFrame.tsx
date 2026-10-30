@@ -5,9 +5,10 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
 /* =========================================================================
-   BOARD TABLE FRAME COMPONENT (Meta World Floating Tropical Island & Ocean)
-   Transforms the board into an ultra-luxury Pearl Island floating upon
-   sparkling turquoise waters with luxury yachts, palm beaches, and golden trims.
+   BOARD TABLE FRAME COMPONENT - VIETNAMESE NOSTALGIA ELEVATED VIADUCT
+   Inspired by Meta World's elevated viaduct structure, tailored with rich
+   Vietnamese nostalgic heritage: ancient weathered brick arches, mossy stone
+   piers, vintage balustrades, and a sunken central lotus lagoon (Hồ Sen Cổ Kính).
    ========================================================================= */
 
 interface BoardTableFrameProps {
@@ -18,119 +19,150 @@ interface BoardTableFrameProps {
 }
 
 /**
- * Animated Tropical Ocean Water Surface with specular glints
+ * Serene Sunken Lotus Pond Water Surface
  */
-function TropicalOceanWater() {
+function NostalgicLotusLagoon() {
   const meshRef = useRef<THREE.Mesh>(null);
 
   useFrame(({ clock }) => {
     if (!meshRef.current) return;
     const t = clock.getElapsedTime();
-    // Gentle water shimmer and subtle breathing wave
-    meshRef.current.position.y = -0.9 + Math.sin(t * 1.2) * 0.04;
+    meshRef.current.position.y = -1.15 + Math.sin(t * 0.8) * 0.02;
   });
 
   return (
     <group>
-      {/* Deep Sea Floor */}
+      {/* Deep Lake Bed with rich silt & river stones */}
       <mesh position={[0, -1.8, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[140, 140]} />
-        <meshStandardMaterial color="#0369a1" roughness={0.9} />
+        <meshStandardMaterial color="#0f172a" roughness={0.95} />
       </mesh>
 
-      {/* Tropical Turquoise Ocean Surface */}
-      <mesh ref={meshRef} position={[0, -0.9, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[130, 130, 32, 32]} />
+      {/* Sunken Emerald-Jade Lotus Water Surface */}
+      <mesh ref={meshRef} position={[0, -1.15, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[130, 130, 24, 24]} />
         <meshStandardMaterial
-          color="#06b6d4"
-          roughness={0.08}
-          metalness={0.2}
+          color="#0d9488"
+          roughness={0.06}
+          metalness={0.25}
           transparent
-          opacity={0.88}
+          opacity={0.82}
         />
       </mesh>
 
-      {/* Shallow Coral Lagoon Ring Around The Island */}
-      <mesh position={[0, -0.86, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[10, 24, 48]} />
-        <meshBasicMaterial color="#38bdf8" transparent opacity={0.35} depthWrite={false} />
+      {/* Shallow Lotus Margin Ring with aquatic glow */}
+      <mesh position={[0, -1.12, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[8.5, 12.5, 48]} />
+        <meshBasicMaterial color="#2dd4bf" transparent opacity={0.28} depthWrite={false} />
       </mesh>
     </group>
   );
 }
 
 /**
- * Miniature Tropical Palm Tree for beach perimeter
+ * Viaduct Arch Opening - repeated along the inner and outer elevated viaduct walls
+ * like the iconic Long Biên viaduct or classic Hanoi/Hue ancient stone bridge arches.
  */
-function BeachPalmTree({ position, scale = 0.9 }: { position: [number, number, number]; scale?: number }) {
+function ViaductArchSegment({
+  position,
+  rotation = [0, 0, 0],
+  width = 2.4,
+  height = 1.3,
+}: {
+  position: [number, number, number];
+  rotation?: [number, number, number];
+  width?: number;
+  height?: number;
+}) {
   return (
-    <group position={position} scale={[scale, scale, scale]}>
-      {/* Curved Trunk */}
-      <mesh position={[0, 0.45, 0]} rotation={[0.08, 0, 0.12]} castShadow>
-        <cylinderGeometry args={[0.07, 0.12, 0.9, 7]} />
-        <meshStandardMaterial color="#78350f" roughness={0.85} />
+    <group position={position} rotation={rotation}>
+      {/* Left Stone Pier Pillar */}
+      <mesh position={[-width / 2 + 0.18, -height / 2, 0]} castShadow receiveShadow>
+        <boxGeometry args={[0.32, height, 0.45]} />
+        <meshStandardMaterial color="#475569" roughness={0.9} />
       </mesh>
-      {/* Palm Fronds Foliage */}
-      {[0, 1.2, 2.4, 3.6, 4.8].map((angle, i) => (
-        <group key={i} position={[0.08, 0.9, 0]} rotation={[0.35, angle, 0]}>
-          <mesh position={[0, 0, 0.28]} rotation={[-0.45, 0, 0]} castShadow>
-            <coneGeometry args={[0.18, 0.65, 4]} />
-            <meshStandardMaterial color="#15803d" roughness={0.6} />
-          </mesh>
-        </group>
+      {/* Right Stone Pier Pillar */}
+      <mesh position={[width / 2 - 0.18, -height / 2, 0]} castShadow receiveShadow>
+        <boxGeometry args={[0.32, height, 0.45]} />
+        <meshStandardMaterial color="#475569" roughness={0.9} />
+      </mesh>
+      {/* Weathered Terracotta Brick Arch Vault */}
+      <mesh position={[0, -0.22, 0]} castShadow receiveShadow>
+        <torusGeometry args={[width / 2 - 0.28, 0.22, 6, 12, Math.PI]} />
+        <meshStandardMaterial color="#b45309" roughness={0.88} />
+      </mesh>
+      {/* Dark recessed shadow opening behind arch */}
+      <mesh position={[0, -height / 2, -0.05]}>
+        <planeGeometry args={[width - 0.6, height * 0.82]} />
+        <meshBasicMaterial color="#090d16" />
+      </mesh>
+    </group>
+  );
+}
+
+/**
+ * Classical Balustrade / Con Tiện Bê Tông Cổ Điển along the elevated edge
+ */
+function RetroBalustradeRow({
+  startPos,
+  length,
+  direction = 'x',
+}: {
+  startPos: [number, number, number];
+  length: number;
+  direction?: 'x' | 'z';
+}) {
+  const count = Math.floor(length / 0.65);
+  const elements = useMemo(() => {
+    return Array.from({ length: count }).map((_, i) => i * 0.65);
+  }, [count]);
+
+  return (
+    <group position={startPos}>
+      {/* Top Handrail */}
+      <mesh
+        position={[
+          direction === 'x' ? length / 2 : 0,
+          0.38,
+          direction === 'z' ? length / 2 : 0,
+        ]}
+        castShadow
+      >
+        <boxGeometry
+          args={[direction === 'x' ? length : 0.08, 0.06, direction === 'z' ? length : 0.08]}
+        />
+        <meshStandardMaterial color="#cbd5e1" roughness={0.6} />
+      </mesh>
+
+      {/* Individual Turned Balusters (Con tiện) */}
+      {elements.map((offset, idx) => (
+        <mesh
+          key={idx}
+          position={[
+            direction === 'x' ? offset + 0.32 : 0,
+            0.18,
+            direction === 'z' ? offset + 0.32 : 0,
+          ]}
+          castShadow
+        >
+          <cylinderGeometry args={[0.024, 0.034, 0.34, 6]} />
+          <meshStandardMaterial color="#e2e8f0" roughness={0.65} />
+        </mesh>
       ))}
-      {/* Coconuts */}
-      <mesh position={[0.08, 0.85, 0.05]} castShadow>
-        <sphereGeometry args={[0.06, 6, 6]} />
-        <meshStandardMaterial color="#451a03" roughness={0.7} />
-      </mesh>
-    </group>
-  );
-}
 
-/**
- * Luxury Yacht cruising peacefully in the surrounding ocean
- */
-function CruisingYacht({ initialRadius = 16, speed = 0.1 }: { initialRadius?: number; speed?: number }) {
-  const groupRef = useRef<THREE.Group>(null);
-  const angleRef = useRef(0.4);
-
-  useFrame((_, delta) => {
-    if (!groupRef.current) return;
-    angleRef.current += speed * delta * 0.2;
-    const x = Math.cos(angleRef.current) * initialRadius;
-    const z = Math.sin(angleRef.current) * initialRadius;
-    groupRef.current.position.set(x, -0.78, z);
-    // Face tangential direction of travel
-    groupRef.current.rotation.y = -angleRef.current + Math.PI;
-  });
-
-  return (
-    <group ref={groupRef}>
-      {/* Yacht Hull */}
-      <mesh position={[0, 0.1, 0]} castShadow>
-        <boxGeometry args={[0.45, 0.2, 1.4]} />
-        <meshStandardMaterial color="#f8fafc" roughness={0.2} metalness={0.1} />
-      </mesh>
-      {/* Sleek Bow Cone */}
-      <mesh position={[0, 0.1, 0.8]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-        <coneGeometry args={[0.22, 0.5, 4]} />
-        <meshStandardMaterial color="#f8fafc" roughness={0.2} />
-      </mesh>
-      {/* Cabin with tinted glass */}
-      <mesh position={[0, 0.26, -0.1]} castShadow>
-        <boxGeometry args={[0.34, 0.18, 0.7]} />
-        <meshStandardMaterial color="#0284c7" roughness={0.1} metalness={0.3} />
-      </mesh>
-      {/* Sun deck flybridge */}
-      <mesh position={[0, 0.38, -0.2]} castShadow>
-        <boxGeometry args={[0.28, 0.08, 0.35]} />
-        <meshStandardMaterial color="#ffffff" roughness={0.3} />
-      </mesh>
-      {/* Wake Ripples */}
-      <mesh position={[0, -0.04, -1.0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[0.8, 1.2]} />
-        <meshBasicMaterial color="#ffffff" transparent opacity={0.4} />
+      {/* Bottom Base Curb */}
+      <mesh
+        position={[
+          direction === 'x' ? length / 2 : 0,
+          0.02,
+          direction === 'z' ? length / 2 : 0,
+        ]}
+        receiveShadow
+      >
+        <boxGeometry
+          args={[direction === 'x' ? length : 0.12, 0.04, direction === 'z' ? length : 0.12]}
+        />
+        <meshStandardMaterial color="#94a3b8" roughness={0.8} />
       </mesh>
     </group>
   );
@@ -140,126 +172,155 @@ export function BoardTableFrame({
   outerSize = 19.2,
   innerSize = 16.2,
   rimHeight = 0.42,
-  baseDepth = 0.8,
+  baseDepth = 1.35,
 }: BoardTableFrameProps) {
-  // Ultra-luxury materials matching Meta World: My City
-  const goldMetalMaterial = useMemo(
+  // Heritage Materials: Ancient Hanoi / Hoi An Weathered Brick & Mossy Stone
+  const ancientBrickMaterial = useMemo(
     () =>
       new THREE.MeshStandardMaterial({
-        color: '#f59e0b',
-        roughness: 0.18,
-        metalness: 0.9,
+        color: '#b45309', // Warm terracotta red-brown brick
+        roughness: 0.92,
+        metalness: 0.05,
       }),
     []
   );
 
-  const whiteMarbleMaterial = useMemo(
+  const mossyStoneMaterial = useMemo(
     () =>
       new THREE.MeshStandardMaterial({
-        color: '#f8fafc',
-        roughness: 0.22,
+        color: '#334155', // Slate stone with subtle moss
+        roughness: 0.88,
         metalness: 0.1,
       }),
     []
   );
 
-  const sandMaterial = useMemo(
+  const goldFiligreeMaterial = useMemo(
     () =>
       new THREE.MeshStandardMaterial({
-        color: '#fde047',
-        roughness: 0.85,
+        color: '#f59e0b',
+        roughness: 0.25,
+        metalness: 0.85,
       }),
     []
   );
 
-  const islandCliffMaterial = useMemo(
+  const curbStoneMaterial = useMemo(
     () =>
       new THREE.MeshStandardMaterial({
-        color: '#1e293b',
-        roughness: 0.75,
+        color: '#64748b',
+        roughness: 0.78,
       }),
     []
   );
 
   useEffect(() => {
     return () => {
-      goldMetalMaterial.dispose();
-      whiteMarbleMaterial.dispose();
-      sandMaterial.dispose();
-      islandCliffMaterial.dispose();
+      ancientBrickMaterial.dispose();
+      mossyStoneMaterial.dispose();
+      goldFiligreeMaterial.dispose();
+      curbStoneMaterial.dispose();
     };
-  }, [goldMetalMaterial, whiteMarbleMaterial, sandMaterial, islandCliffMaterial]);
+  }, [ancientBrickMaterial, mossyStoneMaterial, goldFiligreeMaterial, curbStoneMaterial]);
 
   const rimWidth = (outerSize - innerSize) / 2;
   const halfOuter = outerSize / 2;
   const halfInner = innerSize / 2;
   const rimCenterOffset = halfInner + rimWidth / 2;
 
+  // Viaduct arch spacing along inner boundary
+  const archPositions = useMemo(() => {
+    const list: { pos: [number, number, number]; rot: [number, number, number] }[] = [];
+    const span = innerSize - 3.0;
+    const steps = 4;
+    const stepSize = span / (steps - 1);
+
+    for (let i = 0; i < steps; i++) {
+      const offset = -span / 2 + i * stepSize;
+      // North Inner Wall
+      list.push({ pos: [offset, -0.05, -halfInner], rot: [0, 0, 0] });
+      // South Inner Wall
+      list.push({ pos: [offset, -0.05, halfInner], rot: [0, Math.PI, 0] });
+      // East Inner Wall
+      list.push({ pos: [halfInner, -0.05, offset], rot: [0, -Math.PI / 2, 0] });
+      // West Inner Wall
+      list.push({ pos: [-halfInner, -0.05, offset], rot: [0, Math.PI / 2, 0] });
+    }
+    return list;
+  }, [innerSize, halfInner]);
+
   return (
-    <group name="meta-world-board-island">
-      {/* ================= 1. ANIMATED TROPICAL OCEAN ================= */}
-      <TropicalOceanWater />
+    <group name="vietnam-viaduct-board-frame">
+      {/* ================= 1. SUNKEN LOTUS LAGOON ================= */}
+      <NostalgicLotusLagoon />
 
-      {/* ================= 2. CRUISING LUXURY YACHTS ================= */}
-      <CruisingYacht initialRadius={16.5} speed={0.15} />
-      <CruisingYacht initialRadius={21.0} speed={-0.1} />
-
-      {/* ================= 3. FLOATING ISLAND CLIFF BASE ================= */}
-      {/* Island Sub-structure rising from the ocean */}
-      <mesh position={[0, -baseDepth / 2, 0]} receiveShadow castShadow material={islandCliffMaterial}>
-        <boxGeometry args={[outerSize + 1.2, baseDepth, outerSize + 1.2]} />
+      {/* ================= 2. ELEVATED VIADUCT PIERS & WALLS ================= */}
+      {/* Massive elevated foundation walls surrounding the sunken basin */}
+      <mesh
+        position={[0, -baseDepth / 2, 0]}
+        receiveShadow
+        castShadow
+        material={mossyStoneMaterial}
+      >
+        <boxGeometry args={[outerSize + 0.8, baseDepth, outerSize + 0.8]} />
       </mesh>
 
-      {/* Golden Glowing Under-Rim LED Ribbon */}
-      <mesh position={[0, -0.06, 0]}>
-        <boxGeometry args={[outerSize + 0.3, 0.08, outerSize + 0.3]} />
-        <meshStandardMaterial
-          color="#38bdf8"
-          emissive="#0284c7"
-          emissiveIntensity={1.2}
-          roughness={0.2}
+      {/* Recessed Inner Basin Cutout - revealing the sunken lotus pond */}
+      <mesh position={[0, -baseDepth / 2, 0]} receiveShadow>
+        <boxGeometry args={[innerSize - 0.4, baseDepth + 0.1, innerSize - 0.4]} />
+        <meshBasicMaterial color="#090d16" />
+      </mesh>
+
+      {/* Ancient Brick Arches repeated along the sunken lagoon perimeter */}
+      {archPositions.map((arch, idx) => (
+        <ViaductArchSegment
+          key={`viaduct-arch-${idx}`}
+          position={arch.pos}
+          rotation={arch.rot}
+          width={2.2}
+          height={1.3}
         />
-      </mesh>
+      ))}
 
-      {/* ================= 4. LUXURY MARBLE & GOLD BEVELED RIM ================= */}
-      {/* South Outer Rim */}
+      {/* ================= 3. RETRO CURB RIM & BRICK ROAD LEDGE ================= */}
+      {/* South Outer Curb */}
       <mesh
         position={[0, rimHeight / 2, rimCenterOffset]}
         castShadow
         receiveShadow
-        material={whiteMarbleMaterial}
+        material={curbStoneMaterial}
       >
         <boxGeometry args={[outerSize, rimHeight, rimWidth]} />
       </mesh>
-      {/* North Outer Rim */}
+      {/* North Outer Curb */}
       <mesh
         position={[0, rimHeight / 2, -rimCenterOffset]}
         castShadow
         receiveShadow
-        material={whiteMarbleMaterial}
+        material={curbStoneMaterial}
       >
         <boxGeometry args={[outerSize, rimHeight, rimWidth]} />
       </mesh>
-      {/* East Outer Rim */}
+      {/* East Outer Curb */}
       <mesh
         position={[rimCenterOffset, rimHeight / 2, 0]}
         castShadow
         receiveShadow
-        material={whiteMarbleMaterial}
+        material={curbStoneMaterial}
       >
         <boxGeometry args={[rimWidth, rimHeight, innerSize]} />
       </mesh>
-      {/* West Outer Rim */}
+      {/* West Outer Curb */}
       <mesh
         position={[-rimCenterOffset, rimHeight / 2, 0]}
         castShadow
         receiveShadow
-        material={whiteMarbleMaterial}
+        material={curbStoneMaterial}
       >
         <boxGeometry args={[rimWidth, rimHeight, innerSize]} />
       </mesh>
 
-      {/* 4 Golden Gilded Corner Brackets */}
+      {/* 4 Golden Antiqued Bronze Corner Bosses */}
       {[
         [-halfOuter + rimWidth / 2, halfOuter - rimWidth / 2],
         [halfOuter - rimWidth / 2, halfOuter - rimWidth / 2],
@@ -267,26 +328,40 @@ export function BoardTableFrame({
         [halfOuter - rimWidth / 2, -halfOuter + rimWidth / 2],
       ].map(([cx, cz], i) => (
         <mesh
-          key={i}
-          position={[cx, rimHeight + 0.04, cz]}
+          key={`corner-${i}`}
+          position={[cx, rimHeight + 0.03, cz]}
           castShadow
-          material={goldMetalMaterial}
+          material={goldFiligreeMaterial}
         >
-          <boxGeometry args={[rimWidth * 1.05, 0.08, rimWidth * 1.05]} />
+          <boxGeometry args={[rimWidth * 1.02, 0.06, rimWidth * 1.02]} />
         </mesh>
       ))}
 
-      {/* ================= 5. TROPICAL SANDY BEACH APRON & PALMS ================= */}
-      {/* Golden Sandy Perimeter Ledge */}
-      <mesh position={[0, -0.02, 0]} receiveShadow material={sandMaterial}>
-        <boxGeometry args={[outerSize + 2.4, 0.12, outerSize + 2.4]} />
-      </mesh>
-
-      {/* Tropical Palm Trees Dotting Island Corners */}
-      <BeachPalmTree position={[-halfOuter - 0.7, 0.04, -halfOuter - 0.7]} scale={0.8} />
-      <BeachPalmTree position={[halfOuter + 0.7, 0.04, -halfOuter - 0.6]} scale={0.85} />
-      <BeachPalmTree position={[-halfOuter - 0.8, 0.04, halfOuter + 0.7]} scale={0.75} />
-      <BeachPalmTree position={[halfOuter + 0.8, 0.04, halfOuter + 0.6]} scale={0.8} />
+      {/* ================= 4. VINTAGE BALUSTRADES ALONG INNER LAGOON ================= */}
+      {/* North Inner Balustrade */}
+      <RetroBalustradeRow
+        startPos={[-halfInner + 1.2, rimHeight, -halfInner + 0.08]}
+        length={innerSize - 2.4}
+        direction="x"
+      />
+      {/* South Inner Balustrade */}
+      <RetroBalustradeRow
+        startPos={[-halfInner + 1.2, rimHeight, halfInner - 0.08]}
+        length={innerSize - 2.4}
+        direction="x"
+      />
+      {/* West Inner Balustrade */}
+      <RetroBalustradeRow
+        startPos={[-halfInner + 0.08, rimHeight, -halfInner + 1.2]}
+        length={innerSize - 2.4}
+        direction="z"
+      />
+      {/* East Inner Balustrade */}
+      <RetroBalustradeRow
+        startPos={[halfInner - 0.08, rimHeight, -halfInner + 1.2]}
+        length={innerSize - 2.4}
+        direction="z"
+      />
     </group>
   );
 }

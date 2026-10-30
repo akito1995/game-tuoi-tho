@@ -86,16 +86,16 @@ function AdaptiveCamera() {
  */
 function BoardCanvasFallback() {
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-b from-[#0284c7] via-[#0ea5e9] to-[#38bdf8] text-white">
+    <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-b from-[#1e1b4b] via-[#312e81] to-[#0f172a] text-white">
       <div className="relative flex items-center justify-center">
         <div className="h-16 w-16 animate-spin rounded-full border-4 border-amber-400 border-t-transparent shadow-lg" />
-        <div className="absolute text-2xl animate-bounce">🏝️</div>
+        <div className="absolute text-2xl animate-bounce">🏮</div>
       </div>
       <p className="mt-4 font-black tracking-wide text-amber-300 drop-shadow">
-        Đang khởi tạo Đảo Ngọc 3D Cờ Tỷ Phú...
+        Đang khởi tạo Phố Cổ 3D Cờ Tỷ Phú...
       </p>
-      <p className="mt-1 text-xs font-semibold text-sky-100/90">
-        Phong cách Meta World: My City sống động
+      <p className="mt-1 text-xs font-semibold text-amber-100/90">
+        Phong cách Ký Ức Tuổi Thơ & Đồ họa Meta World sống động
       </p>
     </div>
   );

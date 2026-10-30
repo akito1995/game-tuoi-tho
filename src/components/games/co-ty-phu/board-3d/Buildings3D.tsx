@@ -12,6 +12,7 @@ import {
   MASCOT_PALETTES,
 } from './board3dHelpers';
 import { CityLandmark3D } from './CityLandmarks3D';
+import { LandmarkConstructionVFX } from './LandmarkConstructionVFX';
 
 /* =========================================================================
    PROCEDURAL 3D BUILDING MESHES (5 TIERS)
@@ -479,6 +480,7 @@ function SingleBuilding3D({ tile, players }: SingleBuilding3DProps) {
   const groupRef = useRef<THREE.Group>(null);
   const tier = getBuildingTier(tile);
   const prevTierRef = useRef<number>(tier);
+  const [isConstructing, setIsConstructing] = React.useState(false);
 
   // Spring animation state
   const springRef = useRef({
@@ -487,13 +489,17 @@ function SingleBuilding3D({ tile, players }: SingleBuilding3DProps) {
     active: true,
   });
 
-  // Trigger spring bounce when tier upgrades or on initial spawn
+  // Trigger spring bounce & holographic construction beam when tier upgrades
   useEffect(() => {
     if (tier !== -1) {
       springRef.current.scale = 0.01;
       springRef.current.velocity = 12.0; // Initial pop impulse
       springRef.current.active = true;
       prevTierRef.current = tier;
+
+      setIsConstructing(true);
+      const timer = setTimeout(() => setIsConstructing(false), 3600);
+      return () => clearTimeout(timer);
     }
   }, [tier, tile.houseCount, tile.hasResort]);
 
@@ -536,21 +542,28 @@ function SingleBuilding3D({ tile, players }: SingleBuilding3DProps) {
   const ownerColor = getOwnerColor(tile.ownerId, players);
 
   return (
-    <group
-      ref={groupRef}
-      position={pos}
-      rotation={[0, layout.rotationY, 0]}
-    >
-      {tier === 0 && <FlagStructure color={ownerColor} />}
-      {tier === 1 && <VillageHouse1Structure flagColor={ownerColor} />}
-      {tier === 2 && <VillageHouse2Structure flagColor={ownerColor} />}
-      {tier === 3 && <LuxuryVillaStructure flagColor={ownerColor} />}
-      {tier >= 4 && (
-        [1, 3, 4, 5, 6, 9, 10, 11, 12, 13, 15, 17, 19, 20, 21, 22, 23, 25, 27, 28, 30, 31].includes(tile.id) ? (
-          <CityLandmark3D tileId={tile.id} />
-        ) : (
-          <GrandGoldenResortStructure flagColor={ownerColor} />
-        )
+    <group position={pos} rotation={[0, layout.rotationY, 0]}>
+      <group ref={groupRef}>
+        {tier === 0 && <FlagStructure color={ownerColor} />}
+        {tier === 1 && <VillageHouse1Structure flagColor={ownerColor} />}
+        {tier === 2 && <VillageHouse2Structure flagColor={ownerColor} />}
+        {tier === 3 && <LuxuryVillaStructure flagColor={ownerColor} />}
+        {tier >= 4 && (
+          [1, 3, 4, 5, 6, 9, 10, 11, 12, 13, 15, 17, 19, 20, 21, 22, 23, 25, 27, 28, 30, 31].includes(tile.id) ? (
+            <CityLandmark3D tileId={tile.id} />
+          ) : (
+            <GrandGoldenResortStructure flagColor={ownerColor} />
+          )
+        )}
+      </group>
+
+      {/* Meta World Style Holographic Beacon & Construction Scaffolding */}
+      {(isConstructing || (tier >= 4 && Boolean(tile.hasResort))) && (
+        <LandmarkConstructionVFX
+          color={tier >= 4 ? '#38bdf8' : '#fbbf24'}
+          label={tier >= 4 ? 'KỲ QUAN KINH ĐIỂN' : 'ĐANG THI CÔNG'}
+          scale={0.9}
+        />
       )}
     </group>
   );

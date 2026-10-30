@@ -11,9 +11,9 @@ interface CloudProps {
 }
 
 /**
- * Stylized Fluffy Tropical Cloud (High in sky, orbits slowly)
+ * Stylized Golden Twilight Cloud floating slowly in evening sky
  */
-function FluffyTropicalCloud({ initialPosition, scale = 1, speed = 0.02 }: CloudProps) {
+function GoldenSunsetCloud({ initialPosition, scale = 1, speed = 0.015 }: CloudProps) {
   const groupRef = useRef<THREE.Group>(null);
   const angleRef = useRef(Math.atan2(initialPosition[2], initialPosition[0]));
   const radius = useMemo(
@@ -24,7 +24,7 @@ function FluffyTropicalCloud({ initialPosition, scale = 1, speed = 0.02 }: Cloud
 
   useFrame((_, delta) => {
     if (!groupRef.current) return;
-    angleRef.current += speed * delta * 0.06;
+    angleRef.current += speed * delta * 0.05;
     const x = Math.cos(angleRef.current) * radius;
     const z = Math.sin(angleRef.current) * radius;
     groupRef.current.position.set(x, baseHeight, z);
@@ -33,95 +33,64 @@ function FluffyTropicalCloud({ initialPosition, scale = 1, speed = 0.02 }: Cloud
 
   return (
     <group ref={groupRef} position={initialPosition} scale={[scale, scale, scale]}>
+      {/* Central warm cloud puff */}
       <mesh castShadow={false}>
         <sphereGeometry args={[2.2, 8, 8]} />
         <meshStandardMaterial
-          color="#ffffff"
-          roughness={0.7}
-          opacity={0.88}
+          color="#fef08a"
+          roughness={0.8}
+          opacity={0.82}
           transparent
         />
       </mesh>
+      {/* Sunset rosy-amber puffs */}
       <mesh position={[-1.6, -0.2, 0.3]} castShadow={false}>
         <sphereGeometry args={[1.6, 7, 7]} />
-        <meshStandardMaterial color="#f8fafc" roughness={0.7} opacity={0.88} transparent />
+        <meshStandardMaterial color="#fed7aa" roughness={0.8} opacity={0.82} transparent />
       </mesh>
       <mesh position={[1.7, -0.15, -0.3]} castShadow={false}>
         <sphereGeometry args={[1.7, 7, 7]} />
-        <meshStandardMaterial color="#f8fafc" roughness={0.7} opacity={0.88} transparent />
+        <meshStandardMaterial color="#fcd34d" roughness={0.8} opacity={0.82} transparent />
       </mesh>
       <mesh position={[0.4, 0.9, 0.1]} castShadow={false}>
         <sphereGeometry args={[1.3, 7, 7]} />
-        <meshStandardMaterial color="#ffffff" roughness={0.7} opacity={0.9} transparent />
+        <meshStandardMaterial color="#ffedd5" roughness={0.8} opacity={0.85} transparent />
       </mesh>
     </group>
   );
 }
 
 /**
- * Distant Hot Air Balloon floating gently in tropical sky (Meta World aesthetic)
- */
-function MetaAirBalloon({ position, scale = 0.8 }: { position: [number, number, number]; scale?: number }) {
-  const groupRef = useRef<THREE.Group>(null);
-  const startY = position[1];
-
-  useFrame(({ clock }) => {
-    if (!groupRef.current) return;
-    const t = clock.getElapsedTime();
-    groupRef.current.position.y = startY + Math.sin(t * 0.8 + position[0]) * 0.4;
-  });
-
-  return (
-    <group ref={groupRef} position={position} scale={[scale, scale, scale]}>
-      {/* Balloon Envelope */}
-      <mesh castShadow={false} position={[0, 1.4, 0]}>
-        <sphereGeometry args={[1.2, 16, 16]} />
-        <meshStandardMaterial color="#f59e0b" roughness={0.3} metalness={0.1} />
-      </mesh>
-      {/* Accent stripes */}
-      <mesh castShadow={false} position={[0, 1.4, 0]} scale={[1.02, 0.98, 1.02]}>
-        <cylinderGeometry args={[1.2, 1.2, 0.4, 16]} />
-        <meshStandardMaterial color="#ef4444" roughness={0.3} />
-      </mesh>
-      {/* Basket */}
-      <mesh castShadow={false} position={[0, 0.1, 0]}>
-        <boxGeometry args={[0.4, 0.3, 0.4]} />
-        <meshStandardMaterial color="#78350f" roughness={0.8} />
-      </mesh>
-    </group>
-  );
-}
-
-/**
- * 3D Tropical Island Environment with radiant Meta World studio lighting:
- * - Golden sunlight with crisp contact shadows
- * - Lush ocean turquoise bounce
- * - Deep tropical sky gradient without murky grey fog
+ * 3D Vietnamese Twilight / Golden Hour Environment:
+ * - Warm late afternoon sunset key light casting long dramatic shadows
+ * - Soft evening indigo/violet sky fill
+ * - Emerald water reflection bounce
+ * - Distant sunset horizon gradient
  */
 export function Environment3D() {
   const dirLightRef = useRef<THREE.DirectionalLight>(null);
 
   return (
-    <group name="meta-world-environment">
-      {/* Clean, distant tropical haze (Never dull grey; vivid light cyan) */}
-      <fog attach="fog" args={['#0284c7', 60, 140]} />
+    <group name="vietnam-twilight-environment">
+      {/* Warm evening dusk atmospheric haze */}
+      <fog attach="fog" args={['#1e1b4b', 65, 145]} />
 
-      {/* Radiant baseline ambient light */}
-      <ambientLight color="#ffffff" intensity={0.85} />
+      {/* Balanced baseline ambient light */}
+      <ambientLight color="#fef3c7" intensity={0.75} />
 
-      {/* Hemisphere Light: Turquoise Sky Top & Golden Sand Ground Reflection */}
+      {/* Hemisphere Light: Twilight Indigo Sky Top & Warm Clay Ground Bounce */}
       <hemisphereLight
-        color="#38bdf8"
-        groundColor="#f59e0b"
-        intensity={0.9}
+        color="#818cf8"
+        groundColor="#78350f"
+        intensity={0.85}
       />
 
-      {/* Primary Key Sunlight (Cinematic high-angle tropical sun) */}
+      {/* Primary Key Sunlight (Cinematic late-afternoon golden hour angle) */}
       <directionalLight
         ref={dirLightRef}
-        position={[-18, 30, -14]}
-        color="#fffbeb"
-        intensity={2.8}
+        position={[-16, 24, -12]}
+        color="#fbbf24"
+        intensity={2.9}
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
@@ -134,29 +103,25 @@ export function Environment3D() {
         shadow-bias={-0.0003}
       />
 
-      {/* Secondary Fill Light: Soft Warm Amber Glow on shaded faces */}
+      {/* Secondary Fill Light: Soft Twilight Lavender Glow on opposite faces */}
       <directionalLight
-        position={[16, 20, 16]}
-        color="#fed7aa"
-        intensity={1.2}
+        position={[14, 18, 14]}
+        color="#c4b5fd"
+        intensity={1.1}
       />
 
-      {/* Cyan Ocean Underglow Bounce */}
+      {/* Central Lotus Lagoon Jade Bounce Light */}
       <directionalLight
         position={[0, -10, 0]}
-        color="#06b6d4"
-        intensity={0.6}
+        color="#2dd4bf"
+        intensity={0.5}
       />
 
-      {/* High Sky Tropical Fluffy Clouds */}
-      <FluffyTropicalCloud initialPosition={[-24, 22, -18]} scale={1.4} speed={0.02} />
-      <FluffyTropicalCloud initialPosition={[26, 25, 20]} scale={1.6} speed={0.018} />
-      <FluffyTropicalCloud initialPosition={[-18, 20, 24]} scale={1.2} speed={0.022} />
-      <FluffyTropicalCloud initialPosition={[22, 23, -22]} scale={1.3} speed={0.015} />
-
-      {/* Meta World Air Balloons in distant sky */}
-      <MetaAirBalloon position={[-28, 16, -10]} scale={0.7} />
-      <MetaAirBalloon position={[30, 18, 15]} scale={0.6} />
+      {/* Sunset Twilight Clouds in high sky */}
+      <GoldenSunsetCloud initialPosition={[-24, 22, -18]} scale={1.4} speed={0.018} />
+      <GoldenSunsetCloud initialPosition={[26, 25, 20]} scale={1.6} speed={0.015} />
+      <GoldenSunsetCloud initialPosition={[-18, 20, 24]} scale={1.2} speed={0.02} />
+      <GoldenSunsetCloud initialPosition={[22, 23, -22]} scale={1.3} speed={0.014} />
     </group>
   );
 }

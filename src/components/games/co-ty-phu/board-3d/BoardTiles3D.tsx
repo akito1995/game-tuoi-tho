@@ -78,32 +78,58 @@ function formatTileName(name: string, isCorner: boolean): string {
    SPECIAL CORNER 3D PROPS (START, JAIL, FESTIVAL, POLICE)
    ========================================================================= */
 
-function StartToriiGate() {
+function VietnameseVillageGate3D() {
   return (
     <group position={[0, 0.05, 0]}>
-      {/* Stone Foundation */}
+      {/* Ancient Mossy Stone Foundation */}
       <mesh position={[0, 0.015, 0]} receiveShadow>
         <boxGeometry args={[1.9, 0.03, 1.9]} />
-        <meshStandardMaterial color="#64748b" roughness={0.9} />
+        <meshStandardMaterial color="#475569" roughness={0.92} />
       </mesh>
-      {/* Red Columns */}
+      {/* Weathered Terracotta Red Brick Pillars (Cột Trụ Gạch Cổ) */}
       <mesh position={[-0.72, 0.55, 0]} castShadow>
-        <cylinderGeometry args={[0.08, 0.1, 1.1, 8]} />
-        <meshStandardMaterial color="#dc2626" roughness={0.3} metalness={0.1} />
+        <boxGeometry args={[0.22, 1.1, 0.22]} />
+        <meshStandardMaterial color="#b45309" roughness={0.85} />
       </mesh>
       <mesh position={[0.72, 0.55, 0]} castShadow>
-        <cylinderGeometry args={[0.08, 0.1, 1.1, 8]} />
-        <meshStandardMaterial color="#dc2626" roughness={0.3} metalness={0.1} />
+        <boxGeometry args={[0.22, 1.1, 0.22]} />
+        <meshStandardMaterial color="#b45309" roughness={0.85} />
       </mesh>
-      {/* Top Crossbeam */}
-      <mesh position={[0, 1.1, 0]} castShadow>
-        <boxGeometry args={[1.95, 0.16, 0.28]} />
-        <meshStandardMaterial color="#b91c1c" roughness={0.25} />
+      {/* Stone Cap on Pillars */}
+      <mesh position={[-0.72, 1.12, 0]} castShadow>
+        <boxGeometry args={[0.28, 0.06, 0.28]} />
+        <meshStandardMaterial color="#cbd5e1" roughness={0.7} />
       </mesh>
+      <mesh position={[0.72, 1.12, 0]} castShadow>
+        <boxGeometry args={[0.28, 0.06, 0.28]} />
+        <meshStandardMaterial color="#cbd5e1" roughness={0.7} />
+      </mesh>
+      {/* Main Arch Beam */}
+      <mesh position={[0, 1.05, 0]} castShadow>
+        <boxGeometry args={[1.85, 0.18, 0.32]} />
+        <meshStandardMaterial color="#991b1b" roughness={0.4} />
+      </mesh>
+      {/* Traditional Vietnamese Curving Tiled Roof (Mái Ngói Mũi Hài Cong Cổ Kính) */}
       <mesh position={[0, 1.25, 0]} castShadow>
-        <boxGeometry args={[1.7, 0.1, 0.36]} />
-        <meshStandardMaterial color="#f59e0b" roughness={0.2} metalness={0.8} />
+        <boxGeometry args={[1.95, 0.12, 0.48]} />
+        <meshStandardMaterial color="#b91c1c" roughness={0.8} />
       </mesh>
+      {/* Golden Village Gate Signboard Crest */}
+      <group position={[0, 0.92, 0.17]}>
+        <mesh castShadow>
+          <boxGeometry args={[0.9, 0.22, 0.04]} />
+          <meshStandardMaterial color="#fbbf24" metalness={0.9} roughness={0.15} />
+        </mesh>
+      </group>
+      {/* Red Festive Silk Lanterns hanging on both sides */}
+      {[-0.72, 0.72].map((x, i) => (
+        <group key={`gate-lantern-${i}`} position={[x, 0.75, 0.18]}>
+          <mesh castShadow>
+            <sphereGeometry args={[0.075, 10, 10]} />
+            <meshStandardMaterial color="#ef4444" emissive="#dc2626" emissiveIntensity={1.2} />
+          </mesh>
+        </group>
+      ))}
     </group>
   );
 }
@@ -221,7 +247,7 @@ function FloatingLuckyWheel() {
 }
 
 function SpecialTileProp({ tileId }: { tileId: number }) {
-  if (tileId === 0) return <StartToriiGate />;
+  if (tileId === 0) return <VietnameseVillageGate3D />;
   if (tileId === 8) return <StoneCavernArch />;
   if (tileId === 16) {
     // 3D Bầu Cua Tôm Cá Festival Stage (Meta World Mini-Game Landmark)

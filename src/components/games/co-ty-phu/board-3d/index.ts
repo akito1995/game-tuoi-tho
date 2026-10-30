@@ -8,5 +8,6 @@ export * from './FloatingIsland';
 export * from './Environment3D';
 export * from './MascotPawns3D';
 export * from './Buildings3D';
+export * from './LandmarkConstructionVFX';
 export * from './Dice3D';
 export * from './BoardCanvas';
