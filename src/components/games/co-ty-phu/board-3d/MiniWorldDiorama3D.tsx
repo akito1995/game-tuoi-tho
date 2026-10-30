@@ -279,111 +279,190 @@ export function RetroTapHoaShop({ position }: { position: [number, number, numbe
   );
 }
 
+// 24 Multi-layered faceted canopy tufts with 4-tier tonal green gradation
+const BANYAN_CANOPY_TUFTS = [
+  // Tier 4: Sunlit Crest (Apex, Y: 3.7 - 4.1)
+  { pos: [0.0, 3.85, 0.0], scale: [1.15, 0.72, 1.15], col: '#4ade80' },
+  { pos: [0.35, 4.05, -0.2], scale: [0.85, 0.58, 0.85], col: '#86efac' },
+  { pos: [-0.45, 3.75, 0.3], scale: [0.9, 0.62, 0.9], col: '#22c55e' },
+  // Tier 3: Upper Canopy Umbrella (Y: 3.1 - 3.7)
+  { pos: [0.85, 3.4, 0.45], scale: [1.1, 0.75, 1.1], col: '#16a34a' },
+  { pos: [-0.95, 3.35, -0.4], scale: [1.05, 0.72, 1.05], col: '#15803d' },
+  { pos: [0.25, 3.5, -0.85], scale: [1.0, 0.7, 1.0], col: '#166534' },
+  { pos: [-0.35, 3.45, 0.8], scale: [0.95, 0.68, 0.95], col: '#16a34a' },
+  { pos: [0.95, 3.25, -0.55], scale: [0.92, 0.65, 0.92], col: '#22c55e' },
+  // Tier 2: Mid-Story Main Dome (Y: 2.5 - 3.1)
+  { pos: [1.35, 2.95, 0.2], scale: [1.15, 0.75, 1.15], col: '#15803d' },
+  { pos: [-1.4, 2.9, 0.15], scale: [1.12, 0.74, 1.12], col: '#166534' },
+  { pos: [0.15, 2.95, 1.45], scale: [1.18, 0.76, 1.18], col: '#15803d' },
+  { pos: [-0.2, 2.9, -1.4], scale: [1.1, 0.72, 1.1], col: '#14532d' },
+  { pos: [1.1, 2.8, 1.05], scale: [1.05, 0.7, 1.05], col: '#16a34a' },
+  { pos: [-1.05, 2.85, -1.05], scale: [1.02, 0.68, 1.02], col: '#166534' },
+  { pos: [1.05, 2.85, -1.1], scale: [1.0, 0.68, 1.0], col: '#15803d' },
+  { pos: [-1.15, 2.8, 1.1], scale: [0.98, 0.66, 0.98], col: '#166534' },
+  // Tier 1: Lower Eaves & Understory Shadows (Y: 2.0 - 2.5)
+  { pos: [1.65, 2.45, -0.2], scale: [0.95, 0.6, 0.95], col: '#14532d' },
+  { pos: [-1.6, 2.4, -0.3], scale: [0.92, 0.58, 0.92], col: '#0f3923' },
+  { pos: [0.35, 2.45, -1.65], scale: [0.96, 0.62, 0.96], col: '#14532d' },
+  { pos: [-0.4, 2.4, 1.6], scale: [0.94, 0.6, 0.94], col: '#14532d' },
+  { pos: [0.0, 2.25, 0.0], scale: [1.25, 0.65, 1.25], col: '#0f3923' },
+  { pos: [0.65, 2.3, 0.65], scale: [0.9, 0.56, 0.9], col: '#14532d' },
+  { pos: [-0.6, 2.25, -0.6], scale: [0.88, 0.55, 0.88], col: '#0f3923' },
+  { pos: [0.7, 2.2, -0.65], scale: [0.85, 0.55, 0.85], col: '#14532d' },
+];
+
 /**
- * 2. CỘI CÂY ĐA ĐẠI THỤ & QUÁN TRÀ ĐÁ CÓC VỈA HÈ
- * Volumetric lush organic banyan canopy with 18 naturally shaped foliage clusters,
- * gnarled winding trunk with roots wrapping around river stones, and authentic tea stall props.
+ * 2. CỘI CÂY ĐA ĐẠI THỤ, BỜ KÈ ĐÁ BẬC TAM CẤP & QUÁN TRÀ ĐÁ CÓC
+ * Sculpted multi-buttressed ancient banyan with 24 faceted tonal tufts,
+ * cascading aerial roots, terraced stone riverbank, and ancestral village shrine.
  */
 export function SidewalkTeaStall({ position }: { position: [number, number, number] }) {
-  // 18 naturally proportioned organic leaf tufts forming a majestic spreading canopy dome
-  const foliagePuffs = useMemo(() => [
-    { pos: [0, 2.7, 0], scale: [1.25, 1.1, 1.25], col: '#15803d' },
-    { pos: [0.75, 2.85, 0.4], scale: [1.05, 0.95, 1.05], col: '#16a34a' },
-    { pos: [-0.75, 2.8, -0.35], scale: [1.0, 0.9, 1.0], col: '#15803d' },
-    { pos: [0.2, 3.25, -0.2], scale: [0.95, 0.85, 0.95], col: '#22c55e' },
-    { pos: [-0.5, 2.45, 0.65], scale: [0.95, 0.85, 0.95], col: '#16a34a' },
-    { pos: [0.65, 2.35, -0.6], scale: [0.92, 0.82, 0.92], col: '#15803d' },
-    { pos: [0.1, 3.55, 0.1], scale: [0.82, 0.72, 0.82], col: '#4ade80' },
-    { pos: [-0.85, 2.2, 0.25], scale: [0.88, 0.8, 0.88], col: '#14532d' },
-    { pos: [0.95, 2.55, -0.2], scale: [0.85, 0.78, 0.85], col: '#16a34a' },
-    { pos: [-0.3, 3.05, -0.65], scale: [0.86, 0.78, 0.86], col: '#15803d' },
-    { pos: [0.55, 2.95, 0.75], scale: [0.85, 0.78, 0.85], col: '#22c55e' },
-    { pos: [-0.65, 3.05, 0.35], scale: [0.82, 0.75, 0.82], col: '#15803d' },
-  ], []);
-
   return (
     <group position={position}>
-      {/* 1. Natural Grassy Riverbank Mound */}
-      <mesh position={[0, -0.16, 0]} scale={[2.6, 0.32, 2.4]} receiveShadow>
-        <sphereGeometry args={[1, 16, 12]} />
-        <meshStandardMaterial color="#15803d" roughness={0.88} />
+      {/* 1. ARCHITECTURAL TERRACED STONE RIVERBANK (Thay thế quả cầu bán nguyệt đơn điệu) */}
+      {/* Submerged Basalt Footing at Waterline */}
+      <mesh position={[0, -0.26, 0]} receiveShadow>
+        <cylinderGeometry args={[2.7, 2.9, 0.22, 16]} />
+        <meshStandardMaterial color="#1e293b" roughness={0.92} />
       </mesh>
-      <mesh position={[0.6, -0.18, 0.5]} scale={[1.8, 0.28, 1.7]} receiveShadow>
-        <sphereGeometry args={[1, 14, 10]} />
-        <meshStandardMaterial color="#166534" roughness={0.85} />
+      {/* Tier 2 Granite Quay Revetment */}
+      <mesh position={[0, -0.12, 0]} receiveShadow castShadow>
+        <cylinderGeometry args={[2.55, 2.7, 0.18, 16]} />
+        <meshStandardMaterial color="#475569" roughness={0.85} />
       </mesh>
-      <mesh position={[-0.7, -0.18, -0.4]} scale={[1.6, 0.26, 1.5]} receiveShadow>
-        <sphereGeometry args={[1, 14, 10]} />
-        <meshStandardMaterial color="#15803d" roughness={0.85} />
+      {/* Upper Brick Terrace & Rich Topsoil */}
+      <mesh position={[0, 0.01, 0]} receiveShadow>
+        <cylinderGeometry args={[2.4, 2.55, 0.1, 16]} />
+        <meshStandardMaterial color="#15803d" roughness={0.78} />
       </mesh>
 
-      {/* Weathered River Stones around the island */}
+      {/* Weathered Granite River Boulders at Shoreline */}
       {[
-        { pos: [-1.9, -0.22, 0.6], s: 0.32 },
-        { pos: [1.8, -0.22, 0.9], s: 0.28 },
-        { pos: [2.0, -0.22, -0.6], s: 0.35 },
-        { pos: [-1.6, -0.22, -1.2], s: 0.3 },
-        { pos: [0.2, -0.22, 1.9], s: 0.26 },
+        { pos: [-2.1, -0.22, 0.7], s: 0.38, r: [0.2, 0.4, 0.1] },
+        { pos: [1.9, -0.22, 1.1], s: 0.32, r: [-0.1, 0.3, 0.2] },
+        { pos: [2.15, -0.22, -0.8], s: 0.42, r: [0.3, -0.2, 0.1] },
+        { pos: [-1.8, -0.22, -1.3], s: 0.35, r: [-0.2, -0.4, 0.3] },
+        { pos: [0.3, -0.22, 2.2], s: 0.3, r: [0.1, 0.5, -0.1] },
+        { pos: [-1.2, -0.22, 2.0], s: 0.28, r: [0.2, -0.3, 0.2] },
       ].map((rock, idx) => (
-        <mesh key={`river-rock-${idx}`} position={rock.pos as [number, number, number]} scale={[rock.s * 1.2, rock.s * 0.7, rock.s]} castShadow receiveShadow>
+        <mesh
+          key={`river-rock-${idx}`}
+          position={rock.pos as [number, number, number]}
+          rotation={rock.r as [number, number, number]}
+          scale={[rock.s * 1.25, rock.s * 0.75, rock.s]}
+          castShadow
+          receiveShadow
+        >
           <dodecahedronGeometry args={[1, 0]} />
-          <meshStandardMaterial color="#475569" roughness={0.92} />
+          <meshStandardMaterial color="#64748b" roughness={0.88} />
         </mesh>
       ))}
 
-      {/* Bat Trang Brick Paved Tea Terrace */}
+      {/* Bat Trang Herringbone Brick Paved Tea Terrace */}
       <mesh position={[0.45, 0.02, 0.3]} receiveShadow>
-        <boxGeometry args={[1.7, 0.05, 1.5]} />
-        <meshStandardMaterial color="#b45309" roughness={0.85} />
+        <boxGeometry args={[1.75, 0.04, 1.55]} />
+        <meshStandardMaterial color="#9a3412" roughness={0.82} />
       </mesh>
 
-      {/* 2. MAJESTIC ANCIENT BANYAN TREE */}
+      {/* ANCIENT VILLAGE STONE SHRINE (Miếu Thổ Thần Cổ Kính Đầu Làng) */}
+      <group position={[-1.4, 0.02, 0.65]} rotation={[0, 0.45, 0]}>
+        {/* Molded Stone Pedestal */}
+        <mesh position={[0, 0.12, 0]} castShadow receiveShadow>
+          <boxGeometry args={[0.38, 0.24, 0.38]} />
+          <meshStandardMaterial color="#64748b" roughness={0.9} />
+        </mesh>
+        {/* Arched Stone Stele */}
+        <mesh position={[0, 0.36, 0]} castShadow>
+          <boxGeometry args={[0.32, 0.32, 0.1]} />
+          <meshStandardMaterial color="#334155" roughness={0.85} />
+        </mesh>
+        <mesh position={[0, 0.52, 0]} rotation={[0, 0, Math.PI / 4]} castShadow>
+          <boxGeometry args={[0.22, 0.22, 0.11]} />
+          <meshStandardMaterial color="#475569" roughness={0.8} />
+        </mesh>
+        {/* Blue Glazed Incense Censer & Glowing Embers */}
+        <mesh position={[0, 0.26, 0.12]} castShadow>
+          <cylinderGeometry args={[0.045, 0.035, 0.06, 10]} />
+          <meshStandardMaterial color="#1e3a8a" roughness={0.4} />
+        </mesh>
+        <mesh position={[0, 0.32, 0.12]}>
+          <cylinderGeometry args={[0.004, 0.004, 0.08, 4]} />
+          <meshStandardMaterial color="#dc2626" emissive="#ef4444" emissiveIntensity={2.8} />
+        </mesh>
+        {/* Stone Guardian Dog (Chó Đá) */}
+        <mesh position={[0.28, 0.14, 0.08]} rotation={[0, -0.3, 0]} castShadow>
+          <boxGeometry args={[0.12, 0.24, 0.18]} />
+          <meshStandardMaterial color="#64748b" roughness={0.9} />
+        </mesh>
+      </group>
+
+      {/* 2. MAJESTIC ANCIENT BANYAN TREE (Cội Cây Đa Đại Thụ) */}
       <group position={[-0.65, 0, -0.5]}>
-        {/* Main Gnarled Tapered Trunk */}
-        <mesh position={[0, 1.15, 0]} rotation={[0.06, 0.12, -0.05]} castShadow>
-          <cylinderGeometry args={[0.28, 0.55, 2.3, 10]} />
-          <meshStandardMaterial color="#451a03" roughness={0.92} />
+        {/* 4 Interconnected Gnarled Buttress Trunk Pillars */}
+        <mesh position={[0, 1.15, 0]} rotation={[0.05, 0.12, -0.06]} castShadow>
+          <cylinderGeometry args={[0.32, 0.62, 2.3, 10]} />
+          <meshStandardMaterial color="#3e2723" roughness={0.92} />
         </mesh>
-        {/* Organic Forked Tree Limbs */}
-        <mesh position={[0.32, 1.85, 0.2]} rotation={[0.3, 0.4, 0.5]} castShadow>
-          <cylinderGeometry args={[0.14, 0.24, 1.25, 8]} />
-          <meshStandardMaterial color="#451a03" roughness={0.92} />
+        <mesh position={[0.22, 0.55, 0.18]} rotation={[0.15, 0.2, 0.22]} castShadow>
+          <cylinderGeometry args={[0.18, 0.35, 1.2, 8]} />
+          <meshStandardMaterial color="#3e2723" roughness={0.92} />
         </mesh>
-        <mesh position={[-0.32, 1.9, -0.2]} rotation={[-0.2, -0.3, -0.6]} castShadow>
-          <cylinderGeometry args={[0.12, 0.22, 1.15, 8]} />
-          <meshStandardMaterial color="#451a03" roughness={0.92} />
+        <mesh position={[-0.24, 0.5, -0.15]} rotation={[-0.12, -0.15, -0.25]} castShadow>
+          <cylinderGeometry args={[0.16, 0.32, 1.1, 8]} />
+          <meshStandardMaterial color="#3e2723" roughness={0.92} />
         </mesh>
-        <mesh position={[0.05, 2.05, -0.3]} rotation={[-0.45, 0.1, 0.1]} castShadow>
-          <cylinderGeometry args={[0.1, 0.18, 0.95, 8]} />
-          <meshStandardMaterial color="#451a03" roughness={0.92} />
+        <mesh position={[0.05, 0.45, -0.28]} rotation={[-0.22, 0.1, -0.1]} castShadow>
+          <cylinderGeometry args={[0.15, 0.3, 1.0, 8]} />
+          <meshStandardMaterial color="#3e2723" roughness={0.92} />
         </mesh>
 
-        {/* Slender Vertical Aerial Roots */}
+        {/* Spreading Massive Tree Limbs */}
+        <mesh position={[0.42, 1.95, 0.25]} rotation={[0.35, 0.45, 0.55]} castShadow>
+          <cylinderGeometry args={[0.15, 0.26, 1.35, 8]} />
+          <meshStandardMaterial color="#3e2723" roughness={0.92} />
+        </mesh>
+        <mesh position={[-0.38, 1.98, -0.22]} rotation={[-0.25, -0.35, -0.65]} castShadow>
+          <cylinderGeometry args={[0.13, 0.24, 1.25, 8]} />
+          <meshStandardMaterial color="#3e2723" roughness={0.92} />
+        </mesh>
+        <mesh position={[0.08, 2.15, -0.35]} rotation={[-0.5, 0.15, 0.15]} castShadow>
+          <cylinderGeometry args={[0.12, 0.2, 1.05, 8]} />
+          <meshStandardMaterial color="#3e2723" roughness={0.92} />
+        </mesh>
+
+        {/* 10 Hanging Aerial Roots Draping Down to Earth (Rễ Phụ Buông Rủ) */}
         {[
-          { pos: [0.38, 0.85, 0.22], h: 1.7, r: 0.03 },
-          { pos: [-0.35, 0.8, -0.25], h: 1.6, r: 0.028 },
-          { pos: [0.12, 0.75, -0.36], h: 1.5, r: 0.025 },
+          { pos: [0.45, 0.9, 0.26], h: 1.8, r: 0.028 },
+          { pos: [-0.42, 0.85, -0.28], h: 1.7, r: 0.026 },
+          { pos: [0.15, 0.8, -0.42], h: 1.6, r: 0.024 },
+          { pos: [-0.18, 0.75, 0.38], h: 1.5, r: 0.022 },
+          { pos: [0.65, 0.7, 0.15], h: 1.4, r: 0.02 },
+          { pos: [-0.58, 0.7, 0.05], h: 1.4, r: 0.02 },
+          { pos: [0.28, 0.65, -0.55], h: 1.3, r: 0.018 },
+          { pos: [-0.32, 0.65, -0.45], h: 1.3, r: 0.018 },
+          { pos: [0.55, 0.6, 0.45], h: 1.2, r: 0.016 },
+          { pos: [-0.48, 0.6, 0.42], h: 1.2, r: 0.016 },
         ].map((root, i) => (
           <mesh key={`aerial-root-${i}`} position={root.pos as [number, number, number]} castShadow>
-            <cylinderGeometry args={[root.r, root.r * 1.25, root.h, 6]} />
-            <meshStandardMaterial color="#3b1d07" roughness={0.95} />
+            <cylinderGeometry args={[root.r, root.r * 1.3, root.h, 6]} />
+            <meshStandardMaterial color="#271c19" roughness={0.95} />
           </mesh>
         ))}
 
-        {/* 18 Volumetric Leaf Puffs Formed into a Magnificent Canopy */}
-        {foliagePuffs.map((puff, i) => (
+        {/* 24 Faceted Multi-Tiered Tonal Foliage Clusters (Faceted Gemstone-like Clouds) */}
+        {BANYAN_CANOPY_TUFTS.map((puff, i) => (
           <mesh
-            key={`puff-${i}`}
+            key={`banyan-tuft-${i}`}
             position={puff.pos as [number, number, number]}
             scale={puff.scale as [number, number, number]}
             castShadow
           >
-            <dodecahedronGeometry args={[1, 1]} />
-            <meshStandardMaterial color={puff.col} roughness={0.78} />
+            <dodecahedronGeometry args={[1, 0]} />
+            <meshStandardMaterial color={puff.col} roughness={0.75} metalness={0.05} />
           </mesh>
         ))}
 
-        {/* Glowing Red Silk Lanterns */}
+        {/* Glowing Red Silk Lanterns Hanging from Branches */}
         <group position={[0.55, 1.65, 0.35]}>
           <mesh position={[0, 0.08, 0]}>
             <cylinderGeometry args={[0.005, 0.005, 0.16, 4]} />
@@ -391,9 +470,9 @@ export function SidewalkTeaStall({ position }: { position: [number, number, numb
           </mesh>
           <mesh castShadow>
             <sphereGeometry args={[0.1, 10, 10]} />
-            <meshStandardMaterial color="#dc2626" emissive="#b91c1c" emissiveIntensity={1.3} />
+            <meshStandardMaterial color="#dc2626" emissive="#b91c1c" emissiveIntensity={1.5} />
           </mesh>
-          <pointLight color="#ef4444" intensity={1.4} distance={3.5} />
+          <pointLight color="#ef4444" intensity={1.5} distance={3.8} />
         </group>
         <group position={[-0.45, 1.75, 0.18]}>
           <mesh position={[0, 0.08, 0]}>
@@ -402,20 +481,20 @@ export function SidewalkTeaStall({ position }: { position: [number, number, numb
           </mesh>
           <mesh castShadow>
             <sphereGeometry args={[0.09, 10, 10]} />
-            <meshStandardMaterial color="#f59e0b" emissive="#d97706" emissiveIntensity={1.3} />
+            <meshStandardMaterial color="#f59e0b" emissive="#d97706" emissiveIntensity={1.5} />
           </mesh>
-          <pointLight color="#f59e0b" intensity={1.1} distance={3.0} />
+          <pointLight color="#f59e0b" intensity={1.2} distance={3.2} />
         </group>
       </group>
 
-      {/* 3. SIDEWALK TEA STALL PROPS */}
+      {/* 3. SIDEWALK TEA STALL PROPS (Quán Trà Đá Vỉa Hè) */}
       <group position={[0.5, 0.16, 0.28]}>
         <mesh castShadow receiveShadow>
-          <boxGeometry args={[0.85, 0.06, 0.6]} />
+          <boxGeometry args={[0.88, 0.06, 0.62]} />
           <meshStandardMaterial color="#78350f" roughness={0.85} />
         </mesh>
-        {[-0.36, 0.36].map((x) =>
-          [-0.24, 0.24].map((z) => (
+        {[-0.38, 0.38].map((x) =>
+          [-0.25, 0.25].map((z) => (
             <mesh key={`leg-${x}-${z}`} position={[x, -0.1, z]} castShadow>
               <cylinderGeometry args={[0.026, 0.026, 0.2, 6]} />
               <meshStandardMaterial color="#451a03" roughness={0.9} />
@@ -423,6 +502,7 @@ export function SidewalkTeaStall({ position }: { position: [number, number, numb
           ))
         )}
 
+        {/* Porcelain Teapot wrapped in insulated cloth */}
         <mesh position={[-0.2, 0.14, 0]} castShadow>
           <cylinderGeometry args={[0.095, 0.115, 0.22, 12]} />
           <meshStandardMaterial color="#f8fafc" roughness={0.5} />
@@ -432,24 +512,7 @@ export function SidewalkTeaStall({ position }: { position: [number, number, numb
           <meshStandardMaterial color="#e11d48" roughness={0.7} />
         </mesh>
 
-        <mesh position={[-0.2, 0.15, 0.2]} castShadow>
-          <cylinderGeometry args={[0.065, 0.07, 0.26, 12]} />
-          <meshStandardMaterial color="#ef4444" roughness={0.4} />
-        </mesh>
-        <mesh position={[-0.2, 0.29, 0.2]}>
-          <cylinderGeometry args={[0.04, 0.04, 0.05, 8]} />
-          <meshStandardMaterial color="#cbd5e1" metalness={0.8} />
-        </mesh>
-
-        <mesh position={[0.12, 0.06, -0.12]} castShadow>
-          <cylinderGeometry args={[0.04, 0.028, 0.055, 8]} />
-          <meshStandardMaterial color="#d97706" roughness={0.8} />
-        </mesh>
-        <mesh position={[0.24, 0.06, 0.05]} castShadow>
-          <cylinderGeometry args={[0.04, 0.028, 0.055, 8]} />
-          <meshStandardMaterial color="#d97706" roughness={0.8} />
-        </mesh>
-
+        {/* Traditional Bamboo Water Pipe (Điếu Cày Tre) */}
         <group position={[0.16, 0.2, 0.26]} rotation={[0.4, 0.3, -0.8]}>
           <mesh castShadow>
             <cylinderGeometry args={[0.025, 0.028, 0.62, 8]} />
@@ -462,6 +525,7 @@ export function SidewalkTeaStall({ position }: { position: [number, number, numb
         </group>
       </group>
 
+      {/* Classic Phượng Hoàng Bicycle leaning against wall */}
       <group position={[-0.1, 0.2, -0.45]}>
         <mesh castShadow>
           <cylinderGeometry args={[0.22, 0.16, 0.38, 12]} />
@@ -473,6 +537,7 @@ export function SidewalkTeaStall({ position }: { position: [number, number, numb
         </mesh>
       </group>
 
+      {/* Retro Red, Blue & Yellow Plastic Stools with Conical Hat */}
       <group position={[1.05, 0.08, 0.28]}>
         <mesh castShadow receiveShadow>
           <boxGeometry args={[0.26, 0.035, 0.26]} />
@@ -499,6 +564,7 @@ export function SidewalkTeaStall({ position }: { position: [number, number, numb
         </mesh>
       </group>
 
+      {/* Wooden Signboard */}
       <group position={[1.15, 0.24, -0.35]} rotation={[0, -0.4, 0]}>
         <mesh castShadow>
           <boxGeometry args={[0.52, 0.42, 0.03]} />
@@ -592,7 +658,108 @@ export function VintageUtilityPole({ position }: { position: [number, number, nu
 }
 
 /**
- * 4. CẦU ĐÁ VÒM CỔ KÍNH, BẾN CẦU TÀU GỖ & ĐẦM SEN BÁCH DIỆP
+ * Animated Swimming Koi Fish School (Đàn Cá Koi Kohaku & Yamabuki Lượn Dưới Nước)
+ */
+function AnimatedKoiSchool() {
+  const schoolRef = useRef<THREE.Group>(null);
+  const fishRefs = useRef<(THREE.Group | null)[]>([]);
+
+  const fishData = useMemo(
+    () => [
+      { radiusX: 1.6, radiusZ: 1.1, speed: 0.55, phase: 0.0, type: 'KOHAKU' },
+      { radiusX: 1.35, radiusZ: 1.25, speed: 0.62, phase: 1.8, type: 'YAMABUKI' },
+      { radiusX: 1.85, radiusZ: 0.95, speed: 0.48, phase: 3.5, type: 'KOHAKU' },
+      { radiusX: 1.15, radiusZ: 1.45, speed: 0.58, phase: 4.8, type: 'TANCHO' },
+      { radiusX: 1.65, radiusZ: 1.2, speed: 0.52, phase: 2.6, type: 'YAMABUKI' },
+    ],
+    []
+  );
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    fishData.forEach((fish, i) => {
+      const g = fishRefs.current[i];
+      if (!g) return;
+
+      const angle = t * fish.speed + fish.phase;
+      const x = Math.cos(angle) * fish.radiusX;
+      const z = Math.sin(angle) * fish.radiusZ;
+      const y = -0.34 + Math.sin(t * 2.0 + fish.phase) * 0.012;
+
+      g.position.set(x, y, z);
+
+      // Tangent heading orientation
+      const dx = -Math.sin(angle) * fish.radiusX;
+      const dz = Math.cos(angle) * fish.radiusZ;
+      g.rotation.y = -Math.atan2(dz, dx) + Math.PI / 2;
+
+      // Caudal tail fin sinewave waggle
+      const tailMesh = g.children.find((c) => c.name === 'tail');
+      if (tailMesh) {
+        tailMesh.rotation.y = Math.sin(t * 8.5 + fish.phase) * 0.45;
+      }
+    });
+  });
+
+  return (
+    <group ref={schoolRef}>
+      {fishData.map((fish, i) => (
+        <group
+          key={`koi-${i}`}
+          ref={(el) => {
+            fishRefs.current[i] = el;
+          }}
+        >
+          {/* Streamlined Fusiform Body */}
+          <mesh castShadow scale={[0.075, 0.055, 0.22]}>
+            <sphereGeometry args={[1, 10, 10]} />
+            <meshStandardMaterial
+              color={fish.type === 'YAMABUKI' ? '#f59e0b' : '#ffffff'}
+              metalness={fish.type === 'YAMABUKI' ? 0.65 : 0.1}
+              roughness={0.25}
+            />
+          </mesh>
+
+          {/* Crimson Markings for Kohaku & Tancho */}
+          {fish.type !== 'YAMABUKI' && (
+            <mesh position={[0, 0.02, 0.04]} scale={[0.07, 0.04, 0.09]}>
+              <sphereGeometry args={[1, 8, 8]} />
+              <meshStandardMaterial color="#dc2626" roughness={0.3} />
+            </mesh>
+          )}
+
+          {/* Caudal Tail Fin with Animated Waggle */}
+          <group name="tail" position={[0, 0, -0.2]}>
+            <mesh rotation={[0, 0, Math.PI / 2]}>
+              <coneGeometry args={[0.065, 0.12, 3]} />
+              <meshBasicMaterial
+                color={fish.type === 'YAMABUKI' ? '#fed7aa' : '#fecaca'}
+                transparent
+                opacity={0.8}
+                side={THREE.DoubleSide}
+              />
+            </mesh>
+          </group>
+
+          {/* Gossamer Pectoral Fins */}
+          {[-0.06, 0.06].map((fx, fi) => (
+            <mesh
+              key={`fin-${fi}`}
+              position={[fx, -0.01, 0.06]}
+              rotation={[0.2, fi === 0 ? 0.6 : -0.6, fi === 0 ? -0.3 : 0.3]}
+            >
+              <planeGeometry args={[0.045, 0.08]} />
+              <meshBasicMaterial color="#ffffff" transparent opacity={0.7} side={THREE.DoubleSide} />
+            </mesh>
+          ))}
+        </group>
+      ))}
+    </group>
+  );
+}
+
+/**
+ * 4. CẦU ĐÁ VÒM CỔ KÍNH, BẾN CẦU TÀU GỖ, THUYỀN TAM BẢN HỘI AN & ĐẦM SEN BÁCH DIỆP
  */
 export function AncientBridgeAndLotusLagoon({ position }: { position: [number, number, number] }) {
   const boatRef = useRef<THREE.Group>(null);
@@ -601,37 +768,46 @@ export function AncientBridgeAndLotusLagoon({ position }: { position: [number, n
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
     if (boatRef.current) {
-      boatRef.current.position.y = -0.32 + Math.sin(t * 1.4) * 0.018;
-      boatRef.current.rotation.z = Math.sin(t * 1.1) * 0.025;
-      boatRef.current.rotation.x = Math.sin(t * 0.9) * 0.015;
+      boatRef.current.position.y = -0.32 + Math.sin(t * 1.4) * 0.015;
+      boatRef.current.rotation.z = Math.sin(t * 1.1) * 0.022;
+      boatRef.current.rotation.x = Math.sin(t * 0.9) * 0.014;
     }
     if (lanternRef.current) {
-      lanternRef.current.rotation.z = Math.sin(t * 2.0) * 0.12;
+      lanternRef.current.rotation.z = Math.sin(t * 2.2) * 0.18;
     }
   });
 
-  const lotusPads = useMemo(() => [
-    { pos: [-1.4, -0.31, 0.5], r: 0.52 },
-    { pos: [-0.8, -0.31, -0.8], r: 0.44 },
-    { pos: [0.6, -0.31, -1.2], r: 0.58 },
-    { pos: [1.8, -0.31, -0.5], r: 0.48 },
-    { pos: [1.1, -0.31, 1.3], r: 0.54 },
-    { pos: [-1.8, -0.31, -0.3], r: 0.42 },
-    { pos: [-0.3, -0.31, 1.1], r: 0.38 },
-    { pos: [1.5, -0.31, 0.7], r: 0.46 },
-    { pos: [-1.1, -0.31, 1.5], r: 0.45 },
-    { pos: [0.3, -0.31, -1.6], r: 0.4 },
-  ], []);
+  const lotusPads = useMemo(
+    () => [
+      { pos: [-1.4, -0.31, 0.5], r: 0.52 },
+      { pos: [-0.8, -0.31, -0.8], r: 0.44 },
+      { pos: [0.6, -0.31, -1.2], r: 0.58 },
+      { pos: [1.8, -0.31, -0.5], r: 0.48 },
+      { pos: [1.1, -0.31, 1.3], r: 0.54 },
+      { pos: [-1.8, -0.31, -0.3], r: 0.42 },
+      { pos: [-0.3, -0.31, 1.1], r: 0.38 },
+      { pos: [1.5, -0.31, 0.7], r: 0.46 },
+      { pos: [-1.1, -0.31, 1.5], r: 0.45 },
+      { pos: [0.3, -0.31, -1.6], r: 0.4 },
+    ],
+    []
+  );
 
-  const reedClusters = useMemo(() => [
-    { pos: [-2.0, -0.15, 0.2] },
-    { pos: [1.7, -0.15, -1.0] },
-    { pos: [0.9, -0.15, 1.7] },
-    { pos: [-0.7, -0.15, -1.6] },
-  ], []);
+  const reedClusters = useMemo(
+    () => [
+      { pos: [-2.0, -0.15, 0.2] },
+      { pos: [1.7, -0.15, -1.0] },
+      { pos: [0.9, -0.15, 1.7] },
+      { pos: [-0.7, -0.15, -1.6] },
+    ],
+    []
+  );
 
   return (
     <group position={position}>
+      {/* 0. ANIMATED KOI FISH SCHOOL SWIMMING IN LAGOON */}
+      <AnimatedKoiSchool />
+
       {/* A. GRACEFUL LOW-ARCHED STONE BRIDGE */}
       <group position={[0, -0.1, 0]} rotation={[0, 0.25, 0]}>
         <mesh position={[0, 0.06, 0]} receiveShadow castShadow>
@@ -702,86 +878,131 @@ export function AncientBridgeAndLotusLagoon({ position }: { position: [number, n
         </mesh>
       </group>
 
-      {/* C. DETAILED WOODEN SAMPAN BOAT WITH LOTUS CARGO */}
+      {/* C. SCULPTED AUTHENTIC HOI AN SAMPAN BOAT WITH WOVEN BAMBOO CANOPY */}
       <group ref={boatRef} position={[1.65, -0.32, 0.85]} rotation={[0, 0.65, 0]}>
-        <mesh castShadow receiveShadow>
-          <boxGeometry args={[1.7, 0.22, 0.58]} />
-          <meshStandardMaterial color="#78350f" roughness={0.8} />
+        {/* Tiered Flared Teak Hull */}
+        <mesh castShadow receiveShadow position={[0, 0, 0]}>
+          <boxGeometry args={[1.85, 0.16, 0.62]} />
+          <meshStandardMaterial color="#78350f" roughness={0.82} />
         </mesh>
-        <mesh position={[0.92, 0.06, 0]} rotation={[0, 0, -Math.PI / 2]} castShadow>
-          <coneGeometry args={[0.29, 0.52, 4]} />
-          <meshStandardMaterial color="#78350f" roughness={0.8} />
+        {/* Upswept Bow Prow */}
+        <mesh position={[0.98, 0.08, 0]} rotation={[0, 0, -0.35]} castShadow>
+          <boxGeometry args={[0.42, 0.18, 0.52]} />
+          <meshStandardMaterial color="#78350f" roughness={0.82} />
         </mesh>
-        <mesh position={[-0.92, 0.06, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
-          <coneGeometry args={[0.26, 0.45, 4]} />
-          <meshStandardMaterial color="#78350f" roughness={0.8} />
-        </mesh>
-
-        <mesh position={[-0.15, 0.24, 0]} castShadow>
-          <cylinderGeometry args={[0.32, 0.32, 0.75, 12, 1, false, 0, Math.PI]} />
-          <meshStandardMaterial color="#ca8a04" roughness={0.85} side={THREE.DoubleSide} />
+        {/* Upswept Stern Transom */}
+        <mesh position={[-0.98, 0.08, 0]} rotation={[0, 0, 0.35]} castShadow>
+          <boxGeometry args={[0.38, 0.18, 0.52]} />
+          <meshStandardMaterial color="#78350f" roughness={0.82} />
         </mesh>
 
-        <mesh position={[-0.7, 0.24, -0.28]} rotation={[0.4, 0.5, 0.6]} castShadow>
-          <cylinderGeometry args={[0.016, 0.016, 1.25, 6]} />
+        {/* Mắt Thuyền (Dragon Eye Talisman on Port & Starboard Bow) */}
+        {[-0.27, 0.27].map((z, side) => (
+          <group key={`boat-eye-${side}`} position={[1.05, 0.1, z]} rotation={[0, side === 0 ? -Math.PI / 2 : Math.PI / 2, 0]}>
+            <mesh>
+              <circleGeometry args={[0.035, 12]} />
+              <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
+            </mesh>
+            <mesh position={[0, 0, 0.001]}>
+              <circleGeometry args={[0.018, 10]} />
+              <meshBasicMaterial color="#000000" side={THREE.DoubleSide} />
+            </mesh>
+          </group>
+        ))}
+
+        {/* Arched Woven Bamboo Cane Canopy (Mui Tre Đan Nan) */}
+        <mesh position={[-0.08, 0.22, 0]} castShadow>
+          <cylinderGeometry args={[0.32, 0.32, 0.82, 16, 1, false, 0, Math.PI]} />
+          <meshStandardMaterial color="#d97706" roughness={0.88} side={THREE.DoubleSide} />
+        </mesh>
+        {/* Bamboo Binding Hoops */}
+        {[-0.35, -0.08, 0.2].map((bx, bi) => (
+          <mesh key={`bamboo-hoop-${bi}`} position={[bx, 0.22, 0]} rotation={[0, 0, Math.PI / 2]}>
+            <torusGeometry args={[0.325, 0.012, 6, 16, Math.PI]} />
+            <meshStandardMaterial color="#78350f" roughness={0.9} />
+          </mesh>
+        ))}
+
+        {/* Long Wooden Sculling Oar (Mái Chèo Gỗ) */}
+        <mesh position={[-0.75, 0.24, -0.32]} rotation={[0.4, 0.5, 0.6]} castShadow>
+          <cylinderGeometry args={[0.014, 0.014, 1.35, 6]} />
           <meshStandardMaterial color="#ca8a04" roughness={0.7} />
         </mesh>
 
-        {[-0.35, 0.05, 0.45].map((x, i) => (
-          <group key={`boat-lotus-${i}`} position={[x, 0.18, i % 2 === 0 ? 0.08 : -0.08]}>
+        {/* Ceramic Urns brimming with Fresh Lotus Blossoms */}
+        {[-0.32, 0.05, 0.42].map((x, i) => (
+          <group key={`boat-lotus-${i}`} position={[x, 0.16, i % 2 === 0 ? 0.08 : -0.08]}>
             <mesh position={[0, -0.04, 0]} castShadow>
-              <cylinderGeometry args={[0.14, 0.11, 0.1, 10]} />
-              <meshStandardMaterial color="#b45309" roughness={0.9} />
+              <cylinderGeometry args={[0.13, 0.1, 0.1, 10]} />
+              <meshStandardMaterial color="#9a3412" roughness={0.85} />
             </mesh>
+            {/* Blooming Lotus Cargo */}
             <mesh position={[0, 0.04, 0]} castShadow>
-              <sphereGeometry args={[0.11, 8, 8]} />
+              <sphereGeometry args={[0.1, 8, 8]} />
               <meshStandardMaterial color="#f472b6" emissive="#db2777" emissiveIntensity={0.6} />
             </mesh>
           </group>
         ))}
 
-        <group ref={lanternRef} position={[0.75, 0.28, 0]}>
+        {/* Swinging Bow Silk Lantern with Physics and Amber Point Light */}
+        <group ref={lanternRef} position={[0.95, 0.32, 0]}>
+          <mesh position={[-0.12, -0.08, 0]} rotation={[0, 0, -0.45]}>
+            <cylinderGeometry args={[0.01, 0.01, 0.35, 4]} />
+            <meshStandardMaterial color="#78350f" />
+          </mesh>
           <mesh position={[0, 0.06, 0]}>
             <cylinderGeometry args={[0.005, 0.005, 0.12, 4]} />
             <meshBasicMaterial color="#1e293b" />
           </mesh>
           <mesh castShadow>
-            <sphereGeometry args={[0.065, 8, 8]} />
-            <meshStandardMaterial color="#fef08a" emissive="#f59e0b" emissiveIntensity={1.8} />
+            <sphereGeometry args={[0.075, 8, 8]} />
+            <meshStandardMaterial color="#fef08a" emissive="#f59e0b" emissiveIntensity={2.8} />
           </mesh>
-          <pointLight color="#f59e0b" intensity={0.8} distance={2.5} />
+          <pointLight color="#f59e0b" intensity={1.8} distance={3.8} />
         </group>
       </group>
 
-      {/* D. LUSH FLOATING LOTUS PADS WITH BLOOMING FLOWERS */}
+      {/* D. 3D CUPPED LOTUS PADS WITH RADIAL VEINS & BLOOMING BLOSSOMS */}
       {lotusPads.map((pad, idx) => (
         <group key={`pad-${idx}`} position={pad.pos as [number, number, number]}>
-          <mesh rotation={[-Math.PI / 2, 0, idx * 0.75]}>
-            <circleGeometry args={[pad.r, 18]} />
-            <meshStandardMaterial color="#15803d" roughness={0.65} side={THREE.DoubleSide} />
+          {/* 3D Cupped Lotus Pad with 16° V-Notch Cutout */}
+          <mesh rotation={[-Math.PI / 2, 0, idx * 0.75 + 0.2]}>
+            <cylinderGeometry args={[pad.r, pad.r * 0.94, 0.03, 24, 1, false, 0.28, Math.PI * 1.91]} />
+            <meshPhysicalMaterial color="#15803d" roughness={0.5} clearcoat={0.5} />
           </mesh>
-          <mesh position={[0, 0.002, 0]} rotation={[-Math.PI / 2, 0, idx * 0.75]}>
-            <ringGeometry args={[0.05, pad.r * 0.7, 12]} />
-            <meshBasicMaterial color="#16a34a" transparent opacity={0.4} side={THREE.DoubleSide} />
+          {/* Radial Leaf Vein Ring */}
+          <mesh position={[0, 0.018, 0]} rotation={[-Math.PI / 2, 0, idx * 0.75 + 0.2]}>
+            <ringGeometry args={[0.04, pad.r * 0.75, 12]} />
+            <meshBasicMaterial color="#4ade80" transparent opacity={0.35} side={THREE.DoubleSide} />
+          </mesh>
+          {/* Glassy Water Bead Droplet on Leaf Center */}
+          <mesh position={[0.04, 0.025, 0.02]}>
+            <sphereGeometry args={[0.022, 8, 8]} />
+            <meshPhysicalMaterial color="#ffffff" roughness={0.05} transmission={0.9} ior={1.33} />
           </mesh>
 
+          {/* 3D Sculpted Multi-Tiered Pink Lotus Blossom (Hoa Sen Bách Diệp) */}
           {idx % 2 === 0 && (
             <group position={[0, 0.08, 0]}>
+              {/* Flared Outer Petals */}
               <mesh castShadow>
-                <sphereGeometry args={[0.1, 10, 10]} />
-                <meshStandardMaterial color="#f472b6" emissive="#db2777" emissiveIntensity={0.5} roughness={0.4} />
+                <sphereGeometry args={[0.11, 10, 10, 0, Math.PI * 2, 0, Math.PI * 0.65]} />
+                <meshStandardMaterial color="#ec4899" emissive="#be185d" emissiveIntensity={0.6} roughness={0.4} />
               </mesh>
-              <mesh position={[0, 0.04, 0]}>
-                <sphereGeometry args={[0.085, 8, 8]} />
-                <meshStandardMaterial color="#fdf2f8" roughness={0.4} />
+              {/* Inner Blush-Pink Petals */}
+              <mesh position={[0, 0.03, 0]}>
+                <sphereGeometry args={[0.085, 8, 8, 0, Math.PI * 2, 0, Math.PI * 0.6]} />
+                <meshStandardMaterial color="#fdf2f8" roughness={0.35} />
               </mesh>
-              <mesh position={[0, 0.075, 0]}>
-                <cylinderGeometry args={[0.035, 0.02, 0.04, 8]} />
-                <meshStandardMaterial color="#facc15" />
+              {/* Golden Seed Pod Core & Stamen Fringe */}
+              <mesh position={[0, 0.065, 0]}>
+                <cylinderGeometry args={[0.04, 0.025, 0.04, 8]} />
+                <meshStandardMaterial color="#eab308" emissive="#ca8a04" emissiveIntensity={0.4} />
               </mesh>
             </group>
           )}
 
+          {/* Slender Lotus Flower Bud on Rising Stem */}
           {idx % 3 === 1 && (
             <group position={[pad.r * 0.4, 0.12, pad.r * 0.3]}>
               <mesh castShadow>
@@ -789,8 +1010,8 @@ export function AncientBridgeAndLotusLagoon({ position }: { position: [number, n
                 <meshStandardMaterial color="#166534" />
               </mesh>
               <mesh position={[0, 0.12, 0]} castShadow>
-                <coneGeometry args={[0.045, 0.11, 8]} />
-                <meshStandardMaterial color="#ec4899" emissive="#be185d" emissiveIntensity={0.4} />
+                <coneGeometry args={[0.048, 0.12, 8]} />
+                <meshStandardMaterial color="#ec4899" emissive="#be185d" emissiveIntensity={0.5} />
               </mesh>
             </group>
           )}
