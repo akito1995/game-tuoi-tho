@@ -153,6 +153,7 @@ export function TropicalOceanWater() {
 
 /**
  * Distant Karst Limestone Mountain Peak (Vịnh Hạ Long Peak) on horizon
+ * Multi-tiered faceted limestone cliffs with vertical rock fissures and lush jungle caps.
  */
 export function DistantIslandAtoll({
   position,
@@ -162,21 +163,30 @@ export function DistantIslandAtoll({
   scale?: number;
 }) {
   return (
-    <group position={position} scale={[scale, scale, scale]}>
-      {/* Towering Karst Pillar */}
-      <mesh position={[0, 3.5, 0]} castShadow>
-        <coneGeometry args={[2.8, 7.5, 8]} />
-        <meshStandardMaterial color="#334155" roughness={0.92} />
+    <group position={[position[0], position[1] - 1.2, position[2]]} scale={[scale, scale, scale]}>
+      {/* Main Karst Limestone Pillar Tower */}
+      <mesh position={[0, 2.8, 0]} castShadow>
+        <cylinderGeometry args={[1.8, 3.4, 5.8, 7]} />
+        <meshStandardMaterial color="#334155" roughness={0.94} />
       </mesh>
-      {/* Dense Tropical Jungle Cap */}
-      <mesh position={[0, 4.2, 0]} castShadow>
-        <coneGeometry args={[2.4, 5.0, 8]} />
+      {/* Secondary Cliff Shoulder Crag */}
+      <mesh position={[1.4, 1.8, 0.4]} rotation={[0.1, 0.4, -0.1]} castShadow>
+        <cylinderGeometry args={[1.1, 2.0, 4.2, 6]} />
+        <meshStandardMaterial color="#475569" roughness={0.92} />
+      </mesh>
+      {/* Weathered Undercut Sea-Notch Base */}
+      <mesh position={[0, 0.3, 0]} castShadow>
+        <cylinderGeometry args={[3.2, 3.6, 1.0, 8]} />
+        <meshStandardMaterial color="#1e293b" roughness={0.96} />
+      </mesh>
+      {/* Crown of Dense Tropical Jungle */}
+      <mesh position={[0, 5.4, 0]} scale={[1.2, 0.8, 1.2]} castShadow>
+        <dodecahedronGeometry args={[2.0, 1]} />
         <meshStandardMaterial color="#14532d" roughness={0.85} />
       </mesh>
-      {/* Mountain Base River Rocks */}
-      <mesh position={[0, 0.4, 0]} castShadow>
-        <cylinderGeometry args={[3.2, 4.2, 1.2, 10]} />
-        <meshStandardMaterial color="#1e293b" roughness={0.95} />
+      <mesh position={[1.2, 3.8, 0.3]} scale={[0.9, 0.6, 0.9]} castShadow>
+        <dodecahedronGeometry args={[1.5, 1]} />
+        <meshStandardMaterial color="#15803d" roughness={0.85} />
       </mesh>
     </group>
   );
@@ -205,9 +215,13 @@ export function BeachPalmTree({ position, scale = 0.9 }: { position: [number, nu
 }
 
 /**
- * Traditional Vietnamese Wooden River Junk / Sampan Cruising in surrounding waters
- * Features a planked mahogany hull, arched bamboo mat cabin, mast with sail,
- * stern lantern, and water wake.
+ * Luxury River Cruise Yacht (Du Thuyền Sang Trọng Vịnh Hạ Long / Meta World Style)
+ * Meticulously modeled multi-deck luxury cruiser:
+ * - Sleek aerodynamic raked hull with navy waterline stripe
+ * - Panoramic tinted salon windows with sky reflection
+ * - Flybridge upper sun-deck with radar arch, antennas, and navigation bridge
+ * - Teak aft cockpit with lounge seating and swim platform
+ * - Stainless steel bow railings and realistic foaming V-wake
  */
 export function CruisingYacht({ initialRadius = 16, speed = 0.1 }: { initialRadius?: number; speed?: number }) {
   const groupRef = useRef<THREE.Group>(null);
@@ -218,62 +232,131 @@ export function CruisingYacht({ initialRadius = 16, speed = 0.1 }: { initialRadi
     angleRef.current += speed * delta * 0.18;
     const x = Math.cos(angleRef.current) * initialRadius;
     const z = Math.sin(angleRef.current) * initialRadius;
-    groupRef.current.position.set(x, -0.48 + Math.sin(angleRef.current * 8) * 0.015, z);
+    groupRef.current.position.set(x, -0.52 + Math.sin(angleRef.current * 8) * 0.012, z);
     groupRef.current.rotation.y = -angleRef.current + Math.PI;
-    groupRef.current.rotation.z = Math.sin(angleRef.current * 6) * 0.03;
+    groupRef.current.rotation.z = Math.sin(angleRef.current * 6) * 0.025;
   });
 
   return (
     <group ref={groupRef}>
-      {/* 1. Main Planked Wooden Hull */}
-      <mesh position={[0, 0.12, 0]} castShadow receiveShadow>
-        <boxGeometry args={[0.55, 0.22, 1.8]} />
-        <meshStandardMaterial color="#5c290a" roughness={0.82} />
-      </mesh>
-      {/* Curved Pointed Prow (Mũi Thuyền) */}
-      <mesh position={[0, 0.18, 0.95]} rotation={[0.4, 0, 0]} castShadow>
-        <boxGeometry args={[0.48, 0.22, 0.45]} />
-        <meshStandardMaterial color="#78350f" roughness={0.8} />
-      </mesh>
-      {/* Pointed Stem Post */}
-      <mesh position={[0, 0.32, 1.15]} rotation={[0.2, 0, 0]} castShadow>
-        <boxGeometry args={[0.08, 0.35, 0.08]} />
-        <meshStandardMaterial color="#b45309" roughness={0.7} />
+      {/* 1. LOWER HULL & WATERLINE STRIPE (Thân tàu dưới nước) */}
+      {/* Navy Waterline Keel */}
+      <mesh position={[0, 0.06, 0]} castShadow receiveShadow>
+        <boxGeometry args={[0.62, 0.12, 2.4]} />
+        <meshStandardMaterial color="#0f172a" roughness={0.3} metalness={0.2} />
       </mesh>
 
-      {/* 2. Arched Woven Bamboo Mat Cabin Shelter (Mui Thuyền Nan) */}
-      <mesh position={[0, 0.32, -0.15]} castShadow>
-        <cylinderGeometry args={[0.3, 0.3, 0.85, 12, 1, false, 0, Math.PI]} />
-        <meshStandardMaterial color="#ca8a04" roughness={0.85} side={THREE.DoubleSide} />
+      {/* 2. MAIN TOPSIDE HULL (Thân vỏ trắng ngọc trai khí động học) */}
+      <mesh position={[0, 0.2, 0]} castShadow receiveShadow>
+        <boxGeometry args={[0.68, 0.18, 2.35]} />
+        <meshStandardMaterial color="#f8fafc" roughness={0.25} metalness={0.15} />
       </mesh>
 
-      {/* 3. Bamboo Mast & Traditional Ochre Tan Sail */}
-      <mesh position={[0, 0.65, 0.42]} castShadow>
-        <cylinderGeometry args={[0.02, 0.025, 0.95, 6]} />
-        <meshStandardMaterial color="#ca8a04" roughness={0.7} />
-      </mesh>
-      <mesh position={[0, 0.72, 0.28]} rotation={[0, 0.1, 0.05]} castShadow>
-        <boxGeometry args={[0.02, 0.7, 0.38]} />
-        <meshStandardMaterial color="#d97706" roughness={0.9} />
+      {/* Raked Pointed Bow (Mũi tàu vát nhọn lướt sóng) */}
+      <mesh position={[0, 0.22, 1.35]} rotation={[0.45, 0, 0]} castShadow>
+        <coneGeometry args={[0.38, 0.85, 4]} />
+        <meshStandardMaterial color="#f8fafc" roughness={0.25} metalness={0.15} />
       </mesh>
 
-      {/* 4. Stern Red Paper Lantern */}
-      <group position={[0, 0.35, -0.92]}>
-        <mesh position={[0, 0.06, 0]}>
-          <cylinderGeometry args={[0.005, 0.005, 0.12, 4]} />
-          <meshBasicMaterial color="#1e293b" />
-        </mesh>
+      {/* Polished Teak Foredeck (Sàn gỗ Teak mũi tàu) */}
+      <mesh position={[0, 0.3, 0.85]} receiveShadow>
+        <boxGeometry args={[0.55, 0.02, 0.9]} />
+        <meshStandardMaterial color="#78350f" roughness={0.65} />
+      </mesh>
+
+      {/* Stainless Steel Bow Railing (Lan can inox sáng bóng) */}
+      <group position={[0, 0.42, 1.1]}>
         <mesh castShadow>
-          <sphereGeometry args={[0.07, 8, 8]} />
-          <meshStandardMaterial color="#dc2626" emissive="#b91c1c" emissiveIntensity={1.2} />
+          <boxGeometry args={[0.5, 0.02, 0.02]} />
+          <meshStandardMaterial color="#e2e8f0" metalness={0.95} roughness={0.1} />
+        </mesh>
+        {[-0.24, 0.24].map((rx, ri) => (
+          <mesh key={`bow-post-${ri}`} position={[rx, -0.06, 0]} castShadow>
+            <cylinderGeometry args={[0.008, 0.008, 0.14, 6]} />
+            <meshStandardMaterial color="#cbd5e1" metalness={0.95} roughness={0.1} />
+          </mesh>
+        ))}
+      </group>
+
+      {/* 3. MAIN CABIN SALON SUPERSTRUCTURE (Cabin phòng khách kính vòm) */}
+      <mesh position={[0, 0.42, -0.1]} castShadow receiveShadow>
+        <boxGeometry args={[0.58, 0.26, 1.3]} />
+        <meshStandardMaterial color="#ffffff" roughness={0.3} metalness={0.1} />
+      </mesh>
+
+      {/* Wraparound Panoramic Dark Glass Windows (Kính cabin phản chiếu bầu trời) */}
+      <mesh position={[0, 0.44, -0.08]}>
+        <boxGeometry args={[0.61, 0.16, 1.22]} />
+        <meshStandardMaterial
+          color="#090d16"
+          roughness={0.05}
+          metalness={0.85}
+          emissive="#0284c7"
+          emissiveIntensity={0.25}
+        />
+      </mesh>
+
+      {/* 4. UPPER FLYBRIDGE DECK (Tầng thượng ngắm cảnh & buồng lái) */}
+      <mesh position={[0, 0.62, -0.22]} castShadow receiveShadow>
+        <boxGeometry args={[0.5, 0.14, 0.85]} />
+        <meshStandardMaterial color="#f8fafc" roughness={0.3} />
+      </mesh>
+
+      {/* Tinted Flybridge Windshield */}
+      <mesh position={[0, 0.72, 0.14]} rotation={[-0.35, 0, 0]}>
+        <boxGeometry args={[0.46, 0.12, 0.03]} />
+        <meshStandardMaterial color="#0284c7" transparent opacity={0.7} roughness={0.05} />
+      </mesh>
+
+      {/* Radar Arch & Dual Satellite Domes (Cột radar viễn thông hiện đại) */}
+      <group position={[0, 0.82, -0.45]}>
+        {/* Arch crossbar */}
+        <mesh castShadow>
+          <boxGeometry args={[0.48, 0.04, 0.1]} />
+          <meshStandardMaterial color="#ffffff" metalness={0.3} />
+        </mesh>
+        {/* Left & right satellite radomes */}
+        {[-0.16, 0.16].map((dx, di) => (
+          <mesh key={`radome-${di}`} position={[dx, 0.08, 0]} castShadow>
+            <sphereGeometry args={[0.045, 10, 10]} />
+            <meshStandardMaterial color="#ffffff" roughness={0.2} />
+          </mesh>
+        ))}
+        {/* Radar Scanner Antenna */}
+        <mesh position={[0, 0.12, 0]} castShadow>
+          <boxGeometry args={[0.22, 0.025, 0.04]} />
+          <meshStandardMaterial color="#1e293b" />
         </mesh>
       </group>
 
-      {/* 5. Trailing Wake Foam on Water */}
-      <mesh position={[0, -0.04, -1.2]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[0.6, 1.1]} />
-        <meshBasicMaterial color="#ecfeff" transparent opacity={0.35} depthWrite={false} />
+      {/* 5. AFT COCKPIT & SWIM PLATFORM (Boong sau & bậc thang bơi) */}
+      <mesh position={[0, 0.24, -1.15]} receiveShadow>
+        <boxGeometry args={[0.62, 0.04, 0.45]} />
+        <meshStandardMaterial color="#78350f" roughness={0.7} />
       </mesh>
+      <mesh position={[0, 0.18, -1.4]} receiveShadow>
+        <boxGeometry args={[0.58, 0.03, 0.16]} />
+        <meshStandardMaterial color="#f8fafc" roughness={0.3} />
+      </mesh>
+
+      {/* 6. REALISTIC V-SHAPED FOAMING WAKE ON WATER (Vệt bọt nước rẽ sóng chữ V) */}
+      <group position={[0, -0.02, -1.6]}>
+        {/* Central trailing bubble wake */}
+        <mesh rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[0.55, 1.6]} />
+          <meshBasicMaterial color="#ecfeff" transparent opacity={0.4} depthWrite={false} />
+        </mesh>
+        {/* Left expanding wake wing */}
+        <mesh position={[-0.35, 0, -0.6]} rotation={[-Math.PI / 2, 0, 0.28]}>
+          <planeGeometry args={[0.32, 1.4]} />
+          <meshBasicMaterial color="#cffafe" transparent opacity={0.28} depthWrite={false} />
+        </mesh>
+        {/* Right expanding wake wing */}
+        <mesh position={[0.35, 0, -0.6]} rotation={[-Math.PI / 2, 0, -0.28]}>
+          <planeGeometry args={[0.32, 1.4]} />
+          <meshBasicMaterial color="#cffafe" transparent opacity={0.28} depthWrite={false} />
+        </mesh>
+      </group>
     </group>
   );
 }
