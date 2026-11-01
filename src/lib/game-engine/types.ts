@@ -91,6 +91,7 @@ export interface ChanceCard {
   category?: CardCategoryType;
   amount?: number;
   targetTileId?: number;
+  image?: string;
 }
 
 export type FateCard = ChanceCard;

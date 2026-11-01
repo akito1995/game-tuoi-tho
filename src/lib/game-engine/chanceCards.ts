@@ -21,10 +21,10 @@ export const CHANCE_CARDS: ChanceCard[] = [
   },
   {
     id: 'chance_03',
-    title: 'Vé bay khứ hồi Phú Quốc',
-    description: 'Bạn săn được vé 0 đồng bay thẳng ra Đảo Ngọc Phú Quốc nghỉ mát tắm biển!',
+    title: 'Vé tàu hỏa đến Ga Đà Lạt',
+    description: 'Bạn săn được vé tàu hỏa du lịch ngắm cảnh tới thẳng Ga Đà Lạt!',
     type: 'TELEPORT',
-    targetTileId: 10,
+    targetTileId: 15,
   },
   {
     id: 'chance_04',
@@ -41,10 +41,10 @@ export const CHANCE_CARDS: ChanceCard[] = [
   },
   {
     id: 'chance_06',
-    title: 'Đi dự Lễ Hội Dân Gian',
-    description: 'Tiếng trống hội làng giòn giã rộn rã, di chuyển ngay đến ô Lễ Hội Dân Gian tham gia bắt vịt!',
+    title: 'Dừng chân Quán Trà Đá',
+    description: 'Thời tiết oi ả, ghé ngay Quán Trà Đá nghỉ ngơi thưởng trà mát lành miễn phí!',
     type: 'TELEPORT',
-    targetTileId: 16,
+    targetTileId: 20,
   },
   {
     id: 'chance_07',
@@ -70,9 +70,9 @@ export const CHANCE_CARDS: ChanceCard[] = [
   {
     id: 'chance_10',
     title: 'Chuyến tàu Thống Nhất',
-    description: 'Bạn lên chuyến tàu Thống Nhất Bắc - Nam di chuyển thẳng tới Sân Bay Nội Bài.',
+    description: 'Bạn lên chuyến tàu Thống Nhất Bắc - Nam di chuyển thẳng tới Sân bay Nội Bài.',
     type: 'TELEPORT',
-    targetTileId: 27,
+    targetTileId: 35,
   },
   {
     id: 'chance_11',
@@ -86,7 +86,7 @@ export const CHANCE_CARDS: ChanceCard[] = [
     title: 'Du lịch Sa Pa săn mây',
     description: 'Cuối tuần hứng khởi rủ bạn thân xách balo lên thẳng Sa Pa ngắm tuyết và săn mây.',
     type: 'TELEPORT',
-    targetTileId: 23,
+    targetTileId: 27,
   },
   {
     id: 'chance_13',
@@ -118,7 +118,7 @@ export const FATE_CARDS: FateCard[] = [
   {
     id: 'fate_01',
     title: 'Đi bão quên đội mũ bảo hiểm',
-    description: 'Hòa cùng dòng người ăn mừng cúp vàng nhưng quên đội mũ bảo hiểm! Nộp phạt 100.000đ vào Quỹ Lễ Hội.',
+    description: 'Hòa cùng dòng người ăn mừng cúp vàng nhưng quên đội mũ bảo hiểm! Nộp phạt 100.000đ.',
     type: 'CASH_LOSS',
     amount: 100000,
   },
@@ -127,7 +127,7 @@ export const FATE_CARDS: FateCard[] = [
     title: 'Bị bắt đi bão quá khích',
     description: 'Nẹt bô lạng lách trên phố bị các chú cảnh sát tuần tra túm gọn, áp giải ngay về Trại Giam!',
     type: 'TELEPORT',
-    targetTileId: 8,
+    targetTileId: 10,
   },
   {
     id: 'fate_03',
@@ -154,7 +154,7 @@ export const FATE_CARDS: FateCard[] = [
     title: 'Về thăm Cố Đô Huế',
     description: 'Duyên số đưa bạn về thăm kinh thành Huế mộng mơ, thưởng thức bún bò và ca Huế trên sông Hương.',
     type: 'TELEPORT',
-    targetTileId: 15,
+    targetTileId: 23,
   },
   {
     id: 'fate_07',
@@ -186,10 +186,10 @@ export const FATE_CARDS: FateCard[] = [
   },
   {
     id: 'fate_11',
-    title: 'Tiến về Sài Gòn lập nghiệp',
-    description: 'Nhận lời mời khởi nghiệp hấp dẫn, xách vali bay thẳng vào TP. Hồ Chí Minh!',
+    title: 'Tiến về TP. Hồ Chí Minh lập nghiệp',
+    description: 'Nhận lời mời khởi nghiệp hấp dẫn, xách vali bay thẳng vào TP. Hồ Chí Minh ghé Chợ Bến Thành!',
     type: 'TELEPORT',
-    targetTileId: 31,
+    targetTileId: 37,
   },
   {
     id: 'fate_12',

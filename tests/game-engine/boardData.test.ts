@@ -145,7 +145,7 @@ describe('Board Data & Core Engine Structures', () => {
         if (card.type === 'TELEPORT') {
           expect(card.targetTileId).toBeDefined();
           expect(card.targetTileId).toBeGreaterThanOrEqual(0);
-          expect(card.targetTileId).toBeLessThan(32);
+          expect(card.targetTileId).toBeLessThan(40);
         }
       });
     });
@@ -170,7 +170,7 @@ describe('Board Data & Core Engine Structures', () => {
         if (card.type === 'TELEPORT') {
           expect(card.targetTileId).toBeDefined();
           expect(card.targetTileId).toBeGreaterThanOrEqual(0);
-          expect(card.targetTileId).toBeLessThan(32);
+          expect(card.targetTileId).toBeLessThan(40);
         }
       });
     });

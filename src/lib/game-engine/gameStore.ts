@@ -1514,11 +1514,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
         activePlayer.tacticalCards.evenOdd = (activePlayer.tacticalCards.evenOdd || 0) + 2;
         logs.push(`✨ ${activePlayer.name} quay trúng 2 Thẻ Xúc Xắc Chẵn/Lẻ!`);
         break;
-      case 4: // Teleport Phu Quoc
-        title = 'BAY ĐẾN PHÚ QUỐC';
-        rewardText = 'Dịch chuyển đến Đảo Ngọc Phú Quốc';
-        activePlayer.position = 10;
-        logs.push(`✈️ ${activePlayer.name} quay trúng chuyến bay thẳng ra Phú Quốc!`);
+      case 4: // Teleport Nha Trang
+        title = 'BAY ĐẾN NHA TRANG';
+        rewardText = 'Dịch chuyển đến Tháp Trầm Hương Nha Trang';
+        activePlayer.position = 18;
+        logs.push(`✈️ ${activePlayer.name} quay trúng chuyến du lịch đến Nha Trang!`);
         break;
       case 5: // Double Step
         title = 'TĂNG TỐC +2 BƯỚC';

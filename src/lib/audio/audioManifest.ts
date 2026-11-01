@@ -163,4 +163,5 @@ export const SFX_PRIORITY_MAP: Record<SfxId, AudioPriority> = {
   'ui.click': 'P3',
   'ui.hover': 'P3',
   'token.step': 'P3',
+  'train.bell': 'P3',
 };

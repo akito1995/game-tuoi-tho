@@ -1,0 +1,34 @@
+[
+  {
+    "id": 0,
+    "name": "Xuất Phát",
+    "offsetX": 0,
+    "offsetY": -15,
+    "scale": 0.065,
+    "asset": "/art/corners/corner-xuat-phat-transparent.png"
+  },
+  {
+    "id": 10,
+    "name": "Trại Giam / Thăm tù",
+    "offsetX": 0,
+    "offsetY": -15,
+    "scale": 0.065,
+    "asset": "/art/corners/corner-trai-giam-transparent.png"
+  },
+  {
+    "id": 20,
+    "name": "Quán Trà Đá",
+    "offsetX": 0,
+    "offsetY": -15,
+    "scale": 0.065,
+    "asset": "/art/corners/corner-quan-tra-da-transparent.png"
+  },
+  {
+    "id": 30,
+    "name": "Vào Tù",
+    "offsetX": 0,
+    "offsetY": -15,
+    "scale": 0.065,
+    "asset": "/art/corners/corner-vao-tu-transparent.png"
+  }
+]

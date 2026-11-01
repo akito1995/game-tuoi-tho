@@ -113,7 +113,7 @@ export default function RoomLobbyPage({ params }: RoomPageProps) {
     const unsubPacket = peerService.onPacket((packet) => {
       if (packet.type === 'START_GAME') {
         soundManager.playBuildSound();
-        router.push(`/games/co-ty-phu/play?roomId=${roomId}`);
+        router.push(`/play?roomId=${roomId}`);
       }
     });
 
@@ -255,7 +255,7 @@ export default function RoomLobbyPage({ params }: RoomPageProps) {
       peerService.broadcastStartGame(roomId, useGameStore.getState());
     }
 
-    router.push(`/games/co-ty-phu/play?roomId=${roomId}`);
+    router.push(`/play?roomId=${roomId}`);
   };
 
   // Send custom chat message

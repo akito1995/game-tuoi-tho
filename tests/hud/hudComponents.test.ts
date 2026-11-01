@@ -39,7 +39,6 @@ describe('HUD Helpers and UI Logic Suite', () => {
       expect(formatMoney(2000000)).toBe('2.000.000đ');
       expect(formatMoney(0)).toBe('0đ');
       expect(formatMoney(-50000)).toBe('-50.000đ');
-      // @ts-expect-error test fallback
       expect(formatMoney(NaN)).toBe('0đ');
     });
 
@@ -577,9 +576,7 @@ describe('HUD Helpers and UI Logic Suite', () => {
 
     it('should properly configure Chance Card (Cơ Hội) details with gold theme and rewards', () => {
       const details = getChanceCardCategoryDetails({
-        id: 'test-card-1',
         title: 'Cơ Hội Vàng',
-        description: 'Nhận tiền thưởng sinh nhật 200.000đ',
         type: 'CASH_GAIN',
         amount: 200000,
       });
@@ -593,9 +590,7 @@ describe('HUD Helpers and UI Logic Suite', () => {
 
     it('should properly distinguish Fate Card (Khí Vận) with amethyst theme and penalties', () => {
       const details = getChanceCardCategoryDetails({
-        id: 'test-fate-1',
         title: 'Khí Vận Định Mệnh',
-        description: 'Nộp phạt vi phạm tốc độ 100.000đ',
         type: 'CASH_LOSS',
         amount: 100000,
       });

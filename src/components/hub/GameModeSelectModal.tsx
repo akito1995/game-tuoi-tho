@@ -117,7 +117,7 @@ export function GameModeSelectModal({
     soundManager.playBuildSound();
     setupPassAndPlayGame(passAndPlayPlayers);
     onClose();
-    router.push('/games/co-ty-phu/play?mode=PASS_AND_PLAY');
+    router.push('/play?mode=PASS_AND_PLAY');
   };
 
   // Launch Bot AI Game
@@ -125,7 +125,7 @@ export function GameModeSelectModal({
     soundManager.playBuildSound();
     setupBotGame({ name: humanName, mascot: humanMascot }, botCount);
     onClose();
-    router.push('/games/co-ty-phu/play?mode=BOT_AI');
+    router.push('/play?mode=BOT_AI');
   };
 
   // Launch Online Host Room

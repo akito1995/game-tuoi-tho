@@ -18,6 +18,7 @@ export class SfxManager {
     'ui.click': 60,
     'ui.confirm': 120,
     'token.step': 140,
+    'train.bell': 800,
     'dice.shake': 250,
     'dice.roll': 300,
     'dice.land': 200,
@@ -219,6 +220,34 @@ export class SfxManager {
     const dest = this.getDestination(ctx);
 
     switch (id) {
+      case 'train.bell': {
+        // Double metallic tram gong strike (ding - ding)
+        [0, 0.18].forEach((delay, idx) => {
+          const osc1 = ctx.createOscillator();
+          const osc2 = ctx.createOscillator();
+          const gain = ctx.createGain();
+
+          osc1.type = 'sine';
+          osc2.type = 'triangle';
+          const freq = idx === 0 ? 1760 : 2093; // A6 then C7
+          osc1.frequency.setValueAtTime(freq, t + delay);
+          osc2.frequency.setValueAtTime(freq * 1.5, t + delay); // harmonic
+
+          gain.gain.setValueAtTime(vol * 0.35, t + delay);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + delay + 0.45);
+
+          osc1.connect(gain);
+          osc2.connect(gain);
+          gain.connect(dest);
+
+          osc1.start(t + delay);
+          osc1.stop(t + delay + 0.45);
+          osc2.start(t + delay);
+          osc2.stop(t + delay + 0.45);
+        });
+        break;
+      }
+
       case 'ui.click':
       case 'ui.hover': {
         const osc = ctx.createOscillator();

@@ -168,5 +168,360 @@
       "width": 577,
       "height": 584
     }
-  ]
+  ],
+  "tiles": {
+    "co-hoi": {
+      "id": "co-hoi",
+      "filename": "tile-co-hoi.png",
+      "cleanPath": "/art/_clean/tiles/tile-co-hoi.png",
+      "originalPath": "/art/tiles/tile-co-hoi.png"
+    },
+    "khi-van": {
+      "id": "khi-van",
+      "filename": "tile-khi-van.png",
+      "cleanPath": "/art/_clean/tiles/tile-khi-van.png",
+      "originalPath": "/art/tiles/tile-khi-van.png"
+    },
+    "thue-thu-nhap": {
+      "id": "thue-thu-nhap",
+      "filename": "tile-thue-thu-nhap.png",
+      "cleanPath": "/art/_clean/tiles/tile-thue-thu-nhap.png",
+      "originalPath": "/art/tiles/tile-thue-thu-nhap.png"
+    },
+    "thue-xa-xi": {
+      "id": "thue-xa-xi",
+      "filename": "tile-thue-xa-xi.png",
+      "cleanPath": "/art/_clean/tiles/tile-thue-xa-xi.png",
+      "originalPath": "/art/tiles/tile-thue-xa-xi.png"
+    }
+  },
+  "buildings": {
+    "banh-mi": {
+      "id": "banh-mi",
+      "filename": "banh-mi.png",
+      "cleanPath": "/art/_clean/buildings/banh-mi.png",
+      "originalPath": "/art/buildings/banh-mi.png"
+    },
+    "ben-xe": {
+      "id": "ben-xe",
+      "filename": "ben-xe.png",
+      "cleanPath": "/art/_clean/buildings/ben-xe.png",
+      "originalPath": "/art/buildings/ben-xe.png"
+    },
+    "biet-thu": {
+      "id": "biet-thu",
+      "filename": "biet-thu.png",
+      "cleanPath": "/art/_clean/buildings/biet-thu.png",
+      "originalPath": "/art/buildings/biet-thu.png"
+    },
+    "hotel": {
+      "id": "hotel",
+      "filename": "hotel.png",
+      "cleanPath": "/art/_clean/buildings/hotel.png",
+      "originalPath": "/art/buildings/hotel.png"
+    },
+    "house-1": {
+      "id": "house-1",
+      "filename": "house-1.png",
+      "cleanPath": "/art/_clean/buildings/house-1.png",
+      "originalPath": "/art/buildings/house-1.png"
+    },
+    "house-2": {
+      "id": "house-2",
+      "filename": "house-2.png",
+      "cleanPath": "/art/_clean/buildings/house-2.png",
+      "originalPath": "/art/buildings/house-2.png"
+    },
+    "house-3": {
+      "id": "house-3",
+      "filename": "house-3.png",
+      "cleanPath": "/art/_clean/buildings/house-3.png",
+      "originalPath": "/art/buildings/house-3.png"
+    },
+    "house-4": {
+      "id": "house-4",
+      "filename": "house-4.png",
+      "cleanPath": "/art/_clean/buildings/house-4.png",
+      "originalPath": "/art/buildings/house-4.png"
+    },
+    "landmark-an-giang": {
+      "id": "landmark-an-giang",
+      "filename": "landmark-an-giang.png",
+      "cleanPath": "/art/_clean/buildings/landmark-an-giang.png",
+      "originalPath": "/art/buildings/landmark-an-giang.png"
+    },
+    "landmark-bac-lieu": {
+      "id": "landmark-bac-lieu",
+      "filename": "landmark-bac-lieu.png",
+      "cleanPath": "/art/_clean/buildings/landmark-bac-lieu.png",
+      "originalPath": "/art/buildings/landmark-bac-lieu.png"
+    },
+    "landmark-bac-ninh": {
+      "id": "landmark-bac-ninh",
+      "filename": "landmark-bac-ninh.png",
+      "cleanPath": "/art/_clean/buildings/landmark-bac-ninh.png",
+      "originalPath": "/art/buildings/landmark-bac-ninh.png"
+    },
+    "landmark-buon-ma-thuot": {
+      "id": "landmark-buon-ma-thuot",
+      "filename": "landmark-buon-ma-thuot.png",
+      "cleanPath": "/art/_clean/buildings/landmark-buon-ma-thuot.png",
+      "originalPath": "/art/buildings/landmark-buon-ma-thuot.png"
+    },
+    "landmark-ca-mau": {
+      "id": "landmark-ca-mau",
+      "filename": "landmark-ca-mau.png",
+      "cleanPath": "/art/_clean/buildings/landmark-ca-mau.png",
+      "originalPath": "/art/buildings/landmark-ca-mau.png"
+    },
+    "landmark-can-tho": {
+      "id": "landmark-can-tho",
+      "filename": "landmark-can-tho.png",
+      "cleanPath": "/art/_clean/buildings/landmark-can-tho.png",
+      "originalPath": "/art/buildings/landmark-can-tho.png"
+    },
+    "landmark-da-nang": {
+      "id": "landmark-da-nang",
+      "filename": "landmark-da-nang.png",
+      "cleanPath": "/art/_clean/buildings/landmark-da-nang.png",
+      "originalPath": "/art/buildings/landmark-da-nang.png"
+    },
+    "landmark-gia-lai": {
+      "id": "landmark-gia-lai",
+      "filename": "landmark-gia-lai.png",
+      "cleanPath": "/art/_clean/buildings/landmark-gia-lai.png",
+      "originalPath": "/art/buildings/landmark-gia-lai.png"
+    },
+    "landmark-ha-giang": {
+      "id": "landmark-ha-giang",
+      "filename": "landmark-ha-giang.png",
+      "cleanPath": "/art/_clean/buildings/landmark-ha-giang.png",
+      "originalPath": "/art/buildings/landmark-ha-giang.png"
+    },
+    "landmark-ha-long": {
+      "id": "landmark-ha-long",
+      "filename": "landmark-ha-long.png",
+      "cleanPath": "/art/_clean/buildings/landmark-ha-long.png",
+      "originalPath": "/art/buildings/landmark-ha-long.png"
+    },
+    "landmark-ha-noi": {
+      "id": "landmark-ha-noi",
+      "filename": "landmark-ha-noi.png",
+      "cleanPath": "/art/_clean/buildings/landmark-ha-noi.png",
+      "originalPath": "/art/buildings/landmark-ha-noi.png"
+    },
+    "landmark-hai-phong": {
+      "id": "landmark-hai-phong",
+      "filename": "landmark-hai-phong.png",
+      "cleanPath": "/art/_clean/buildings/landmark-hai-phong.png",
+      "originalPath": "/art/buildings/landmark-hai-phong.png"
+    },
+    "landmark-hoi-an": {
+      "id": "landmark-hoi-an",
+      "filename": "landmark-hoi-an.png",
+      "cleanPath": "/art/_clean/buildings/landmark-hoi-an.png",
+      "originalPath": "/art/buildings/landmark-hoi-an.png"
+    },
+    "landmark-hue": {
+      "id": "landmark-hue",
+      "filename": "landmark-hue.png",
+      "cleanPath": "/art/_clean/buildings/landmark-hue.png",
+      "originalPath": "/art/buildings/landmark-hue.png"
+    },
+    "landmark-kon-tum": {
+      "id": "landmark-kon-tum",
+      "filename": "landmark-kon-tum.png",
+      "cleanPath": "/art/_clean/buildings/landmark-kon-tum.png",
+      "originalPath": "/art/buildings/landmark-kon-tum.png"
+    },
+    "landmark-nha-trang": {
+      "id": "landmark-nha-trang",
+      "filename": "landmark-nha-trang.png",
+      "cleanPath": "/art/_clean/buildings/landmark-nha-trang.png",
+      "originalPath": "/art/buildings/landmark-nha-trang.png"
+    },
+    "landmark-ninh-binh": {
+      "id": "landmark-ninh-binh",
+      "filename": "landmark-ninh-binh.png",
+      "cleanPath": "/art/_clean/buildings/landmark-ninh-binh.png",
+      "originalPath": "/art/buildings/landmark-ninh-binh.png"
+    },
+    "landmark-phan-thiet": {
+      "id": "landmark-phan-thiet",
+      "filename": "landmark-phan-thiet.png",
+      "cleanPath": "/art/_clean/buildings/landmark-phan-thiet.png",
+      "originalPath": "/art/buildings/landmark-phan-thiet.png"
+    },
+    "landmark-phu-yen": {
+      "id": "landmark-phu-yen",
+      "filename": "landmark-phu-yen.png",
+      "cleanPath": "/art/_clean/buildings/landmark-phu-yen.png",
+      "originalPath": "/art/buildings/landmark-phu-yen.png"
+    },
+    "landmark-sa-pa": {
+      "id": "landmark-sa-pa",
+      "filename": "landmark-sa-pa.png",
+      "cleanPath": "/art/_clean/buildings/landmark-sa-pa.png",
+      "originalPath": "/art/buildings/landmark-sa-pa.png"
+    },
+    "landmark-tp-hcm": {
+      "id": "landmark-tp-hcm",
+      "filename": "landmark-tp-hcm.png",
+      "cleanPath": "/art/_clean/buildings/landmark-tp-hcm.png",
+      "originalPath": "/art/buildings/landmark-tp-hcm.png"
+    },
+    "landmark-vung-tau": {
+      "id": "landmark-vung-tau",
+      "filename": "landmark-vung-tau.png",
+      "cleanPath": "/art/_clean/buildings/landmark-vung-tau.png",
+      "originalPath": "/art/buildings/landmark-vung-tau.png"
+    },
+    "nha-may-dien": {
+      "id": "nha-may-dien",
+      "filename": "nha-may-dien.png",
+      "cleanPath": "/art/_clean/buildings/nha-may-dien.png",
+      "originalPath": "/art/buildings/nha-may-dien.png"
+    },
+    "nha-may-nuoc": {
+      "id": "nha-may-nuoc",
+      "filename": "nha-may-nuoc.png",
+      "cleanPath": "/art/_clean/buildings/nha-may-nuoc.png",
+      "originalPath": "/art/buildings/nha-may-nuoc.png"
+    },
+    "pho": {
+      "id": "pho",
+      "filename": "pho.png",
+      "cleanPath": "/art/_clean/buildings/pho.png",
+      "originalPath": "/art/buildings/pho.png"
+    },
+    "station-ga-da-lat": {
+      "id": "station-ga-da-lat",
+      "filename": "station-ga-da-lat.png",
+      "cleanPath": "/art/_clean/buildings/station-ga-da-lat.png",
+      "originalPath": "/art/buildings/station-ga-da-lat.png"
+    },
+    "station-hai-van": {
+      "id": "station-hai-van",
+      "filename": "station-hai-van.png",
+      "cleanPath": "/art/_clean/buildings/station-hai-van.png",
+      "originalPath": "/art/buildings/station-hai-van.png"
+    },
+    "station-nha-rong": {
+      "id": "station-nha-rong",
+      "filename": "station-nha-rong.png",
+      "cleanPath": "/art/_clean/buildings/station-nha-rong.png",
+      "originalPath": "/art/buildings/station-nha-rong.png"
+    },
+    "station-noi-bai": {
+      "id": "station-noi-bai",
+      "filename": "station-noi-bai.png",
+      "cleanPath": "/art/_clean/buildings/station-noi-bai.png",
+      "originalPath": "/art/buildings/station-noi-bai.png"
+    },
+    "tap-hoa": {
+      "id": "tap-hoa",
+      "filename": "tap-hoa.png",
+      "cleanPath": "/art/_clean/buildings/tap-hoa.png",
+      "originalPath": "/art/buildings/tap-hoa.png"
+    },
+    "tra-da": {
+      "id": "tra-da",
+      "filename": "tra-da.png",
+      "cleanPath": "/art/_clean/buildings/tra-da.png",
+      "originalPath": "/art/buildings/tra-da.png"
+    },
+    "util-nha-may-nuoc": {
+      "id": "util-nha-may-nuoc",
+      "filename": "util-nha-may-nuoc.png",
+      "cleanPath": "/art/_clean/buildings/util-nha-may-nuoc.png",
+      "originalPath": "/art/buildings/util-nha-may-nuoc.png"
+    },
+    "util-thuy-dien": {
+      "id": "util-thuy-dien",
+      "filename": "util-thuy-dien.png",
+      "cleanPath": "/art/_clean/buildings/util-thuy-dien.png",
+      "originalPath": "/art/buildings/util-thuy-dien.png"
+    }
+  },
+  "ambient": {
+    "tau-dien": {
+      "path": "/art/ambient/ambient-tau-dien.png",
+      "width": 1024,
+      "height": 500
+    },
+    "thuyen-1": {
+      "path": "/art/ambient/ambient-thuyen-1.png",
+      "width": 512,
+      "height": 365
+    },
+    "thuyen-2": {
+      "path": "/art/ambient/ambient-thuyen-2.png",
+      "width": 512,
+      "height": 365
+    }
+  },
+  "props": {
+    "gian-giao": {
+      "path": "/art/props/prop-gian-giao.png",
+      "width": 896,
+      "height": 1200
+    },
+    "heo-dat": {
+      "path": "/art/props/prop-heo-dat.png",
+      "width": 896,
+      "height": 1200
+    },
+    "co": {
+      "path": "/art/props/prop-co.png",
+      "width": 512,
+      "height": 512
+    }
+  },
+  "ui": {
+    "dong-xu": {
+      "path": "/art/ui/ui-dong-xu.png",
+      "width": 1024,
+      "height": 1024
+    },
+    "tien-giay": {
+      "path": "/art/ui/ui-tien-giay.png",
+      "width": 1024,
+      "height": 572
+    },
+    "logo": {
+      "path": "/art/ui/ui-logo.png",
+      "width": 2048,
+      "height": 2048
+    },
+    "chien-thang": {
+      "path": "/art/ui/ui-chien-thang.png",
+      "width": 2752,
+      "height": 1536
+    },
+    "pha-san": {
+      "path": "/art/ui/ui-pha-san.png",
+      "width": 2752,
+      "height": 1536
+    },
+    "loading": {
+      "path": "/art/ui/ui-loading.png",
+      "width": 2752,
+      "height": 1536
+    },
+    "skill-doi": {
+      "path": "/art/ui/skill-doi.png",
+      "width": 1024,
+      "height": 1024
+    },
+    "skill-nhay-ngan": {
+      "path": "/art/ui/skill-nhay-ngan.png",
+      "width": 1024,
+      "height": 1024
+    },
+    "skill-nhay-xa": {
+      "path": "/art/ui/skill-nhay-xa.png",
+      "width": 1024,
+      "height": 1024
+    }
+  }
 }

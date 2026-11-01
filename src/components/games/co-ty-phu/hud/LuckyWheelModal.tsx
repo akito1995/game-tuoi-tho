@@ -10,7 +10,7 @@ export const WHEEL_PRIZES = [
   { id: 1, title: '+150.000đ TIỀN MẶT', color: '#10b981', desc: 'Thưởng nóng từ Ngân hàng' },
   { id: 2, title: 'KHIÊN BẢO HỘ', color: '#3b82f6', desc: 'Miễn phí 1 lần trả tiền thuê' },
   { id: 3, title: 'XÚC XẮC CHẴN/LẺ', color: '#f59e0b', desc: 'Thẻ chọn Chẵn hoặc Lẻ' },
-  { id: 4, title: 'BAY ĐẾN PHÚ QUỐC', color: '#06b6d4', desc: 'Dịch chuyển đến Đảo Ngọc' },
+  { id: 4, title: 'BAY ĐẾN NHA TRANG', color: '#06b6d4', desc: 'Dịch chuyển đến Nha Trang' },
   { id: 5, title: 'TĂNG TỐC +2 BƯỚC', color: '#8b5cf6', desc: 'Thẻ tăng tốc độ di chuyển' },
   { id: 6, title: 'LÌ XÌ +80.000đ', color: '#eab308', desc: 'Lộc lá đầu xuân may mắn' },
   { id: 7, title: 'ĐỔ TIẾP LẬP TỨC', color: '#f43f5e', desc: 'Tặng thêm 1 lượt đổ xúc xắc' },

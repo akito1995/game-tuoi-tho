@@ -29,6 +29,7 @@ export type SfxId =
   | 'bankruptcy'
   | 'player.eliminated'
   | 'turn.start'
+  | 'train.bell'
   | 'game.victory'
   | 'game.defeat'
   | 'game.near_victory';
@@ -53,6 +54,7 @@ export interface CharacterVoiceProfile {
 
 export type VoiceTriggerId =
   | 'turn.start'
+  | 'train.bell'
   | 'dice.roll'
   | 'property.buy'
   | 'money.gain'
