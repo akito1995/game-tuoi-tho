@@ -28,10 +28,10 @@ import { ZoomIn, ZoomOut, Crosshair, Activity, Sparkles } from 'lucide-react';
 import { isHarmonizationEnabled, setHarmonizationEnabled } from './colorHarmonizer';
 
 export const DEFAULT_4_PLAYERS: PlayerTokenData[] = [
-  { id: 'player_1', name: 'Bé Tí', characterKey: 'be-ti', colorHex: 0xe5484d, position: 0, isCurrentTurn: true },
-  { id: 'player_2', name: 'Cô Hoa', characterKey: 'co-hoa', colorHex: 0x19b8a6, position: 0, isCurrentTurn: false },
-  { id: 'player_3', name: 'Ông Bảy', characterKey: 'ong-bay', colorHex: 0xf5b83d, position: 0, isCurrentTurn: false },
-  { id: 'player_4', name: 'Chị Mây', characterKey: 'chi-may', colorHex: 0x8b6cf0, position: 0, isCurrentTurn: false },
+  { id: 'player-1', name: 'Bé Tí', characterKey: 'be-ti', colorHex: 0xe5484d, position: 0, isCurrentTurn: true },
+  { id: 'player-2', name: 'Cô Hoa', characterKey: 'co-hoa', colorHex: 0x19b8a6, position: 0, isCurrentTurn: false },
+  { id: 'player-3', name: 'Ông Bảy', characterKey: 'ong-bay', colorHex: 0xf5b83d, position: 0, isCurrentTurn: false },
+  { id: 'player-4', name: 'Chị Mây', characterKey: 'chi-may', colorHex: 0x8b6cf0, position: 0, isCurrentTurn: false },
 ];
 
 export interface Board25DCanvasProps {

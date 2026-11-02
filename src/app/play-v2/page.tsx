@@ -973,7 +973,7 @@ export default function PlayV2Page() {
 
   // Nút thử nghiệm: "Rải công trình ngẫu nhiên" (1-4 nhà & landmark)
   const handleRandomizeBuildings = () => {
-    const playerIds = ['player_1', 'player_2', 'player_3', 'player_4'];
+    const playerIds = ['player-1', 'player-2', 'player-3', 'player-4'];
     const newTiles = gameTiles.map((t) => {
       if (t.type === 'PROPERTY') {
         const ownerId = playerIds[Math.floor(Math.random() * playerIds.length)];
@@ -1020,7 +1020,7 @@ export default function PlayV2Page() {
       t.hasLandmark = false;
     });
 
-    const playerIds = ['player_1', 'player_2', 'player_3', 'player_4'];
+    const playerIds = ['player-1', 'player-2', 'player-3', 'player-4'];
     const totalAssign = Math.min(16, shuffled.length);
 
     for (let i = 0; i < totalAssign; i++) {
@@ -1064,7 +1064,7 @@ export default function PlayV2Page() {
   // Nút thử nghiệm: "Xây tối đa tất cả"
   const handleMaxBuildAll = () => {
     const newTiles = gameTiles.map((t) => ({ ...t }));
-    const playerIds = ['player_1', 'player_2', 'player_3', 'player_4'];
+    const playerIds = ['player-1', 'player-2', 'player-3', 'player-4'];
     let idx = 0;
 
     newTiles.forEach((tile) => {

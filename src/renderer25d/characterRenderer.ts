@@ -18,6 +18,17 @@ export interface CharacterManager {
   setSpeedMultiplier: (speed: number) => void;
   update: (deltaSeconds: number) => void;
   destroy: () => void;
+  verifyIntegrity: (expectedPlayerCount?: number) => {
+    isValid: boolean;
+    tokenCount: number;
+    spriteCount: number;
+    badgeCount: number;
+    shadowCount: number;
+    expectedCount?: number;
+    errors: string[];
+  };
+  getTokensCount: () => number;
+  clearTokens: () => void;
   onTokenStep?: (playerId: string, tileId: number, pos: { x: number; y: number }) => void;
 }
 
@@ -63,6 +74,7 @@ interface TokenInstance {
   onHopComplete?: () => void;
   idleElapsed: number;
   isHovered: boolean;
+  isLoadingAsset?: boolean;
 }
 
 // Tính vị trí đứng của nhân vật trong ô:
@@ -249,7 +261,9 @@ export function createCharacterManager(): CharacterManager {
       (charSprite as any).__harmonizedTexture = harmonizedTex;
       spriteContainer.addChild(charSprite);
       instance.charSprite = charSprite;
+      instance.isLoadingAsset = false;
     }).catch((err) => {
+      instance.isLoadingAsset = false;
       console.warn(`Lỗi tải ảnh nhân vật ${profile.avatarUrl}:`, err);
     });
 
@@ -294,6 +308,7 @@ export function createCharacterManager(): CharacterManager {
       isHopping: false,
       idleElapsed: Math.random() * 2,
       isHovered: false,
+      isLoadingAsset: true,
     };
 
     // Tương tác chuột / chạm để hiện nhãn tên khi hover
@@ -341,6 +356,17 @@ export function createCharacterManager(): CharacterManager {
   };
 
   const syncPlayers = (players: PlayerTokenData[]) => {
+    // 0. Quy tắc: Mỗi người chơi có ĐÚNG MỘT sprite nhân vật trong Map theo id.
+    // Xoá và huỷ (destroy) bất kỳ token nào không còn trong danh sách incoming players (người chơi phá sản, đổi ván, hot reload...)
+    const incomingIds = new Set(players.map((p) => p.id));
+    tokens.forEach((token, id) => {
+      if (!incomingIds.has(id)) {
+        container.removeChild(token.container);
+        token.container.destroy({ children: true });
+        tokens.delete(id);
+      }
+    });
+
     // Thống kê số lượng người ở từng ô để tạo lưới 2x2
     const tileOccupancy = new Map<number, number>();
     players.forEach((p) => {
@@ -357,6 +383,10 @@ export function createCharacterManager(): CharacterManager {
       } else {
         token.data = player;
         token.badgeText.text = player.name;
+        // Nếu ô thay đổi khi không đang nhảy, cập nhật currentTile
+        if (!token.isHopping && token.hopQueue.length === 0) {
+          token.currentTile = player.position;
+        }
       }
 
       // Cập nhật vị trí tĩnh nếu không đang nhảy
@@ -379,6 +409,7 @@ export function createCharacterManager(): CharacterManager {
     });
 
     updateBadgePositions();
+    verifyIntegrity(players.length);
   };
 
   const movePlayerTo = (playerId: string, targetTile: number, onComplete?: () => void) => {
@@ -493,9 +524,9 @@ export function createCharacterManager(): CharacterManager {
     tokens.forEach((token) => {
       token.idleElapsed += deltaSeconds;
 
-      // 1. Diễn hoạt chuyển động nhảy bước (Hop Animation)
+      // 1. Diễn hoạt chuyển động nhảy bước (Hop Animation - 0.40s cơ bản ở 1x)
       if (token.isHopping) {
-        const hopDuration = Math.max(0.04, 0.35 / speedMultiplier);
+        const hopDuration = Math.max(0.04, 0.40 / speedMultiplier);
         token.hopProgress += deltaSeconds / hopDuration;
 
         if (token.hopProgress >= 1.0) {
@@ -590,10 +621,129 @@ export function createCharacterManager(): CharacterManager {
     });
   });
 
+  const getTokensCount = (): number => {
+    return tokens.size;
+  };
+
+  const clearTokens = () => {
+    tokens.forEach((token) => {
+      container.removeChild(token.container);
+      token.container.destroy({ children: true });
+    });
+    tokens.clear();
+  };
+
+  const verifyIntegrity = (expectedPlayerCount?: number): {
+    isValid: boolean;
+    tokenCount: number;
+    spriteCount: number;
+    badgeCount: number;
+    shadowCount: number;
+    expectedCount?: number;
+    errors: string[];
+  } => {
+    const errors: string[] = [];
+    const tokenCount = tokens.size;
+    const containerChildrenCount = container.children.length;
+
+    let spriteCount = 0;
+    let badgeCount = 0;
+    let shadowCount = 0;
+
+    tokens.forEach((token, id) => {
+      // 1. Kiểm tra sprite nhân vật (spriteContainer + charSprite hoặc đang nạp texture)
+      if (token.spriteContainer && (token.charSprite || token.spriteContainer.children.length > 0 || token.isLoadingAsset)) {
+        spriteCount++;
+      } else {
+        errors.push(`Token id='${id}' (${token.data.name}) thiếu sprite nhân vật hợp lệ`);
+      }
+
+      // 2. Kiểm tra nhãn tên
+      if (token.badgeContainer && token.badgeText) {
+        badgeCount++;
+      } else {
+        errors.push(`Token id='${id}' (${token.data.name}) thiếu nhãn tên`);
+      }
+
+      // 3. Kiểm tra bóng đổ dưới chân
+      if (token.shadowGraphic) {
+        shadowCount++;
+      } else {
+        errors.push(`Token id='${id}' (${token.data.name}) thiếu bóng chân`);
+      }
+    });
+
+    if (expectedPlayerCount !== undefined && tokenCount !== expectedPlayerCount) {
+      errors.push(`Số lượng token (${tokenCount}) không bằng số người chơi còn lại (${expectedPlayerCount})`);
+    }
+
+    if (containerChildrenCount !== tokenCount) {
+      errors.push(`Số lượng children trong entity container (${containerChildrenCount}) không khớp tokenCount (${tokenCount})`);
+    }
+
+    if (spriteCount !== tokenCount) {
+      errors.push(`Số lượng sprite (${spriteCount}) không khớp tokenCount (${tokenCount})`);
+    }
+
+    if (badgeCount !== tokenCount) {
+      errors.push(`Số lượng nhãn tên (${badgeCount}) không khớp tokenCount (${tokenCount})`);
+    }
+
+    if (shadowCount !== tokenCount) {
+      errors.push(`Số lượng bóng chân (${shadowCount}) không khớp tokenCount (${tokenCount})`);
+    }
+
+    const isValid = errors.length === 0;
+    if (!isValid) {
+      console.error(
+        `[INVARIANT_VIOLATION: characterRenderer.verifyIntegrity] Phát hiện lỗi bất biến nhân vật:\n${errors.map((e) => `  - ${e}`).join('\n')}`
+      );
+      if (typeof window !== 'undefined') {
+        (window as any).__characterInvariantViolations = (window as any).__characterInvariantViolations || [];
+        (window as any).__characterInvariantViolations.push({
+          timestamp: Date.now(),
+          caller: 'characterRenderer.verifyIntegrity',
+          errors,
+          tokenCount,
+          expectedPlayerCount,
+          spriteCount,
+          badgeCount,
+          shadowCount,
+        });
+      }
+    }
+
+    if (typeof window !== 'undefined') {
+      (window as any).__characterIntegrityState = {
+        isValid,
+        tokenCount,
+        spriteCount,
+        badgeCount,
+        shadowCount,
+        expectedPlayerCount,
+        timestamp: Date.now(),
+      };
+      (window as any).__verifyCharacterIntegrity = verifyIntegrity;
+    }
+
+    return {
+      isValid,
+      tokenCount,
+      spriteCount,
+      badgeCount,
+      shadowCount,
+      expectedCount: expectedPlayerCount,
+      errors,
+    };
+  };
+
   const destroy = () => {
     unsubscribeHarmonize();
-    container.destroy({ children: true });
+    tokens.forEach((token) => {
+      token.container.destroy({ children: true });
+    });
     tokens.clear();
+    container.destroy({ children: true });
   };
 
   const managerInstance: CharacterManager = {
@@ -603,6 +753,9 @@ export function createCharacterManager(): CharacterManager {
     setSpeedMultiplier,
     update,
     destroy,
+    verifyIntegrity,
+    getTokensCount,
+    clearTokens,
   };
   return managerInstance;
 }

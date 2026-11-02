@@ -233,21 +233,23 @@ export class GameV2Bridge {
 
   public getPlayerTokenData(): PlayerTokenData[] {
     const active = this.engine.getActivePlayer();
-    return this.engine.state.players.map((p) => {
-      let colorHex = 0xe5484d;
-      if (p.character === 'co-hoa') colorHex = 0x19b8a6;
-      else if (p.character === 'ong-bay') colorHex = 0xf5b83d;
-      else if (p.character === 'chi-may') colorHex = 0x8b6cf0;
+    return this.engine.state.players
+      .filter((p) => !p.bankrupt)
+      .map((p) => {
+        let colorHex = 0xe5484d;
+        if (p.character === 'co-hoa') colorHex = 0x19b8a6;
+        else if (p.character === 'ong-bay') colorHex = 0xf5b83d;
+        else if (p.character === 'chi-may') colorHex = 0x8b6cf0;
 
-      return {
-        id: p.id,
-        name: p.name,
-        characterKey: p.character,
-        colorHex,
-        position: p.position,
-        isCurrentTurn: p.id === active.id && !p.bankrupt,
-      };
-    });
+        return {
+          id: p.id,
+          name: p.name,
+          characterKey: p.character,
+          colorHex,
+          position: p.position,
+          isCurrentTurn: p.id === active.id && !p.bankrupt,
+        };
+      });
   }
 
   public setSpeed(speed: GameSpeed): void {
@@ -400,13 +402,13 @@ export class GameV2Bridge {
     }
 
     // -------------------------------------------------------------
-    // BƯỚC 1: Camera chuyển tới bot + băng "Lượt của <tên>" giữa màn hình: 1.0 giây
+    // BƯỚC 1: Camera chuyển tới bot + băng "Lượt của <tên>" giữa màn hình: 1.2 giây
     // -------------------------------------------------------------
     cb?.onCameraFocus?.(bot.position, 1.2, t(400));
     if (cb?.onShowBanner) {
       await cb.onShowBanner(bot);
     }
-    await new Promise((r) => setTimeout(r, t(1000)));
+    await new Promise((r) => setTimeout(r, t(1200)));
     cb?.onHideBanner?.();
 
     if (this.isDestroyed) return;
@@ -424,10 +426,10 @@ export class GameV2Bridge {
     }
 
     // -------------------------------------------------------------
-    // BƯỚC 2: Bot "suy nghĩ": 0.6 giây, rồi xúc xắc lăn 1.2 giây, hiện kết quả 0.6 giây
+    // BƯỚC 2: Bot "suy nghĩ": 1.0 giây, rồi xúc xắc lăn 1.5 giây, hiện kết quả 0.8 giây
     // -------------------------------------------------------------
     cb?.onShowToast?.(`${bot.name.replace(' 🤖', '')} đang suy nghĩ... 🤔`, 'info');
-    await new Promise((r) => setTimeout(r, t(600)));
+    await new Promise((r) => setTimeout(r, t(1000)));
 
     if (this.isDestroyed) return;
 
@@ -436,24 +438,24 @@ export class GameV2Bridge {
     const sum = d1 + d2;
     const isDouble = d1 === d2;
 
-    // Xúc xắc lăn 1.2 giây
+    // Xúc xắc lăn 1.5 giây
     if (cb?.onRollDiceAnimation) {
-      await cb.onRollDiceAnimation([d1, d2], sum, isDouble, bot.name, t(1200));
+      await cb.onRollDiceAnimation([d1, d2], sum, isDouble, bot.name, t(1500));
     } else {
-      await new Promise((r) => setTimeout(r, t(1200)));
+      await new Promise((r) => setTimeout(r, t(1500)));
     }
 
-    // Hiện kết quả 0.6 giây
-    await new Promise((r) => setTimeout(r, t(600)));
+    // Hiện kết quả 0.8 giây
+    await new Promise((r) => setTimeout(r, t(800)));
 
     if (this.isDestroyed) return;
 
     // -------------------------------------------------------------
-    // BƯỚC 3: Nhảy từng ô: 0.35 giây mỗi ô, camera bám theo
+    // BƯỚC 3: Nhảy từng ô: 0.40 giây mỗi ô, camera bám theo
     // -------------------------------------------------------------
     const oldPos = bot.position;
     const targetPos = (oldPos + sum) % 40;
-    const hopDurationSec = 0.35 / S;
+    const hopDurationSec = 0.40 / S;
 
     if (cb?.onMoveToken) {
       await cb.onMoveToken(bot.id, targetPos, hopDurationSec);
@@ -468,9 +470,9 @@ export class GameV2Bridge {
     this.notify();
 
     // -------------------------------------------------------------
-    // BƯỚC 4: Dừng chân: toast tên ô và sự kiện 1.5 giây.
-    // Nếu bot mua/xây: hiện thẻ mua ở chế độ chỉ xem (không có nút) 1.5 giây
-    // với dòng chữ "Cô Hoa quyết định MUA" hoặc "BỎ QUA", rồi mới chạy hiệu ứng mua
+    // BƯỚC 4: Dừng chân: toast tên ô và sự kiện 2.0 giây.
+    // Nếu bot mua/xây: hiện thẻ mua ở chế độ chỉ xem (không có nút) 2.0 giây
+    // với dòng chữ "<tên> quyết định MUA/BỎ QUA", rồi mới chạy hiệu ứng mua
     // -------------------------------------------------------------
     const tile = this.engine.getTile(bot.position);
     let stepActionSummary = 'dừng chân';
@@ -496,16 +498,16 @@ export class GameV2Bridge {
           : `${bot.name.replace(' 🤖', '')} quyết định BỎ QUA`;
       }
 
-      // Hiện thẻ mua ở chế độ chỉ xem 1.5 giây
+      // Hiện thẻ mua ở chế độ chỉ xem 2.0 giây
       if (cb?.onShowReadOnlyCard) {
         await cb.onShowReadOnlyCard(
           tile,
           isBuy ? (willAct ? 'BUY' : 'SKIP') : (willAct ? 'UPGRADE' : 'SKIP'),
           botDecisionText,
-          t(1500)
+          t(2000)
         );
       } else {
-        await new Promise((r) => setTimeout(r, t(1500)));
+        await new Promise((r) => setTimeout(r, t(2000)));
       }
 
       // Chạy hành động mua / xây thật sự
@@ -529,18 +531,19 @@ export class GameV2Bridge {
       this.notify();
     } else {
       cb?.onShowToast?.(`${bot.name.replace(' 🤖', '')} dừng chân tại ${tile.name} 🚩`, 'info');
+      await new Promise((r) => setTimeout(r, t(2000)));
 
       // -------------------------------------------------------------
-      // BƯỚC 5: Trả tiền thuê/thuế: hiệu ứng tiền bay 1.0 giây,
+      // BƯỚC 5: Trả tiền thuê/thuế: hiệu ứng tiền bay 1.2 giây,
       // số tiền trên thanh lượt chạy đúng lúc tiền tới
       // -------------------------------------------------------------
       if (tile.ownerId != null && tile.ownerId !== bot.id) {
         const owner = this.engine.state.players.find((p) => p.id === tile.ownerId);
         const rentAmount = this.engine.calculateRent(tile, sum);
         if (cb?.onMoneyFly) {
-          await cb.onMoneyFly(bot.id, owner?.id || null, rentAmount, t(1000));
+          await cb.onMoneyFly(bot.id, owner?.id || null, rentAmount, t(1200));
         } else {
-          await new Promise((r) => setTimeout(r, t(1000)));
+          await new Promise((r) => setTimeout(r, t(1200)));
         }
         stepActionSummary = `trả ${rentAmount.toLocaleString('vi-VN')}đ tiền thuê cho ${
           owner ? owner.name.replace(' 🤖', '') : 'chủ đất'
@@ -548,20 +551,17 @@ export class GameV2Bridge {
       } else if (tile.type === 'TAX') {
         const taxAmount = tile.id === 4 ? 100000 : 100000;
         if (cb?.onMoneyFly) {
-          await cb.onMoneyFly(bot.id, null, taxAmount, t(1000));
+          await cb.onMoneyFly(bot.id, null, taxAmount, t(1200));
         } else {
-          await new Promise((r) => setTimeout(r, t(1000)));
+          await new Promise((r) => setTimeout(r, t(1200)));
         }
         stepActionSummary = `nộp phạt ${taxAmount.toLocaleString('vi-VN')}đ thuế`;
       } else if (tile.type === 'CHANCE' || tile.type === 'FATE') {
-        await new Promise((r) => setTimeout(r, t(1500)));
         if (this.engine.state.currentCard) {
           stepActionSummary = `rút thẻ '${this.engine.state.currentCard.title}'`;
           this.engine.applyCardEffect(this.engine.state.currentCard);
           this.notify();
         }
-      } else {
-        await new Promise((r) => setTimeout(r, t(1500)));
       }
     }
 
@@ -576,12 +576,20 @@ export class GameV2Bridge {
     this.notify();
 
     // -------------------------------------------------------------
-    // BƯỚC 6: Nghỉ 0.8 giây rồi mới chuyển lượt;
+    // BƯỚC 6: Nghỉ 1.0 giây rồi mới chuyển lượt;
     // ô người chơi trên thanh lượt chuyển sáng sang người kế tiếp
     // -------------------------------------------------------------
-    await new Promise((r) => setTimeout(r, t(800)));
+    await new Promise((r) => setTimeout(r, t(1000)));
 
     if (this.isDestroyed) return;
+
+    // -------------------------------------------------------------
+    // Kiểm tra bất biến tự động sau mỗi lượt: đếm số sprite nhân vật
+    // -------------------------------------------------------------
+    if (typeof window !== 'undefined' && (window as any).__charManager?.verifyIntegrity) {
+      const activeCount = this.engine.state.players.filter((p) => !p.bankrupt).length;
+      (window as any).__charManager.verifyIntegrity(activeCount);
+    }
 
     if (this.engine.getActivePlayer().id === bot.id) {
       this.engine.endTurn();
@@ -677,6 +685,10 @@ export class GameV2Bridge {
   public endTurn(): void {
     this.engine.endTurn();
     this.notify();
+    if (typeof window !== 'undefined' && (window as any).__charManager?.verifyIntegrity) {
+      const activeCount = this.engine.state.players.filter((p) => !p.bankrupt).length;
+      (window as any).__charManager.verifyIntegrity(activeCount);
+    }
     if (this.humanTurnResolver) {
       this.humanTurnResolver();
       this.humanTurnResolver = null;
