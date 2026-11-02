@@ -1,4 +1,4 @@
-import { Container, Graphics, Sprite, Assets } from 'pixi.js';
+import { Container, Graphics, Sprite, Assets, BlurFilter } from 'pixi.js';
 import { BOARD_PLATE_WIDTH, BOARD_PLATE_HEIGHT, getTileGeometry } from './isoMath';
 import { imageToStage } from './tileCalibration';
 
@@ -145,6 +145,7 @@ export function createAmbientEffects(options: AmbientOptions = {}): AmbientEffec
 
   // -------------------------------------------------------------
   // 3. HAI THUYỀN TRÔI DẬP DỀNH TRÊN HỒ + BÓNG PHẢN CHIẾU NƯỚC
+  // Lớp vẽ TRÊN sóng nước và vệt nắng (không bị hiệu ứng nước phủ lên)
   // -------------------------------------------------------------
   const boatsGroup = new Container();
   boatsGroup.label = 'ambient-boats';
@@ -152,25 +153,38 @@ export function createAmbientEffects(options: AmbientOptions = {}): AmbientEffec
 
   let boat1Sprite: Sprite | null = null;
   let boat1Reflection: Sprite | null = null;
+  const boat1Wake = new Graphics();
+  boat1Wake.label = 'ambient-boat1-wake';
+  boatsGroup.addChild(boat1Wake);
+
   let boat2Sprite: Sprite | null = null;
   let boat2Reflection: Sprite | null = null;
+  const boat2Wake = new Graphics();
+  boat2Wake.label = 'ambient-boat2-wake';
+  boatsGroup.addChild(boat2Wake);
+
+  let boat1TextureWidth = 438;
+  let boat2TextureWidth = 374;
 
   // Thuyền 1 (thuyền nan chèo tay)
   Assets.load('/art/ambient/ambient-thuyen-1.png').then((tex) => {
     if (tex) {
-      // Bóng phản chiếu mờ trên mặt nước
-      boat1Reflection = new Sprite(tex);
-      boat1Reflection.anchor.set(0.5, 0.15);
-      boat1Reflection.scale.set(0.24, -0.15); // Lật ngược theo trục Y, dẹp dẹt
-      boat1Reflection.tint = 0x1e3a8a; // Hòa màu xanh thẫm của lòng hồ
-      boat1Reflection.alpha = 0.28;
-      boatsGroup.addChild(boat1Reflection);
+      boat1TextureWidth = tex.width || 438;
 
-      // Thuyền thật
+      // Bóng phản chiếu mờ: lật dọc, độ đục 20%, nhòe 3px ngay dưới thuyền
+      boat1Reflection = new Sprite(tex);
+      boat1Reflection.anchor.set(0.5, 0.1);
+      boat1Reflection.alpha = 0.20;
+      boat1Reflection.tint = 0x164e63; // Màu xanh nước hồ sẫm
+      try {
+        boat1Reflection.filters = [new BlurFilter({ strength: 3, quality: 3 })];
+      } catch {}
+      boatsGroup.addChildAt(boat1Reflection, 0);
+
+      // Thuyền thật: vẽ TRÊN sóng nước và phản chiếu
       boat1Sprite = new Sprite(tex);
       boat1Sprite.anchor.set(0.5, 0.5);
-      boat1Sprite.scale.set(0.24);
-      boat1Sprite.position.set(-110, 60);
+      boat1Sprite.position.set(-5, 105);
       boatsGroup.addChild(boat1Sprite);
     }
   }).catch(() => {});
@@ -178,19 +192,22 @@ export function createAmbientEffects(options: AmbientOptions = {}): AmbientEffec
   // Thuyền 2 (thuyền thiên nga)
   Assets.load('/art/ambient/ambient-thuyen-2.png').then((tex) => {
     if (tex) {
-      // Bóng phản chiếu mờ trên mặt nước
+      boat2TextureWidth = tex.width || 374;
+
+      // Bóng phản chiếu mờ: lật dọc, độ đục 20%, nhòe 3px ngay dưới thuyền
       boat2Reflection = new Sprite(tex);
-      boat2Reflection.anchor.set(0.5, 0.15);
-      boat2Reflection.scale.set(0.22, -0.14);
-      boat2Reflection.tint = 0x1e3a8a;
-      boat2Reflection.alpha = 0.26;
-      boatsGroup.addChild(boat2Reflection);
+      boat2Reflection.anchor.set(0.5, 0.1);
+      boat2Reflection.alpha = 0.20;
+      boat2Reflection.tint = 0x164e63;
+      try {
+        boat2Reflection.filters = [new BlurFilter({ strength: 3, quality: 3 })];
+      } catch {}
+      boatsGroup.addChildAt(boat2Reflection, 1);
 
       // Thuyền thật
       boat2Sprite = new Sprite(tex);
       boat2Sprite.anchor.set(0.5, 0.5);
-      boat2Sprite.scale.set(0.22);
-      boat2Sprite.position.set(90, -20);
+      boat2Sprite.position.set(265, 5);
       boatsGroup.addChild(boat2Sprite);
     }
   }).catch(() => {});
@@ -358,52 +375,94 @@ export function createAmbientEffects(options: AmbientOptions = {}): AmbientEffec
       sunGlintsGraphic.visible = false;
     }
 
-    // C. DẬP DỀNH SEN & THUYỀN
+    // C. DẬP DỀNH SEN & THUYỀN TRÊN HỒ
     lotusNodes.forEach((node) => {
       node.graphic.y = node.baseY + Math.sin(elapsed * 1.5 + node.phase) * 2.0;
       node.graphic.x = node.baseX + Math.cos(elapsed * 0.8 + node.phase) * 0.9;
     });
 
-    if (boat1Sprite) {
-      // Thuyền nan trôi nhẹ theo hình ellipse góc Tây Nam hồ
-      const b1Phase = elapsed * 0.12;
-      const b1X = -130 + Math.cos(b1Phase) * 60;
-      const b1Y = 80 + Math.sin(b1Phase) * 35;
-      const b1Rot = Math.sin(elapsed * 0.9) * 0.04 - 0.1;
+    // 1. Thuyền nan 1: trôi trong lòng hồ phía Nam (tránh đảo và cầu Thê Húc)
+    if (boat1Sprite && boat1Reflection) {
+      const b1Phase = elapsed * 0.08;
+      const b1X = -5 + Math.cos(b1Phase) * 24;
+      const b1Y = 105 + Math.sin(b1Phase) * 14;
+
+      // Bập bềnh 1.5px chu kỳ 3.0 giây, nghiêng nhẹ ±2° (0.0349 rad)
+      const b1Bob = Math.sin((elapsed / 3.0) * Math.PI * 2) * 1.5;
+      const b1Tilt = Math.sin((elapsed / 3.0) * Math.PI * 2 + 0.4) * (2 * Math.PI / 180);
+      const b1BaseRot = -0.05 + Math.sin(b1Phase) * 0.06;
+
+      // Chiều dài thuyền ≈ 0.9 lần chiều rộng ô ở vị trí đó
+      const tileW1 = getNearestTileWidth({ x: b1X, y: b1Y });
+      const targetLen1 = tileW1 * 0.9;
+      const scale1 = targetLen1 / boat1TextureWidth;
 
       boat1Sprite.x = b1X;
-      boat1Sprite.y = b1Y;
-      boat1Sprite.rotation = b1Rot;
+      boat1Sprite.y = b1Y + b1Bob;
+      boat1Sprite.scale.set(scale1);
+      boat1Sprite.rotation = b1BaseRot + b1Tilt;
 
-      // Bóng phản chiếu mờ dập dềnh theo mặt nước
-      if (boat1Reflection) {
-        boat1Reflection.x = b1X + Math.sin(elapsed * 2.2) * 1.5;
-        boat1Reflection.y = b1Y + 9;
-        boat1Reflection.rotation = b1Rot * 0.8;
-        boat1Reflection.scale.x = 0.24 + Math.sin(elapsed * 2.5) * 0.01;
-        boat1Reflection.alpha = 0.25 + Math.sin(elapsed * 1.6) * 0.07;
-      }
+      // Bóng phản chiếu mờ: lật dọc, độ đục 20%, nhòe 3px ngay dưới thuyền
+      boat1Reflection.x = b1X;
+      boat1Reflection.y = b1Y + 5 + b1Bob * 0.25;
+      boat1Reflection.scale.set(scale1, -scale1 * 0.65);
+      boat1Reflection.rotation = (b1BaseRot - b1Tilt) * 0.6;
+      boat1Reflection.alpha = 0.20;
+
+      // Vòng gợn nước do code vẽ: elip mảnh màu trắng độ đục 25%, loang ra rồi mờ dần
+      boat1Wake.clear();
+      const p1A = (elapsed / 3.0) % 1.0;
+      const p1B = (elapsed / 3.0 + 0.5) % 1.0;
+      [p1A, p1B].forEach((p) => {
+        const rx = targetLen1 * 0.52 * (0.8 + 0.55 * p);
+        const ry = targetLen1 * 0.28 * (0.8 + 0.55 * p);
+        const alpha = (1.0 - p) * 0.25;
+        boat1Wake
+          .ellipse(b1X, b1Y + 4, rx, ry)
+          .stroke({ width: 1.0, color: 0xffffff, alpha });
+      });
     }
 
-    if (boat2Sprite) {
-      // Thuyền thiên nga trôi nhẹ theo hình số 8 góc Đông Bắc hồ
-      const b2Phase = elapsed * 0.09;
-      const b2X = 80 + Math.sin(b2Phase) * 75;
-      const b2Y = -30 + Math.sin(b2Phase * 2) * 25;
-      const b2Rot = Math.cos(elapsed * 0.75) * 0.035;
+    // 2. Thuyền thiên nga 2: trôi trong lòng hồ phía Đông (tránh đảo và cầu Thê Húc)
+    if (boat2Sprite && boat2Reflection) {
+      const b2Phase = elapsed * 0.07;
+      const b2X = 265 + Math.cos(b2Phase) * 28;
+      const b2Y = 5 + Math.sin(b2Phase) * 10;
+
+      // Bập bềnh 1.5px chu kỳ 3.0 giây, nghiêng nhẹ ±2° (lệch pha thuyền 1)
+      const b2Bob = Math.sin(((elapsed + 1.2) / 3.0) * Math.PI * 2) * 1.5;
+      const b2Tilt = Math.sin(((elapsed + 1.2) / 3.0) * Math.PI * 2 + 0.4) * (2 * Math.PI / 180);
+      const b2BaseRot = 0.04 + Math.sin(b2Phase) * 0.05;
+
+      // Chiều dài thuyền ≈ 0.9 lần chiều rộng ô ở vị trí đó
+      const tileW2 = getNearestTileWidth({ x: b2X, y: b2Y });
+      const targetLen2 = tileW2 * 0.9;
+      const scale2 = targetLen2 / boat2TextureWidth;
 
       boat2Sprite.x = b2X;
-      boat2Sprite.y = b2Y;
-      boat2Sprite.rotation = b2Rot;
+      boat2Sprite.y = b2Y + b2Bob;
+      boat2Sprite.scale.set(scale2);
+      boat2Sprite.rotation = b2BaseRot + b2Tilt;
 
-      // Bóng phản chiếu mờ dập dềnh theo mặt nước
-      if (boat2Reflection) {
-        boat2Reflection.x = b2X + Math.cos(elapsed * 1.8) * 1.5;
-        boat2Reflection.y = b2Y + 8;
-        boat2Reflection.rotation = b2Rot * 0.8;
-        boat2Reflection.scale.x = 0.22 + Math.sin(elapsed * 2.1) * 0.01;
-        boat2Reflection.alpha = 0.24 + Math.cos(elapsed * 1.4) * 0.06;
-      }
+      // Bóng phản chiếu mờ: lật dọc, độ đục 20%, nhòe 3px ngay dưới thuyền
+      boat2Reflection.x = b2X;
+      boat2Reflection.y = b2Y + 5 + b2Bob * 0.25;
+      boat2Reflection.scale.set(scale2, -scale2 * 0.65);
+      boat2Reflection.rotation = (b2BaseRot - b2Tilt) * 0.6;
+      boat2Reflection.alpha = 0.20;
+
+      // Vòng gợn nước do code vẽ: elip mảnh màu trắng độ đục 25%, loang ra rồi mờ dần
+      boat2Wake.clear();
+      const p2A = ((elapsed + 1.2) / 3.0) % 1.0;
+      const p2B = ((elapsed + 1.2) / 3.0 + 0.5) % 1.0;
+      [p2A, p2B].forEach((p) => {
+        const rx = targetLen2 * 0.48 * (0.8 + 0.55 * p);
+        const ry = targetLen2 * 0.32 * (0.8 + 0.55 * p);
+        const alpha = (1.0 - p) * 0.25;
+        boat2Wake
+          .ellipse(b2X, b2Y + 4, rx, ry)
+          .stroke({ width: 1.0, color: 0xffffff, alpha });
+      });
     }
 
     // D. TÀU ĐIỆN CHẠY MỖI 25 GIÂY (CHỈ KHI ĐƯỢC BẬT TRONG CÀI ĐẶT)
