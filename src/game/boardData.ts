@@ -193,7 +193,7 @@ export const BOARD_40_TILES: Tile[] = [
   {
     id: 14,
     name: 'Buôn Ma Thuột',
-    shortName: 'B.M.Thuột',
+    shortName: 'BM Thuột',
     type: 'PROPERTY',
     colorGroup: 'PINK',
     price: 160000,
@@ -399,7 +399,7 @@ export const BOARD_40_TILES: Tile[] = [
   {
     id: 28,
     name: 'Nhà máy nước Yên Phụ',
-    shortName: 'Nhà máy nước',
+    shortName: 'Yên Phụ',
     type: 'UTILITY',
     colorGroup: 'UTILITY',
     price: 150000,
@@ -536,7 +536,7 @@ export const BOARD_40_TILES: Tile[] = [
   {
     id: 38,
     name: 'Thuế xa xỉ',
-    shortName: 'Thuế xa xỉ',
+    shortName: 'Xa xỉ',
     type: 'TAX',
     taxAmount: 100000,
   },

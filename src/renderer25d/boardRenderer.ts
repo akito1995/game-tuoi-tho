@@ -484,14 +484,16 @@ export function createBoardRenderer(options: BoardRendererOptions): BoardRendere
           const tileWidth = Math.hypot(outE.x - outS.x, outE.y - outS.y);
           const tileDepth = Math.hypot(inS.x - outS.x, inS.y - outS.y);
 
-          const halfU = 0.30;
+          const halfU = 0.28;
           const u0 = 0.5 - halfU;
           const u1 = 0.5 + halfU;
 
-          const targetDiam = 0.60 * tileWidth;
-          const halfV = Math.min(0.35, (targetDiam / tileDepth) * 0.5);
-          const v0 = 0.5 - halfV;
-          const v1 = 0.5 + halfV;
+          // Huy hiệu tròn nằm ở nửa trong của ô (gần dải màu/bờ kè), nhường nửa ngoài cho biển tên
+          const targetDiam = 0.52 * tileWidth;
+          const halfV = Math.min(0.18, (targetDiam / tileDepth) * 0.5);
+          const centerV = 0.28;
+          const v0 = Math.max(0.08, centerV - halfV);
+          const v1 = v0 + 2 * halfV;
 
           const side = Math.floor(tile.id / 10) % 4;
           let p0: { x: number; y: number };
@@ -511,7 +513,7 @@ export function createBoardRenderer(options: BoardRendererOptions): BoardRendere
             p3 = interpTile(u1, v0);
           }
 
-          const centerPt = interpTile(0.5, 0.5);
+          const centerPt = interpTile(0.5, (v0 + v1) * 0.5);
           const shadowG = new Graphics();
           shadowG.position.set(centerPt.x, centerPt.y);
           shadowG.rotation = geo.angle;
@@ -629,29 +631,20 @@ function fitTileName(rawName: string, maxW: number): { text: string; fontSize: n
 
   /**
    * =========================================================================
-   * BẢN VẼ TÊN Ô: NGAY NGẮN, SONG SONG CẠNH BÀN CỜ
+   * BẢN VẼ TÊN Ô: MỖI CẠNH LÀ MỘT HÀNG CHỮ IN THẲNG TẮP
    * =========================================================================
-   * 1. Hướng chữ: Dòng chữ chạy song song cạnh bàn cờ. Cả 4 cạnh chỉ có 2 hướng
-   *    (cạnh đối diện song song nhau), lấy chính xác từ homography board-calibration.json.
-   *    Chữ luôn đọc từ trái sang phải trên màn hình, không bao giờ lộn ngược.
-   * 2. Hai chế độ hiển thị:
-   *    - "Dán phẳng" (Mặc định): biến đổi affine (xoay + xiên) để cạnh trên/dưới
-   *      song song cạnh bàn cờ, cạnh trái/phải song song cạnh bên ô, biển nằm khít
-   *      như in trên mặt đá. KHÔNG thu nhỏ phối cảnh: giữ cỡ chữ chuẩn.
-   *    - "Chỉ xoay": chỉ xoay biển song song cạnh bàn cờ, không xiên.
-   * 3. Vị trí & Kích thước:
-   *    - Ô thường: dải giữa-ngoài (t = 0.62), giữa dải màu và mép ngoài, rộng tối đa 88%.
-   *    - Ô Khí Vận / Cơ Hội / Thuế: huy hiệu tròn ở giữa, biển tên ngay dưới huy hiệu, cùng hướng.
-   *    - 4 ô góc: song song cạnh ngoài gần người xem nhất, đặt sát mép ngoài.
-   * 4. Chữ:
-   *    - Dòng 1: shortName, Be Vietnam Pro 800, chữ trắng, viền chữ nâu đậm 2px.
-   *    - Dòng 2: giá "140K" Baloo 2 700 màu vàng nhạt #FFE08A (hoặc "Thuê 120K" màu chủ).
-   *    - Nền biển: nâu gỗ sẫm #3A2414 độ đục 88%, bo góc 5px, viền mảnh màu nhóm ở cạnh phía dải màu.
-   *    - Tự co cỡ chữ 11-16px, nếu dài tự xuống 2 dòng, không cắt cụt chữ.
-   * 5. Lớp và va chạm:
-   *    - Biển tên nằm trên lớp mặt ô, dưới nhân vật. Nếu có công trình che: biển nâng lên
-   *      trên công trình với độ đục 75%, rê chuột vào thì 100%.
-   *    - Biển của các ô kề nhau không chạm nhau (khoảng cách an toàn >= 14% bề ngang ô).
+   * 1. Một góc chung cho cả cạnh: mỗi cạnh (1-9, 11-19, 21-29, 31-39) dùng ĐÚNG 1
+   *    phép biến đổi (cùng góc xoay, cùng độ xiên) tính tại điểm giữa cạnh (t = 0.5).
+   * 2. Một đường thẳng chung: trên mặt phẳng bàn cờ, tâm mọi biển của một cạnh nằm
+   *    trên cùng một đường song song với cạnh, ở 62% chiều sâu ô tính từ mép trong.
+   * 3. Kích thước đồng nhất: mọi biển trên toàn bàn cờ có cùng chiều cao (28px),
+   *    cùng cỡ chữ (11px cho tên, 10px cho giá), cùng chiều rộng = 84% chiều rộng
+   *    ô hẹp nhất của cạnh đó. Luôn đúng 2 dòng.
+   * 4. Tên ngắn <= 10 ký tự: "Phan Thiết" vừa biển ở ô hẹp nhất.
+   * 5. Ô Khí Vận / Cơ Hội / Thuế: huy hiệu tròn ở nửa trong, biển tên nằm đúng trên
+   *    đường thẳng chung, dòng 2 là "Rút thẻ" hoặc "-10%" / "-100K".
+   * 6. Ô góc: biển song song với cạnh vào ô góc đó, kích thước giống các biển khác,
+   *    đặt sát mép ngoài, không che công trình góc và nhân vật.
    * =========================================================================
    */
   const buildTileLabels = () => {
@@ -660,14 +653,92 @@ function fitTileName(rawName: string, maxW: number): { text: string; fontSize: n
 
     const zoomRatio = currentBaseCoverScale > 0 ? currentZoom / currentBaseCoverScale : 1.0;
     const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
-    // Độ phân giải chữ = devicePixelRatio * mức phóng to
     const textResolution = Math.min(4.5, Math.max(2.0, Number((dpr * Math.max(1.0, zoomRatio)).toFixed(2))));
 
-    // Target font scale for signboards:
-    // Cỡ chữ cố định theo màn hình ở khung nhìn mặc định, co giãn nhẹ nhưng giới hạn rõ ràng
     const targetScaleRatio = Math.min(18 / 13.5, Math.max(12 / 13.5, zoomRatio));
     const localScale = targetScaleRatio / zoomRatio;
 
+    // Hằng số kích thước và cỡ chữ đồng nhất trên toàn bàn cờ (Mục 3)
+    const SIGN_HEIGHT = 28;
+    const NAME_FONT_SIZE = 11;
+    const PRICE_FONT_SIZE = 10;
+
+    // -------------------------------------------------------------------------
+    // 1. TÍNH TOÁN METRICS RIÊNG CHO TỪNG CẠNH (TÍNH TẠI ĐIỂM GIỮA CẠNH - Mục 1 & 2)
+    // -------------------------------------------------------------------------
+    interface SideMetrics {
+      edgeAngle: number;
+      skewX: number;
+      signW: number;
+    }
+
+    const sideMetrics: SideMetrics[] = [];
+
+    for (let side = 0; side < 4; side++) {
+      const sideTiles = currentTiles.filter(
+        (t) => Math.floor(t.id / 10) % 4 === side && t.id % 10 !== 0
+      );
+
+      // Điểm giữa cạnh: lấy tại ô giữa dãy (ô k=4, tức tile s*10 + 5)
+      const midTile = currentTiles.find((t) => t.id === side * 10 + 5) || sideTiles[Math.floor(sideTiles.length / 2)];
+      const midGeo = midTile ? getTileGeometry(midTile.id) : null;
+
+      // Chiều rộng ô hẹp nhất của cạnh đó
+      const widths = sideTiles.map((t) => {
+        const g = getTileGeometry(t.id);
+        return g ? Math.hypot(g.outerEnd.x - g.outerStart.x, g.outerEnd.y - g.outerStart.y) : 65;
+      });
+      const minTileW = widths.length > 0 ? Math.min(...widths) : 65;
+      const signW = Math.round(minTileW * 0.84);
+
+      // Vector cạnh và vector ngang tính tại điểm giữa cạnh
+      const firstTile = currentTiles.find((t) => t.id === side * 10 + 1) || sideTiles[0];
+      const lastTile = currentTiles.find((t) => t.id === side * 10 + 9) || sideTiles[sideTiles.length - 1];
+      const gFirst = firstTile ? getTileGeometry(firstTile.id) : null;
+      const gLast = lastTile ? getTileGeometry(lastTile.id) : null;
+
+      let edgeAngle = 0;
+      let sideAngle = 0;
+
+      if (gFirst && gLast && midGeo) {
+        // Hướng cạnh chung: từ outerStart ô đầu đến outerEnd ô cuối
+        const vEdge = {
+          x: gLast.outerEnd.x - gFirst.outerStart.x,
+          y: gLast.outerEnd.y - gFirst.outerStart.y,
+        };
+        edgeAngle = Math.atan2(vEdge.y, vEdge.x);
+
+        // Đảm bảo chữ luôn đọc từ trái sang phải trên màn hình, không bao giờ lộn ngược:
+        while (edgeAngle > Math.PI / 2) edgeAngle -= Math.PI;
+        while (edgeAngle < -Math.PI / 2) edgeAngle += Math.PI;
+
+        // Hướng ngang (từ mép ngoài vào mép trong) tại điểm giữa cạnh
+        const inMid = {
+          x: (midGeo.innerStart.x + midGeo.innerEnd.x) / 2,
+          y: (midGeo.innerStart.y + midGeo.innerEnd.y) / 2,
+        };
+        const outMid = {
+          x: (midGeo.outerStart.x + midGeo.outerEnd.x) / 2,
+          y: (midGeo.outerStart.y + midGeo.outerEnd.y) / 2,
+        };
+        const vTrans = { x: inMid.x - outMid.x, y: inMid.y - outMid.y };
+        sideAngle = Math.atan2(vTrans.y, vTrans.x);
+      }
+
+      let skewX = edgeAngle + Math.PI / 2 - sideAngle;
+      while (skewX > Math.PI / 2) skewX -= Math.PI;
+      while (skewX < -Math.PI / 2) skewX += Math.PI;
+
+      sideMetrics[side] = {
+        edgeAngle,
+        skewX,
+        signW,
+      };
+    }
+
+    // -------------------------------------------------------------------------
+    // 2. DỰNG TỪNG BIỂN TÊN Ô (CĂN THEO ĐƯỜNG THẲNG CHUNG & ĐỒNG NHẤT KÍCH THƯỚC)
+    // -------------------------------------------------------------------------
     currentTiles.forEach((tile) => {
       const geo = getTileGeometry(tile.id);
       if (!geo) return;
@@ -677,7 +748,6 @@ function fitTileName(rawName: string, maxW: number): { text: string; fontSize: n
       const isOwned = Boolean(tile.ownerId && currentColorMap[tile.ownerId]);
       const hasBuilding = Boolean(tile.buildingLevel && tile.buildingLevel > 0);
       const isProperty = tile.type === 'PROPERTY';
-      const isSpecialIllustrated = tile.type === 'FATE' || tile.type === 'CHANCE' || tile.type === 'TAX';
 
       // Tiền thuê / Giá hiển thị
       let rentVal = 0;
@@ -690,10 +760,10 @@ function fitTileName(rawName: string, maxW: number): { text: string; fontSize: n
           0;
       }
 
-      // Tên ngắn (shortName, không cắt cụt)
+      // Tên ngắn (shortName, tối đa 10 ký tự, Mục 4)
       const rawName = (tile.shortName || tile.name).trim();
 
-      // Nội dung dòng 2 (giá / tiền thuê / mô tả ngắn)
+      // Nội dung dòng 2 (giá / tiền thuê / mô tả ngắn - Mục 5)
       let line2Text = '';
       if (isOwned) {
         line2Text = `Thuê ${Math.round(rentVal / 1000)}K`;
@@ -704,59 +774,53 @@ function fitTileName(rawName: string, maxW: number): { text: string; fontSize: n
         else if (tile.id === 10) line2Text = 'Thăm tù';
         else if (tile.id === 20) line2Text = 'Nghỉ chân';
         else if (tile.id === 30) line2Text = 'Vào tù';
-        else if (tile.type === 'FATE') line2Text = 'Khí Vận';
-        else if (tile.type === 'CHANCE') line2Text = 'Cơ Hội';
+        else if (tile.type === 'FATE') line2Text = 'Rút thẻ';
+        else if (tile.type === 'CHANCE') line2Text = 'Rút thẻ';
         else if (tile.id === 4) line2Text = '−10%';
         else if (tile.id === 38) line2Text = '−100K';
       }
 
-      // -------------------------------------------------------------
-      // 1. TÍNH TOÁN GÓC HƯỚNG CHỮ VÀ VỊ TRÍ BIỂN
-      // -------------------------------------------------------------
-      let edgeAngle = 0;
-      let sideAngle = 0;
+      const sm = sideMetrics[side];
+      let edgeAngle = sm.edgeAngle;
+      let skewX = sm.skewX;
+      let signW = sm.signW;
       let posX = geo.center.x;
       let posY = geo.center.y;
-      let tileWidth = 80;
 
       if (isCorner) {
-        // 4 Ô GÓC: biển tên đặt ở mép ngoài ô, thấp hơn và không che nhân vật / công trình góc
+        // Ô góc: biển song song với cạnh vào ô góc đó, kích thước giống các biển khác, đặt sát mép ngoài (Mục 6)
         if (tile.id === 0) {
-          // Nam - Xuất Phát: đặt ở mép ngoài ô (phía dưới), thấp hơn để không che 4 nhân vật đứng trên ô
-          edgeAngle = 0;
-          sideAngle = Math.PI / 2;
+          // Nam - Xuất Phát: cạnh vào là Side 3 -> cùng góc xoay với Side 3
+          edgeAngle = sideMetrics[3].edgeAngle;
+          skewX = 0;
+          signW = sideMetrics[3].signW;
           posX = geo.center.x;
           posY = geo.outerStart.y + 24;
-          tileWidth = 110;
         } else if (tile.id === 10) {
-          // Tây - Trại Giam: đặt ở mép ngoài ô góc phía Tây, không đè lên công trình Trại Giam
-          edgeAngle = HOMOGRAPHY_ANGLE_AXIS_A;
-          sideAngle = HOMOGRAPHY_ANGLE_AXIS_B;
+          // Tây - Trại Giam: cạnh vào là Side 0 -> cùng góc xoay với Side 0
+          edgeAngle = sideMetrics[0].edgeAngle;
+          skewX = 0;
+          signW = sideMetrics[0].signW;
           posX = geo.outerStart.x - 24;
           posY = geo.outerStart.y + 20;
-          tileWidth = 90;
         } else if (tile.id === 20) {
-          // Bắc - Quán Trà Đá: đặt ở mép ngoài ô phía Bắc
-          edgeAngle = 0;
-          sideAngle = Math.PI / 2;
+          // Bắc - Quán Trà Đá: cạnh vào là Side 1 -> cùng góc xoay với Side 1
+          edgeAngle = sideMetrics[1].edgeAngle;
+          skewX = 0;
+          signW = sideMetrics[1].signW;
           posX = geo.center.x;
           posY = geo.outerStart.y - 12;
-          tileWidth = 85;
         } else {
-          // Đông - Vào Tù: đặt ở mép ngoài ô góc phía Đông, không đè lên công trình Vào Tù
-          edgeAngle = HOMOGRAPHY_ANGLE_AXIS_B;
-          sideAngle = HOMOGRAPHY_ANGLE_AXIS_A;
+          // Đông - Vào Tù: cạnh vào là Side 2 -> cùng góc xoay với Side 2
+          edgeAngle = sideMetrics[2].edgeAngle;
+          skewX = 0;
+          signW = sideMetrics[2].signW;
           posX = geo.outerStart.x + 24;
           posY = geo.outerStart.y + 20;
-          tileWidth = 90;
         }
       } else {
-        // CÁC Ô DÃY THƯỜNG (Side 0..3):
-        // Cả 4 cạnh chỉ có 2 hướng (2 cạnh đối diện song song nhau):
-        // Side 0 & Side 2: HOMOGRAPHY_ANGLE_AXIS_A (~30.71°)
-        // Side 1 & Side 3: HOMOGRAPHY_ANGLE_AXIS_B (~-26.96°)
-        edgeAngle = (side === 0 || side === 2) ? HOMOGRAPHY_ANGLE_AXIS_A : HOMOGRAPHY_ANGLE_AXIS_B;
-
+        // CÁC Ô DÃY THƯỜNG (Ô 1-9, 11-19, 21-29, 31-39):
+        // Nằm trên đúng đường thẳng chung ở 62% chiều sâu ô tính từ mép trong, căn giữa đúng tâm ô (Mục 2)
         const inMid = {
           x: (geo.innerStart.x + geo.innerEnd.x) / 2,
           y: (geo.innerStart.y + geo.innerEnd.y) / 2,
@@ -765,53 +829,23 @@ function fitTileName(rawName: string, maxW: number): { text: string; fontSize: n
           x: (geo.outerStart.x + geo.outerEnd.x) / 2,
           y: (geo.outerStart.y + geo.outerEnd.y) / 2,
         };
-
-        tileWidth = Math.hypot(geo.outerEnd.x - geo.outerStart.x, geo.outerEnd.y - geo.outerStart.y);
-
-        // Hướng cạnh bên ô (transverse: từ ngoài vào trong)
-        const vTrans = { x: inMid.x - outMid.x, y: inMid.y - outMid.y };
-        sideAngle = Math.atan2(vTrans.y, vTrans.x);
-
-        if (isSpecialIllustrated) {
-          // Ô Khí Vận / Cơ Hội / Thuế: huy hiệu tròn ở giữa ô, biển tên ngay dưới huy hiệu, cùng hướng
-          const isOuterNearViewer = outMid.y >= inMid.y;
-          const tSign = isOuterNearViewer ? 0.78 : 0.22;
-          posX = inMid.x + (outMid.x - inMid.x) * tSign;
-          posY = inMid.y + (outMid.y - inMid.y) * tSign;
-        } else {
-          // Ô thường: biển nằm ở dải giữa-ngoài (t = 0.62), giữa vùng dải màu (t=0.22) và mép ngoài (t=1.0)
-          posX = inMid.x + (outMid.x - inMid.x) * 0.62;
-          posY = inMid.y + (outMid.y - inMid.y) * 0.62;
-        }
+        posX = inMid.x + (outMid.x - inMid.x) * 0.62;
+        posY = inMid.y + (outMid.y - inMid.y) * 0.62;
       }
 
-      // Đảm bảo chữ luôn đọc từ trái sang phải trên màn hình, không bao giờ lộn ngược:
-      while (edgeAngle > Math.PI / 2) edgeAngle -= Math.PI;
-      while (edgeAngle < -Math.PI / 2) edgeAngle += Math.PI;
-
-      // -------------------------------------------------------------
-      // 2. TẠO CONTAINER BIỂN TÊN VÀ BIẾN ĐỔI (AFFINE / CHỈ XOAY)
-      // -------------------------------------------------------------
+      // Tạo Container biển tên
       const signboard = new Container();
       signboard.position.set(posX, posY);
       signboard.rotation = edgeAngle;
 
       if (currentTileLabelStyle === 'affine' && !isCorner) {
-        // "Dán phẳng": Biến đổi affine (xoay + xiên) để cạnh trên/dưới song song cạnh bàn cờ,
-        // cạnh trái/phải song song cạnh bên của ô, biển nằm khít trong ô như in trên mặt đá.
-        let skewX = edgeAngle + Math.PI / 2 - sideAngle;
-        while (skewX > Math.PI / 2) skewX -= Math.PI;
-        while (skewX < -Math.PI / 2) skewX += Math.PI;
         signboard.skew.set(skewX, 0);
       } else {
-        // "Chỉ xoay": chỉ xoay biển cho chữ chạy song song cạnh bàn cờ, không xiên
         signboard.skew.set(0, 0);
       }
 
-      // Giữ cỡ chữ theo mục 4, KHÔNG thu nhỏ theo phối cảnh:
       signboard.scale.set(localScale, localScale);
 
-      // Độ đục: Nếu công trình của ô che biển: biển nâng lên trên công trình với độ đục 75%, rê chuột vào thì 100%
       const defaultAlpha = hasBuilding ? 0.75 : 1.0;
       signboard.alpha = defaultAlpha;
       signboard.eventMode = 'static';
@@ -821,21 +855,20 @@ function fitTileName(rawName: string, maxW: number): { text: string; fontSize: n
       signboard.on('pointerout', () => { signboard.alpha = defaultAlpha; });
       signboard.on('pointerdown', () => { options.onTileClick?.(tile.id); });
 
-      // -------------------------------------------------------------
-      // 3. TỰ CO CỠ CHỮ & XUỐNG DÒNG (KHÔNG CẮT CỤT)
-      // -------------------------------------------------------------
-      // Chiều rộng tối đa 88% chiều rộng ô, không tràn sang ô bên cạnh (đặt 85% để an toàn tuyệt đối)
-      const maxSignW = Math.max(48, tileWidth * 0.85);
-      const availTextW = maxSignW - 10;
+      // Lưu debug
+      (signboard as any).__signW = signW;
+      (signboard as any).__signH = SIGN_HEIGHT;
+      (signboard as any).__tileId = tile.id;
 
-      const fittedName = fitTileName(rawName, availTextW);
-
+      // -------------------------------------------------------------
+      // DÒNG 1: TÊN Ô (Be Vietnam Pro 800, cố định cỡ chữ NAME_FONT_SIZE = 11)
+      // -------------------------------------------------------------
       const nameText = new Text({
-        text: fittedName.text,
+        text: rawName,
         resolution: textResolution,
         style: {
           fontFamily: '"Be Vietnam Pro", sans-serif',
-          fontSize: fittedName.fontSize,
+          fontSize: NAME_FONT_SIZE,
           fontWeight: '800',
           fill: '#FFFFFF',
           stroke: {
@@ -844,25 +877,26 @@ function fitTileName(rawName: string, maxW: number): { text: string; fontSize: n
             join: 'round',
           },
           align: 'center',
-          lineHeight: fittedName.isTwoLines ? fittedName.fontSize * 1.15 : undefined,
+          letterSpacing: -0.4,
         },
       });
       nameText.anchor.set(0.5, 0.5);
 
-      // Dòng 2: Giá "140K" Baloo 2 700 vàng nhạt #FFE08A, ô đã có chủ thành "Thuê 120K"
-      const priceColor = isOwned ? '#FFFFFF' : '#FFE08A';
-      // Cỡ chữ dòng 2 tự co trong khoảng 10-14px
-      let priceFontSize = Math.min(13, Math.max(10, fittedName.fontSize - 1.5));
-      if (measureTextWidth(line2Text, priceFontSize, '700', '"Baloo 2", cursive, sans-serif') > availTextW) {
-        priceFontSize = 10;
+      // Đảm bảo tên dài nhất ("Phan Thiết") vừa biển ở ô hẹp nhất, không xuống dòng
+      if (nameText.width > signW - 4) {
+        nameText.scale.x = (signW - 4) / nameText.width;
       }
 
+      // -------------------------------------------------------------
+      // DÒNG 2: GIÁ / THUÊ / RÚT THẺ (Baloo 2 700, cố định cỡ chữ PRICE_FONT_SIZE = 10)
+      // -------------------------------------------------------------
+      const priceColor = isOwned ? '#FFFFFF' : '#FFE08A';
       const priceText = new Text({
         text: line2Text,
         resolution: textResolution,
         style: {
           fontFamily: '"Baloo 2", cursive, sans-serif',
-          fontSize: priceFontSize,
+          fontSize: PRICE_FONT_SIZE,
           fontWeight: '700',
           fill: priceColor,
           stroke: {
@@ -871,35 +905,33 @@ function fitTileName(rawName: string, maxW: number): { text: string; fontSize: n
             join: 'round',
           },
           align: 'center',
+          letterSpacing: -0.2,
         },
       });
       priceText.anchor.set(0.5, 0.5);
 
-      // Kích thước tấm biển:
-      const contentW = Math.max(nameText.width, priceText.width);
-      const signW = Math.min(maxSignW, Math.max(contentW + 12, 50));
-      const signH = fittedName.isTwoLines ? 37 : 27;
+      if (priceText.width > signW - 4) {
+        priceText.scale.x = (signW - 4) / priceText.width;
+      }
 
       // -------------------------------------------------------------
-      // 4. VẼ NỀN BIỂN VÀ DẢI MÀU NHÓM
+      // VẼ NỀN BIỂN VÀ DẢI MÀU NHÓM (KÍCH THƯỚC ĐỒNG NHẤT)
       // -------------------------------------------------------------
       const bgG = new Graphics();
       if (isOwned && tile.ownerId && currentColorMap[tile.ownerId]) {
         const ownerCol = currentColorMap[tile.ownerId];
-        // Ô đã có chủ: nền biển đổi sang màu người chơi
-        bgG.roundRect(-signW / 2, -signH / 2, signW, signH, 5)
+        bgG.roundRect(-signW / 2, -SIGN_HEIGHT / 2, signW, SIGN_HEIGHT, 4)
           .fill({ color: ownerCol, alpha: 0.90 })
           .stroke({ width: 1.2, color: 0xFFF2DB, alpha: 0.90 });
       } else {
-        // Nền biển: nâu gỗ sẫm #3A2414 độ đục 88%, bo góc 5px
-        bgG.roundRect(-signW / 2, -signH / 2, signW, signH, 5)
+        bgG.roundRect(-signW / 2, -SIGN_HEIGHT / 2, signW, SIGN_HEIGHT, 4)
           .fill({ color: 0x3A2414, alpha: 0.88 })
           .stroke({ width: 1, color: 0x5C3A21, alpha: 0.75 });
       }
       signboard.addChild(bgG);
 
-      // Viền mảnh màu nhóm ở cạnh phía dải màu (cạnh trên của biển):
-      let barColor = 0x718096; // Mặc định xám đá
+      // Viền dải màu nhóm ở cạnh trên của biển
+      let barColor = 0x718096;
       if (isProperty && tile.colorGroup && COLOR_GROUP_HEX[tile.colorGroup]) {
         barColor = parseInt(COLOR_GROUP_HEX[tile.colorGroup].replace('#', '0x'), 16);
       } else if (tile.type === 'FATE') {
@@ -915,24 +947,34 @@ function fitTileName(rawName: string, maxW: number): { text: string; fontSize: n
       }
 
       const topBar = new Graphics();
-      topBar.roundRect(-signW / 2 + 1, -signH / 2 + 1, signW - 2, 2.5, 1.5)
+      topBar.roundRect(-signW / 2 + 1, -SIGN_HEIGHT / 2 + 1, signW - 2, 2.5, 1.5)
         .fill({ color: barColor, alpha: 0.95 });
       signboard.addChild(topBar);
 
-      // Định vị chữ trong biển:
-      if (fittedName.isTwoLines) {
-        nameText.position.set(0, -signH / 2 + 12);
-        priceText.position.set(0, -signH / 2 + 28);
-      } else {
-        nameText.position.set(0, -signH / 2 + 8.5);
-        priceText.position.set(0, -signH / 2 + 19.5);
-      }
+      // Căn giữa 2 dòng chữ trong biển
+      nameText.position.set(0, -SIGN_HEIGHT / 2 + 8.5);
+      priceText.position.set(0, -SIGN_HEIGHT / 2 + 19.5);
+
       signboard.addChild(nameText);
       signboard.addChild(priceText);
 
       labelsLayer.addChild(signboard);
       labelContainers.set(tile.id, signboard);
     });
+
+    if (typeof window !== 'undefined') {
+      (window as any).__tileLabelsData = Array.from(labelContainers.entries()).map(([id, sb]) => ({
+        id,
+        side: Math.floor(id / 10) % 4,
+        isCorner: id % 10 === 0,
+        x: sb.position.x,
+        y: sb.position.y,
+        rotation: sb.rotation,
+        skewX: sb.skew.x,
+        width: (sb as any).__signW,
+        height: SIGN_HEIGHT,
+      }));
+    }
   };
 
   // Khởi tạo ban đầu
