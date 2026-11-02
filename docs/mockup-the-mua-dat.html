@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mẫu thẻ mua đất – Cờ Tỷ Phú</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Be+Vietnam+Pro:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* ====== MẪU THAM CHIẾU: làm y hệt kích thước, màu, bố cục ====== */
+  :root{
+    --paper:#F6EEDC; --paper-2:#EADFC6; --ink:#2B1B0E; --ink-2:#6B5640;
+    --line:#D9CBAE; --buy:#1F9D6B; --buy-dark:#137A51;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;font-family:'Be Vietnam Pro',system-ui,sans-serif;color:var(--ink);
+       background:linear-gradient(135deg,#7FA88A,#C9A35E 55%,#8C5A3A);}
+  .note{position:fixed;top:12px;left:16px;right:16px;color:#fff;font-weight:600;font-size:14px;text-shadow:0 1px 3px #000}
+
+  /* Lớp tối phía sau thẻ: phủ toàn màn hình, nằm TRÊN canvas và TRÊN mọi biển tên ô */
+  .overlay{position:fixed;inset:0;background:rgba(20,12,4,.45);z-index:1000;
+           display:flex;align-items:center;justify-content:center;gap:32px;flex-wrap:wrap;padding:56px 16px 16px}
+
+  /* Thẻ: nền ĐẶC, rộng cố định, không bao giờ trong suốt */
+  .card{width:min(420px,92vw);background:var(--paper);border-radius:20px;overflow:hidden;
+        border:3px solid var(--group);box-shadow:0 18px 48px rgba(0,0,0,.45)}
+  .band{height:12px;background:var(--group)}
+  .body{padding:16px 20px 20px;display:flex;flex-direction:column;gap:12px}
+  .eyebrow{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;letter-spacing:.06em;
+           text-transform:uppercase;color:var(--ink-2)}
+  .dot{width:12px;height:12px;border-radius:50%;background:var(--group)}
+  .title{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:32px;line-height:1;margin:0}
+  .sub{font-size:14px;color:var(--ink-2);font-weight:600;margin-top:-4px}
+
+  .img{height:150px;border-radius:14px;background:var(--paper-2);display:flex;align-items:center;justify-content:center;
+       color:var(--ink-2);font-size:13px;font-weight:600;border:1px dashed var(--line)}
+
+  .price{display:flex;justify-content:space-between;align-items:baseline;background:#fff;border-radius:12px;padding:10px 14px}
+  .price span{font-size:14px;font-weight:600;color:var(--ink-2)}
+  .price b{font-family:'Baloo 2',sans-serif;font-size:26px;font-weight:800}
+
+  table{width:100%;border-collapse:collapse;font-size:15px}
+  caption{text-align:left;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);padding-bottom:6px}
+  td{padding:6px 10px;border-top:1px solid var(--line)}
+  td:last-child{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+  tr.now td{background:#FFF6D6;font-weight:800}
+  .hint{font-size:12px;color:var(--ink-2);font-weight:500}
+
+  .actions{display:grid;grid-template-columns:1fr 1.6fr;gap:10px;margin-top:4px}
+  button{height:54px;border-radius:14px;font-family:'Be Vietnam Pro',sans-serif;font-size:16px;font-weight:800;cursor:pointer}
+  .skip{background:#fff;border:2px solid var(--line);color:var(--ink)}
+  .buy{background:var(--buy);border:0;color:#fff;box-shadow:inset 0 -4px 0 var(--buy-dark)}
+  .after{text-align:center;font-size:13px;color:var(--ink-2);font-weight:600}
+</style>
+</head>
+<body>
+<div class="note">MẪU THAM CHIẾU – thẻ mua đất (trái: ô đất · phải: ô giao thông). Số liệu theo docs/rules-v2.md.</div>
+
+<div class="overlay">
+
+  <!-- ===== Ô ĐẤT ===== -->
+  <section class="card" style="--group:#EE5FA0" aria-label="Mua đất Kon Tum">
+    <div class="band"></div>
+    <div class="body">
+      <div class="eyebrow"><span class="dot"></span>Nhóm Hồng · Tây Nguyên</div>
+      <h2 class="title">Kon Tum</h2>
+      <div class="sub">Đất chưa có chủ</div>
+      <div class="img">[ảnh house-1.png – nhà cấp 1]</div>
+      <div class="price"><span>Giá mua đất</span><b>140.000đ</b></div>
+      <table>
+        <caption>Tiền thuê</caption>
+        <tr class="now"><td>Đất trống</td><td>14.000đ</td></tr>
+        <tr><td>Nhà cấp 1</td><td>70.000đ</td></tr>
+        <tr><td>Nhà cấp 2</td><td>182.000đ</td></tr>
+        <tr><td>Nhà cấp 3</td><td>350.000đ</td></tr>
+        <tr><td>Nhà cấp 4</td><td>490.000đ</td></tr>
+        <tr><td>Landmark · Nhà rông Kon Klor</td><td>700.000đ</td></tr>
+      </table>
+      <div class="hint">Giá xây mỗi cấp 100.000đ · Landmark 200.000đ · Đất trống ×2 khi sở hữu trọn nhóm</div>
+      <div class="actions">
+        <button class="skip">Bỏ qua</button>
+        <button class="buy">MUA 140.000đ</button>
+      </div>
+      <div class="after">Còn lại sau khi mua: 1.860.000đ</div>
+    </div>
+  </section>
+
+  <!-- ===== Ô GIAO THÔNG ===== -->
+  <section class="card" style="--group:#8A8F98" aria-label="Mua Bến Nhà Rồng">
+    <div class="band"></div>
+    <div class="body">
+      <div class="eyebrow"><span class="dot"></span>Giao thông · Cảng biển</div>
+      <h2 class="title">Bến Nhà Rồng</h2>
+      <div class="sub">Chưa có chủ</div>
+      <div class="img">[ảnh station-nha-rong.png]</div>
+      <div class="price"><span>Giá mua</span><b>200.000đ</b></div>
+      <table>
+        <caption>Tiền thuê theo số ga sở hữu</caption>
+        <tr class="now"><td>Sở hữu 1 ga</td><td>25.000đ</td></tr>
+        <tr><td>Sở hữu 2 ga</td><td>50.000đ</td></tr>
+        <tr><td>Sở hữu 3 ga</td><td>100.000đ</td></tr>
+        <tr><td>Sở hữu 4 ga</td><td>200.000đ</td></tr>
+      </table>
+      <div class="hint">Dừng ở ga của mình: trả 50.000đ để đi thẳng tới ga khác · Độc quyền 4 ga = thắng</div>
+      <div class="actions">
+        <button class="skip">Bỏ qua</button>
+        <button class="buy">MUA 200.000đ</button>
+      </div>
+      <div class="after">Còn lại sau khi mua: 1.800.000đ</div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

@@ -295,8 +295,12 @@ describe('GameEngine 40-Tile Architecture & Rules', () => {
 
       await executeBotTurn(engine);
 
-      // Sau khi bot đi xong, lượt chơi phải được chuyển sang người tiếp theo
-      expect(engine.state.activePlayerIndex).not.toBe(1);
+      // Sau khi bot đi xong, lượt chơi phải được chuyển sang người tiếp theo hoặc đi tiếp nếu đổ đôi
+      if (engine.state.isDouble && engine.state.doubleStreak > 0) {
+        expect(engine.state.activePlayerIndex).toBe(1);
+      } else {
+        expect(engine.state.activePlayerIndex).not.toBe(1);
+      }
     });
   });
 

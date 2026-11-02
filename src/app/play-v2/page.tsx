@@ -8,7 +8,7 @@ import { PlayerTokenData } from '../../renderer25d/characterRenderer';
 import { CornerConfig } from '../../renderer25d/boardRenderer';
 import { BuildingsLayout, BuildingLayoutItem } from '../../renderer25d/buildingRenderer';
 import { BOARD_40_TILES } from '../../game/boardData';
-import { Tile, COLOR_GROUP_HEX } from '../../game/types';
+import { Tile, COLOR_GROUP_HEX, PlayerSlotConfig } from '../../game/types';
 import {
   CalibratedTile,
   Point2D,
@@ -53,17 +53,19 @@ import { Dice3DV2Overlay } from '../../renderer25d/Dice3DV2Overlay';
 import { ActionDecisionModal } from '../../renderer25d/ActionDecisionModal';
 import { CardV2Modal } from '../../renderer25d/CardV2Modal';
 import { GameOverV2Modal } from '../../renderer25d/GameOverV2Modal';
+import { CameraController } from '../../renderer25d/cameraController';
+import { getTileGeometry } from '../../renderer25d/isoMath';
 import {
   TopScoreboard,
-  TopLeftPlayerCard,
-  TopRightActions,
+  TopLeftActions,
   BottomRightPanel,
   SkillType,
   BottomLeftSocial,
-  TilePurchaseCard,
   LobbyModal,
   GameOverModal,
   SettingsModal,
+  EventToastQueue,
+  EventToastItem,
 } from '../../renderer25d/hud';
 import { CharacterId } from '../../game/types';
 
@@ -97,8 +99,19 @@ export default function PlayV2Page() {
   const [selectedSkill, setSelectedSkill] = useState<SkillType | null>(null);
   const [showLobbyModal, setShowLobbyModal] = useState<boolean>(false);
   const [showSettingsModal, setShowSettingsModal] = useState<boolean>(false);
-  const [turnTimeLeft, setTurnTimeLeft] = useState<number>(15);
+  const [showRulesModal, setShowRulesModal] = useState<boolean>(false);
+  const [showAssetsModal, setShowAssetsModal] = useState<boolean>(false);
+  const [eventToasts, setEventToasts] = useState<EventToastItem[]>([]);
+  const [turnTimerEnabled, setTurnTimerEnabled] = useState<boolean>(false);
+  const [turnTimeLeft, setTurnTimeLeft] = useState<number>(60);
+  const [activeSlotConfigs, setActiveSlotConfigs] = useState<PlayerSlotConfig[] | undefined>(undefined);
   const [chatToast, setChatToast] = useState<string | null>(null);
+  const cameraControllerRef = useRef<CameraController | null>(null);
+  const charManagerRef = useRef<any>(null);
+  const animManagerRef = useRef<any>(null);
+  const [bannerData, setBannerData] = useState<{ name: string; character: CharacterId } | null>(null);
+  const [botDecisionCard, setBotDecisionCard] = useState<{ tile: Tile; type: 'BUY' | 'UPGRADE'; badgeText: string } | null>(null);
+  const [skipBotAnimations, setSkipBotAnimations] = useState<boolean>(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -113,6 +126,45 @@ export default function PlayV2Page() {
     setGraphicsQuality(q);
     if (typeof window !== 'undefined') {
       localStorage.setItem('cotyphu_quality', q);
+    }
+  };
+
+  const [tileLabelStyle, setTileLabelStyle] = useState<'affine' | 'rotate_only'>('affine');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedStyle = localStorage.getItem('cotyphu_tile_label_style');
+      if (savedStyle === 'affine' || savedStyle === 'rotate_only') {
+        setTileLabelStyle(savedStyle);
+      } else {
+        setTileLabelStyle('affine');
+      }
+    }
+  }, []);
+
+  const handleChangeTileLabelStyle = (style: 'affine' | 'rotate_only') => {
+    setTileLabelStyle(style);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('cotyphu_tile_label_style', style);
+    }
+  };
+
+  const [forceHideLabels, setForceHideLabels] = useState<boolean>(false);
+  const [showTrain, setShowTrain] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedTrain = localStorage.getItem('cotyphu_show_train');
+      if (savedTrain !== null) {
+        setShowTrain(savedTrain === 'true');
+      }
+    }
+  }, []);
+
+  const handleToggleShowTrain = (val: boolean) => {
+    setShowTrain(val);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('cotyphu_show_train', String(val));
     }
   };
 
@@ -132,10 +184,76 @@ export default function PlayV2Page() {
     bridgeRef.current = bridge;
     if (typeof window !== 'undefined') (window as any).__testBridge = bridge;
 
+    const pushToast = (msg: string, type: 'info' | 'success' | 'warn' | 'danger' = 'info') => {
+      const id = Date.now().toString() + Math.random().toString(36).substring(2, 5);
+      setEventToasts((prev) => [...prev, { id, message: msg, type }]);
+    };
+
     const unsubState = bridge.subscribe((state) => {
       setBridgeState(state);
       setGameTiles(state.tiles);
       setGamePlayers(bridge.getPlayerTokenData());
+
+      // Khi đến lượt người chơi thật (AWAIT_ROLL), camera tự dịch nhẹ về nhân vật của tôi (0.4s)
+      if (state.gamePhase === 'AWAIT_ROLL' && !state.activePlayer.isBot && !isAutoBotMatch) {
+        const geo = getTileGeometry(state.activePlayer.position);
+        if (geo && cameraControllerRef.current) {
+          cameraControllerRef.current.focusOnPoint(geo.center.x, geo.center.y, 1.2, 400);
+        }
+      }
+
+      // Khi người chơi dừng ở ô chờ quyết định Mua/Xây: ô nửa trái thì thẻ ở nửa phải và ngược lại, camera dịch để ô ở nửa còn lại (0.4s)
+      if (state.gamePhase === 'AWAIT_DECISION' && !state.activePlayer.isBot) {
+        const geo = getTileGeometry(state.activePlayer.position);
+        if (geo && cameraControllerRef.current) {
+          const isLeft = (geo.center.x ?? 0) <= 0;
+          cameraControllerRef.current.offsetForModal(geo.center.x, geo.center.y, 400, isLeft);
+        }
+      }
+
+      // Xong hành động thì trở về toàn cảnh (0.4s)
+      if (state.gamePhase === 'ACTION_COMPLETED' || state.gamePhase === 'TURN_END') {
+        cameraControllerRef.current?.returnToOverview(400);
+      }
+    });
+
+    const unsubPassedGo = bridge.eventBus.on('player-moved', (payload) => {
+      if (payload.passedGo) {
+        pushToast('+200.000đ Nhận thưởng Xuất Phát! 🏁', 'success');
+      }
+    });
+
+    const unsubBought = bridge.eventBus.on('property-bought', (payload) => {
+      const p = bridge.engine.state.players.find((x) => x.id === payload.playerId);
+      pushToast(`${p ? p.name : 'Người chơi'} đã mua ${payload.tile.name}! 🏰`, 'success');
+    });
+
+    const unsubUpgraded = bridge.eventBus.on('property-upgraded', (payload) => {
+      const p = bridge.engine.state.players.find((x) => x.id === payload.playerId);
+      pushToast(`${p ? p.name : 'Người chơi'} nâng cấp ${payload.tile.name}! 🌟`, 'success');
+    });
+
+    const unsubRent = bridge.eventBus.on('rent-paid', (payload) => {
+      const payer = bridge.engine.state.players.find((x) => x.id === payload.debtorId);
+      pushToast(`${payer ? payer.name : 'Người chơi'} trả ${payload.amount.toLocaleString('vi-VN')}đ tiền thuê`, 'warn');
+    });
+
+    const unsubTax = bridge.eventBus.on('tax-paid', (payload) => {
+      const p = bridge.engine.state.players.find((x) => x.id === payload.playerId);
+      pushToast(`${p ? p.name : 'Người chơi'} nộp phạt ${payload.amount.toLocaleString('vi-VN')}đ thuế`, 'danger');
+    });
+
+    const unsubJail = bridge.eventBus.on('jail-entered', () => {
+      pushToast('Vào Trại Giam! Bị giam 3 lượt 🔒', 'danger');
+    });
+
+    const unsubUnjail = bridge.eventBus.on('jail-exited', () => {
+      pushToast('Được trả tự do khỏi Trại Giam! 🕊️', 'success');
+    });
+
+    const unsubBankrupt = bridge.eventBus.on('player-bankrupt', (payload) => {
+      const p = bridge.engine.state.players.find((x) => x.id === payload.playerId);
+      pushToast(`${p ? p.name : 'Người chơi'} đã Phá Sản! 💥`, 'danger');
     });
 
     const unsubDice = bridge.eventBus.on('dice-rolled', (payload) => {
@@ -159,10 +277,88 @@ export default function PlayV2Page() {
       }, hideDuration);
     });
 
-    bridge.checkAutoBotTurn();
+    bridge.setCallbacks({
+      onShowBanner: (player) => {
+        setBannerData({ name: player.name.replace(' 🤖', ''), character: player.character });
+      },
+      onHideBanner: () => {
+        setBannerData(null);
+      },
+      onCameraFocus: (tileId, zoom, durationMs) => {
+        const geo = getTileGeometry(tileId);
+        if (geo && cameraControllerRef.current) {
+          cameraControllerRef.current.focusOnPoint(geo.center.x, geo.center.y, zoom || 1.2, durationMs || 400);
+        }
+      },
+      onCameraOverview: (durationMs) => {
+        cameraControllerRef.current?.returnToOverview(durationMs || 400);
+      },
+      onRollDiceAnimation: (dice, sum, isDouble, playerName, durationMs) => {
+        setDiceOverlayData({ dice, isDouble, playerName });
+        setShowDiceOverlay(true);
+        setIsRollingDice(true);
+        setTimeout(() => setIsRollingDice(false), Math.round(durationMs * 0.7));
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            setShowDiceOverlay(false);
+            resolve();
+          }, durationMs);
+        });
+      },
+      onMoveToken: (playerId, targetTile, hopSec) => {
+        return new Promise((resolve) => {
+          if (charManagerRef.current) {
+            charManagerRef.current.movePlayerTo(playerId, targetTile, resolve);
+          } else {
+            resolve();
+          }
+        });
+      },
+      onShowToast: (msg, type = 'info') => {
+        pushToast(msg, type);
+      },
+      onShowReadOnlyCard: (tile, action, botDecisionText, durationMs) => {
+        setBotDecisionCard({
+          tile,
+          type: action === 'UPGRADE' ? 'UPGRADE' : 'BUY',
+          badgeText: botDecisionText,
+        });
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            setBotDecisionCard(null);
+            resolve();
+          }, durationMs);
+        });
+      },
+      onHideReadOnlyCard: () => {
+        setBotDecisionCard(null);
+      },
+      onMoneyFly: (fromId, toId, amount, durationMs) => {
+        if (animManagerRef.current) {
+          const pFrom = bridge.engine.state.players.find((p) => p.id === fromId);
+          const pTo = toId ? bridge.engine.state.players.find((p) => p.id === toId) : null;
+          const fromPos = getTileGeometry(pFrom?.position || 0)?.center || { x: 0, y: 0 };
+          const toPos = pTo ? getTileGeometry(pTo.position)?.center || { x: 0, y: 0 } : { x: 0, y: 0 };
+          animManagerRef.current.spawnRentPaidVfx(fromPos, toPos, amount, durationMs / 1000);
+        }
+        return new Promise((resolve) => {
+          setTimeout(resolve, durationMs);
+        });
+      },
+    });
+
+    bridge.startTurnLoop();
 
     return () => {
       unsubState();
+      unsubPassedGo();
+      unsubBought();
+      unsubUpgraded();
+      unsubRent();
+      unsubTax();
+      unsubJail();
+      unsubUnjail();
+      unsubBankrupt();
       unsubDice();
       bridge.destroy();
     };
@@ -172,6 +368,18 @@ export default function PlayV2Page() {
     setGameSpeed(speed);
     if (bridgeRef.current) {
       bridgeRef.current.setSpeed(speed);
+    }
+  };
+
+  const handleCycleSpeed = () => {
+    const nextSpeed: GameSpeed = gameSpeed === 1 ? 2 : gameSpeed === 2 ? 4 : 1;
+    handleChangeSpeed(nextSpeed);
+  };
+
+  const handleToggleSkipBotAnimations = (skip: boolean) => {
+    setSkipBotAnimations(skip);
+    if (bridgeRef.current) {
+      bridgeRef.current.setSkipBotAnimations(skip);
     }
   };
 
@@ -191,13 +399,41 @@ export default function PlayV2Page() {
     }
   };
 
-  // Đếm ngược 15 giây cho vòng đếm giờ người đang đi
+  // Đồng hồ đếm giờ mỗi lượt (mặc định TẮT khi chơi với máy; nếu bật trong cài đặt thì 60s)
   useEffect(() => {
-    setTurnTimeLeft(15);
+    if (!turnTimerEnabled) {
+      return;
+    }
+
+    setTurnTimeLeft(60);
     const interval = setInterval(() => {
-      setTurnTimeLeft((prev) => (prev > 0 ? prev - 1 : 15));
+      setTurnTimeLeft((prev) => {
+        if (prev <= 1) {
+          // Khi hết 60s: chỉ tự chọn "Bỏ qua" ở bước mua/xây, KHÔNG BAO GIỜ tự đổ xúc xắc
+          if (bridgeRef.current && bridgeState) {
+            const active = bridgeState.activePlayer;
+            if (!active.isBot && !isAutoBotMatch && bridgeState.gamePhase === 'AWAIT_DECISION') {
+              cameraControllerRef.current?.returnToOverview(500);
+              const tile = bridgeState.tiles[active.position];
+              if (tile && tile.ownerId == null) {
+                bridgeRef.current.skipBuy();
+              } else if (tile && tile.ownerId === active.id) {
+                bridgeRef.current.skipUpgrade();
+              }
+            }
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
     }, 1000);
+
     return () => clearInterval(interval);
+  }, [turnTimerEnabled, bridgeState?.turnCount, bridgeState?.activePlayer?.id, bridgeState?.gamePhase, isAutoBotMatch]);
+
+  // Tự động đóng bảng thông tin ô ở góc trái dưới khi chuyển lượt
+  useEffect(() => {
+    setInspectTile(null);
   }, [bridgeState?.turnCount, bridgeState?.activePlayer?.id]);
 
   const handleUseSkill = (skill: SkillType) => {
@@ -236,16 +472,18 @@ export default function PlayV2Page() {
   const handleStartMatchFromLobby = (
     char: CharacterId,
     count: 2 | 3 | 4,
-    autoBot: boolean
+    autoBot: boolean,
+    slotConfigs?: PlayerSlotConfig[]
   ) => {
     setSelectedHumanChar(char);
     setPlayerCount(count);
     setIsAutoBotMatch(autoBot);
+    setActiveSlotConfigs(slotConfigs);
     setShowLobbyModal(false);
     setSkillCharges({ short: 2, long: 2, double: 1 });
     setSelectedSkill(null);
     if (bridgeRef.current) {
-      bridgeRef.current.resetGame(count, autoBot, char);
+      bridgeRef.current.resetGame(count, autoBot, char, slotConfigs);
     }
   };
 
@@ -265,10 +503,13 @@ export default function PlayV2Page() {
       if (e.code === 'Space' && !e.repeat && !calibrationMode) {
         if (!bridgeRef.current || !bridgeState) return;
         const active = bridgeState.activePlayer;
-        if (!active.isBot && !isAutoBotMatch && bridgeState.gamePhase === 'AWAIT_ROLL') {
+        // Khoá phím Space tuyệt đối trong lượt của bot hoặc khi đang chạy hoạt ảnh
+        if (bridgeState.isTurnExecuting || active.isBot || isAutoBotMatch || isRollingDice || bridgeState.gamePhase !== 'AWAIT_ROLL') {
           e.preventDefault();
-          handleHumanRoll();
+          return;
         }
+        e.preventDefault();
+        handleHumanRoll();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -500,17 +741,11 @@ export default function PlayV2Page() {
       }
 
       if (activeMarkerType === 'train_track') {
-        if (target.points.length >= 2) {
-          target.points = [pt];
-          setStatusToast({ type: 'success', text: 'Đã đặt điểm bắt đầu đường ray (cần thêm 1 điểm kết thúc).' });
-        } else {
-          target.points.push(pt);
-          if (target.points.length === 2) {
-            setStatusToast({ type: 'success', text: 'Đã hoàn thành đường ray tàu điện (2 điểm)!' });
-          } else {
-            setStatusToast({ type: 'success', text: 'Đã đặt điểm bắt đầu đường ray.' });
-          }
-        }
+        target.points.push(pt);
+        setStatusToast({
+          type: 'success',
+          text: `Đã thêm mốc đường ray #${target.points.length} (${Math.round(pt.x)}, ${Math.round(pt.y)}).`,
+        });
       } else {
         target.points.push(pt);
         setStatusToast({ type: 'success', text: `Đã thêm đèn lồng (Tổng cộng: ${target.points.length} điểm).` });
@@ -907,34 +1142,67 @@ export default function PlayV2Page() {
           buildingsLayout={buildingsLayout}
           onBuildingsLayoutChange={setBuildingsLayout}
           graphicsQuality={graphicsQuality}
+          showTrain={showTrain}
+          tileLabelStyle={tileLabelStyle}
+          hideTileLabels={Boolean(
+            forceHideLabels ||
+            botDecisionCard !== null ||
+            (bridgeState &&
+              bridgeState.gamePhase === 'AWAIT_DECISION' &&
+              !bridgeState.activePlayer.isBot &&
+              !isAutoBotMatch)
+          )}
+          onCharManagerReady={(cm) => {
+            charManagerRef.current = cm;
+            cm.onTokenStep = (playerId, nextTile, pos) => {
+              cameraControllerRef.current?.focusOnPoint(pos.x, pos.y, 1.2, 200);
+            };
+            if (typeof window !== 'undefined') (window as any).__charManager = cm;
+          }}
+          onAnimManagerReady={(am) => {
+            animManagerRef.current = am;
+            if (typeof window !== 'undefined') (window as any).__animManager = am;
+          }}
+          onCameraReady={(cam) => {
+            cameraControllerRef.current = cam;
+            if (typeof window !== 'undefined') {
+              (window as any).__testCamera = cam;
+              (window as any).__getTileGeometry = getTileGeometry;
+              (window as any).__setTileLabelStyle = handleChangeTileLabelStyle;
+              (window as any).__setShowTrain = handleToggleShowTrain;
+              (window as any).__setForceHideLabels = setForceHideLabels;
+            }
+          }}
         />
       </main>
 
-      {/* 2. HUD ĐỈNH CAO: TRÁI TRÊN, GIỮA TRÊN, PHẢI TRÊN (Ẩn khi F2 bật) */}
+      {/* 2. HUD ĐỈNH CAO: TRÁI TRÊN (3 NÚT TRÒN), GIỮA TRÊN (THANH LƯỢT + TOAST) */}
       {!calibrationMode && bridgeState && (() => {
-        const humanPlayer =
-          bridgeState.players.find((p) => !p.isBot) || bridgeState.players[0];
-
         return (
           <>
-            {/* Trái trên: Avatar tròn + Tiền Baloo 2 số chạy + 4 ô thẻ đang giữ */}
-            <TopLeftPlayerCard
-              player={humanPlayer}
-              heldCards={bridgeState.currentCard ? [bridgeState.currentCard] : []}
+            {/* Trái trên: 3 nút tròn (Menu, Luật chơi, Âm thanh) + Nút tăng tốc 1x/2x */}
+            <TopLeftActions
+              onOpenRules={() => setShowRulesModal(true)}
+              onOpenMenu={() => setShowSettingsModal(true)}
+              onSurrender={handleSurrender}
+              gameSpeed={gameSpeed}
+              onToggleSpeed={handleCycleSpeed}
+              skipBotAnimations={skipBotAnimations}
+              onToggleSkipBotAnimations={() => handleToggleSkipBotAnimations(!skipBotAnimations)}
             />
 
-            {/* Giữa trên: Bảng điểm (2P: khối đỏ | LƯỢT n | khối xanh; 3-4P: dải avatar viền màu + vòng đếm giờ) */}
+            {/* Giữa trên: thanh lượt — "VÒNG x/25", 4 người chơi */}
             <TopScoreboard
               players={bridgeState.players}
               activePlayer={bridgeState.activePlayer}
               roundCount={bridgeState.roundCount}
-              timeLeft={turnTimeLeft}
+              timeLeft={turnTimerEnabled ? turnTimeLeft : undefined}
             />
 
-            {/* Phải trên: Nút cờ (đầu hàng) và nút cài đặt (tối thiểu 44px) */}
-            <TopRightActions
-              onSurrender={handleSurrender}
-              onOpenSettings={() => setShowSettingsModal(true)}
+            {/* Thông báo sự kiện: toast ngắn giữa màn hình dưới thanh lượt, xếp hàng, tự ẩn sau 2.5 giây */}
+            <EventToastQueue
+              toasts={eventToasts}
+              onDismiss={(id) => setEventToasts((prev) => prev.filter((t) => t.id !== id))}
             />
           </>
         );
@@ -1021,11 +1289,50 @@ export default function PlayV2Page() {
                   ? 'bg-sky-600 text-white border-sky-400'
                   : 'bg-slate-800 text-slate-300 border-slate-700 hover:text-white'
               }`}
-              title="Nhấp 2 điểm trên ảnh để kẻ đường ray tàu điện"
+              title="Nhấp nhiều điểm liên tiếp trên ảnh để uốn đường ray tàu điện"
             >
               <Train className="h-3.5 w-3.5" />
-              <span>Đường ray (2đ)</span>
+              <span>Đường ray ({markers.find((m) => m.type === 'train_track')?.points.length || 0}đ)</span>
             </button>
+
+            {activeMarkerType === 'train_track' && (
+              <>
+                <button
+                  onClick={() => {
+                    setMarkers((prev) => {
+                      const copy = [...prev];
+                      const t = copy.find((m) => m.type === 'train_track');
+                      if (t && t.points.length > 0) {
+                        t.points = t.points.slice(0, -1);
+                        setStatusToast({ type: 'success', text: `Đã xóa điểm cuối. Còn ${t.points.length} điểm.` });
+                      }
+                      return copy;
+                    });
+                  }}
+                  className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 text-[11px] font-medium border border-slate-700 transition"
+                  title="Xóa điểm mốc ray vừa đặt gần nhất"
+                >
+                  Xóa điểm cuối
+                </button>
+                <button
+                  onClick={() => {
+                    setMarkers((prev) => {
+                      const copy = [...prev];
+                      const t = copy.find((m) => m.type === 'train_track');
+                      if (t) {
+                        t.points = [];
+                        setStatusToast({ type: 'success', text: 'Đã xóa toàn bộ đường ray. Hãy nhấp để kẻ lại.' });
+                      }
+                      return copy;
+                    });
+                  }}
+                  className="px-2 py-1 rounded-lg bg-red-950/70 hover:bg-red-900 text-red-200 text-[11px] font-medium border border-red-800 transition"
+                  title="Xóa toàn bộ các điểm đường ray để kẻ lại từ đầu"
+                >
+                  Làm lại ray
+                </button>
+              </>
+            )}
 
             <button
               onClick={() => setActiveMarkerType(activeMarkerType === 'lanterns' ? null : 'lanterns')}
@@ -1484,13 +1791,19 @@ export default function PlayV2Page() {
         );
       })()}
 
-      {/* 4. Thẻ thông tin ô khi nhấp vào bàn cờ (Chế độ thường ngoài F2) */}
+      {/* 4. Thẻ thông tin ô khi nhấp vào bàn cờ: tự đóng khi chuyển lượt hoặc bấm ra ngoài */}
       {inspectTile && !calibrationMode && (() => {
         const currentTile = gameTiles.find((t) => t.id === inspectTile.id) || inspectTile;
         const ownerPlayer = currentTile.ownerId ? gamePlayers.find((p) => p.id === currentTile.ownerId) : null;
 
         return (
-          <div className="fixed bottom-6 left-6 z-40 w-80 rounded-2xl border border-amber-500/40 bg-slate-950/95 p-4 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <>
+            {/* Lớp bắt sự kiện bấm ra ngoài để tự động đóng bảng thông tin ô */}
+            <div
+              className="fixed inset-0 z-39"
+              onClick={() => setInspectTile(null)}
+            />
+            <div className="fixed bottom-4 left-4 z-40 w-80 rounded-2xl border border-amber-500/40 bg-slate-950/95 p-4 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-4 duration-200">
             <div className="flex items-start justify-between border-b border-slate-800 pb-3">
               <div>
                 <div className="flex items-center gap-2">
@@ -1637,6 +1950,7 @@ export default function PlayV2Page() {
               )}
             </div>
           </div>
+          </>
         );
       })()}
 
@@ -1656,7 +1970,7 @@ export default function PlayV2Page() {
         </div>
       )}
 
-      {/* HUD GÓC DƯỚI: TRÁI DƯỚI (CHAT & EMOTES), PHẢI DƯỚI (MY PANEL + 3 SKILL + NÚT VÀNG LỚN) */}
+      {/* HUD GÓC DƯỚI: TRÁI DƯỚI (VÍ CỦA TÔI + SOCIAL + NHẬT KÝ 1 DÒNG), PHẢI DƯỚI (KỸ NĂNG + NÚT VÀNG 96PX) */}
       {!calibrationMode && bridgeState && (() => {
         const humanPlayer =
           bridgeState.players.find((p) => !p.isBot) || bridgeState.players[0];
@@ -1665,19 +1979,30 @@ export default function PlayV2Page() {
           !humanPlayer.bankrupt &&
           !isAutoBotMatch;
 
+        const ownedTiles = bridgeState.tiles.filter((t) => t.ownerId === humanPlayer.id);
+        const ownedHouses = ownedTiles.reduce((acc, t) => acc + (t.buildingLevel || 0), 0);
+
         return (
           <>
-            {/* Trái dưới: Nút chat & biểu cảm chibi */}
+            {/* Trái dưới: ví của tôi (avatar, tiền dạng "1.850.000đ", số đất/nhà sở hữu, nút xem danh sách tài sản) + nút chat/biểu cảm; nhật ký ván đấu thu gọn thành 1 dòng, bấm để mở */}
             <BottomLeftSocial
+              player={humanPlayer}
+              ownedTilesCount={ownedTiles.length}
+              ownedHousesCount={ownedHouses}
+              onViewAssets={() => setShowAssetsModal(true)}
+              logs={bridgeState.logs}
               onSendChatMessage={handleSendChatMessage}
               onSendEmote={handleSendEmote}
             />
 
-            {/* Phải dưới: Panel của tôi + 3 thẻ kỹ năng + Nút tròn vàng lớn "ĐỔ XÚC XẮC" */}
+            {/* Phải dưới: nút tròn vàng lớn 96px "ĐỔ XÚC XẮC" (đổi nhãn: Đổ xúc xắc / Đổ tiếp (đôi) / Đang đi... / Chờ lượt), phía trên là hàng thẻ kỹ năng đang giữ (tối đa 3) và kết quả xúc xắc */}
             <BottomRightPanel
               activePlayer={bridgeState.activePlayer}
               isMyTurn={isMyTurn}
-              isRolling={isRollingDice}
+              isRolling={isRollingDice || bridgeState.isTurnExecuting}
+              isMoving={bridgeState.isTurnExecuting}
+              canRollAgain={bridgeState.canRollAgain}
+              lastDice={bridgeState.dice}
               gamePhase={bridgeState.gamePhase}
               onRoll={handleHumanRoll}
               onUseSkill={handleUseSkill}
@@ -1691,25 +2016,9 @@ export default function PlayV2Page() {
 
       {/* Thông báo tin nhắn chat */}
       {chatToast && (
-        <div className="fixed bottom-20 left-16 z-30 pointer-events-none animate-in fade-in slide-in-from-bottom-2 duration-200">
+        <div className="fixed bottom-24 left-16 z-30 pointer-events-none animate-in fade-in slide-in-from-bottom-2 duration-200">
           <div className="rounded-xl border border-sky-400 bg-slate-950 px-3.5 py-1.5 text-xs font-bold text-sky-200 shadow-2xl">
             {chatToast}
-          </div>
-        </div>
-      )}
-
-      {/* Nhật ký sự kiện ván đấu (Góc dưới bên trái nhỏ gọn) */}
-      {bridgeState && bridgeState.logs.length > 0 && !calibrationMode && (
-        <div className="fixed bottom-16 left-4 z-20 max-w-xs pointer-events-none hidden sm:block">
-          <div className="space-y-1">
-            {bridgeState.logs.slice(-2).map((log, idx) => (
-              <div
-                key={idx}
-                className="rounded-xl border border-slate-800 bg-slate-950/90 px-2.5 py-1 text-[10px] text-slate-300 shadow-xl"
-              >
-                {log}
-              </div>
-            ))}
           </div>
         </div>
       )}
@@ -1725,7 +2034,7 @@ export default function PlayV2Page() {
         />
       )}
 
-      {/* Giữa dưới: Thẻ thông tin ô khi dừng ở ô chưa có chủ hoặc cần nâng cấp (không che toàn màn hình) */}
+      {/* Giữa màn hình: Thẻ mua/xây: hiện giữa màn hình, nền tối mờ 40% phía sau, thiết kế như thẻ giấy cổ (dùng khung card-front-*) */}
       {bridgeState &&
         !bridgeState.activePlayer.isBot &&
         !isAutoBotMatch &&
@@ -1738,16 +2047,23 @@ export default function PlayV2Page() {
           const isUpgrade = tile.ownerId === active.id;
           if (!isBuy && !isUpgrade) return null;
 
+          const geo = getTileGeometry(active.position);
+          const isTileOnLeft = (geo?.center?.x ?? 0) <= 0;
+
           return (
-            <TilePurchaseCard
+            <ActionDecisionModal
+              type={isBuy ? 'BUY' : 'UPGRADE'}
               tile={tile}
+              allTiles={bridgeState.tiles}
               playerMoney={active.money}
-              isUpgrade={isUpgrade}
-              onBuy={() => {
+              isTileOnLeft={isTileOnLeft}
+              onConfirm={() => {
+                cameraControllerRef.current?.returnToOverview(400);
                 if (isBuy) bridgeRef.current?.buyProperty();
                 else bridgeRef.current?.upgradeProperty();
               }}
-              onSkip={() => {
+              onCancel={() => {
+                cameraControllerRef.current?.returnToOverview(400);
                 if (isBuy) bridgeRef.current?.skipBuy();
                 else bridgeRef.current?.skipUpgrade();
               }}
@@ -1770,6 +2086,45 @@ export default function PlayV2Page() {
             }}
           />
         )}
+
+      {/* Băng "Lượt của <tên>" giữa màn hình */}
+      {bannerData && (
+        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none flex flex-col items-center animate-in fade-in zoom-in-95 duration-200">
+          <div className="flex items-center gap-3.5 px-6 py-3.5 rounded-2xl bg-slate-950/95 border-2 border-amber-400 shadow-[0_0_35px_rgba(245,158,11,0.6)] backdrop-blur-md">
+            <div className="relative h-12 w-12 rounded-full overflow-hidden border-2 border-amber-300 bg-slate-900 shrink-0">
+              <Image
+                src={`/art/avatars/${bannerData.character}.png`}
+                alt={bannerData.name}
+                fill
+                className="object-cover"
+                onError={(e) => {
+                  (e.target as any).src = '/art/avatars/avatar-1.png';
+                }}
+              />
+            </div>
+            <div className="flex flex-col text-left">
+              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-amber-400/90">
+                LƯỢT ĐI
+              </span>
+              <span className="font-baloo text-xl sm:text-2xl font-black text-amber-300">
+                Lượt của {bannerData.name}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Thẻ Mua / Xây ở chế độ CHỈ XEM cho Bot (không có nút, hiện quyết định) */}
+      {botDecisionCard && (
+        <ActionDecisionModal
+          type={botDecisionCard.type}
+          tile={botDecisionCard.tile}
+          allTiles={bridgeState?.tiles || []}
+          playerMoney={bridgeState?.activePlayer.money || 0}
+          readOnly={true}
+          botDecisionBadge={botDecisionCard.badgeText}
+        />
+      )}
 
       {/* Màn hình kết thúc: ui-chien-thang (nhân vật thắng pose wave lên bục) và ui-pha-san */}
       {bridgeState &&
@@ -1805,11 +2160,139 @@ export default function PlayV2Page() {
         onChangeSpeed={handleChangeSpeed}
         graphicsQuality={graphicsQuality}
         onChangeQuality={handleSetQuality}
+        showTrain={showTrain}
+        onChangeShowTrain={handleToggleShowTrain}
         isAutoBot={isAutoBotMatch}
         onToggleAutoBot={handleToggleAutoMatch}
+        turnTimerEnabled={turnTimerEnabled}
+        onToggleTurnTimer={() => setTurnTimerEnabled(!turnTimerEnabled)}
+        tileLabelStyle={tileLabelStyle}
+        onChangeTileLabelStyle={handleChangeTileLabelStyle}
         onOpenCalibration={() => setCalibrationMode(true)}
         onOpenLobby={() => setShowLobbyModal(true)}
       />
+
+      {/* Hộp thoại Luật Chơi */}
+      {showRulesModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-150">
+          <div className="relative w-full max-w-md rounded-2xl bg-slate-950 border-2 border-amber-500/50 p-6 shadow-2xl text-left select-text">
+            <button
+              onClick={() => setShowRulesModal(false)}
+              className="absolute top-3.5 right-3.5 text-slate-400 hover:text-white p-1 rounded-lg"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <h3 className="font-baloo text-xl font-bold text-amber-300 mb-3 flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-amber-400" />
+              <span>LUẬT CHƠI CỜ TỶ PHÚ v2</span>
+            </h3>
+
+            <div className="space-y-2.5 text-xs text-slate-300 leading-relaxed max-h-[60vh] overflow-y-auto pr-1">
+              <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
+                <b className="text-amber-200">1. Mục tiêu chiến thắng:</b>
+                <p className="mt-1">
+                  Làm đối thủ phá sản bằng cách thâu tóm các ô đất giá trị, xây dựng nhà phố và kỳ quan Landmark để thu tiền thuê. Người có tổng tài sản lớn nhất sau 25 vòng hoặc người sống sót cuối cùng sẽ chiến thắng.
+                </p>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
+                <b className="text-amber-200">2. Đổ xúc xắc & Đôi:</b>
+                <p className="mt-1">
+                  Đổ 2 viên xúc xắc để di chuyển. Nếu đổ được xúc xắc đôi (ví dụ 6-6), bạn được đi thêm một lượt nữa!
+                </p>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
+                <b className="text-amber-200">3. Thẻ kỹ năng đặc biệt:</b>
+                <p className="mt-1">
+                  Mỗi người chơi nắm giữ 3 thẻ kỹ năng: Nhảy ngắn (2~4 bước), Nhảy xa (10~12 bước) và Đôi x6 (tự động ra đôi 6-6 và được đi tiếp).
+                </p>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
+                <b className="text-amber-200">4. Trại Giam & Vào Tù:</b>
+                <p className="mt-1">
+                  Ô Vào Tù (ô 30) sẽ đưa bạn vào Trại Giam (ô 10). Phải chờ 3 lượt hoặc nộp phạt để ra tù.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowRulesModal(false)}
+              className="mt-4 w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 font-bold text-slate-950 text-xs transition active:scale-95 shadow-md"
+            >
+              ĐÃ HIỂU
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Hộp thoại Xem Danh Sách Tài Sản Của Tôi */}
+      {showAssetsModal && bridgeState && (() => {
+        const humanPlayer =
+          bridgeState.players.find((p) => !p.isBot) || bridgeState.players[0];
+        const owned = bridgeState.tiles.filter((t) => t.ownerId === humanPlayer.id);
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-150">
+            <div className="relative w-full max-w-md rounded-2xl bg-slate-950 border-2 border-amber-500/50 p-6 shadow-2xl text-left select-text">
+              <button
+                onClick={() => setShowAssetsModal(false)}
+                className="absolute top-3.5 right-3.5 text-slate-400 hover:text-white p-1 rounded-lg"
+              >
+                <X className="h-5 w-5" />
+              </button>
+
+              <h3 className="font-baloo text-xl font-bold text-amber-300 mb-2 flex items-center gap-2">
+                <Building className="h-5 w-5 text-amber-400" />
+                <span>DANH SÁCH BẤT ĐỘNG SẢN ({owned.length})</span>
+              </h3>
+              <p className="text-xs text-slate-400 mb-3">
+                Tổng số dư: <span className="font-bold text-amber-300">{humanPlayer.money.toLocaleString('vi-VN')}đ</span>
+              </p>
+
+              <div className="space-y-1.5 max-h-[55vh] overflow-y-auto pr-1">
+                {owned.length === 0 ? (
+                  <div className="p-4 text-center text-xs text-slate-400 bg-slate-900 rounded-xl border border-slate-800">
+                    Bạn chưa sở hữu mảnh đất nào. Hãy tích cực đổ xúc xắc để mua đất nhé!
+                  </div>
+                ) : (
+                  owned.map((tile) => (
+                    <div
+                      key={tile.id}
+                      className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="h-3 w-3 rounded-full shrink-0"
+                          style={{ backgroundColor: tile.colorGroup ? COLOR_GROUP_HEX[tile.colorGroup] : '#94a3b8' }}
+                        />
+                        <span className="font-bold text-white">{tile.name}</span>
+                        <span className="text-[10px] text-amber-400 bg-amber-950/60 px-1.5 py-0.2 rounded border border-amber-500/30">
+                          {tile.buildingLevel ? `Cấp ${tile.buildingLevel}` : 'Đất trống'}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-mono font-bold text-emerald-400 text-[11px]">
+                          Thuê: {((tile.rentMultiplier && tile.buildingLevel ? tile.rentMultiplier[tile.buildingLevel] : tile.baseRent) || 0).toLocaleString('vi-VN')}đ
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <button
+                onClick={() => setShowAssetsModal(false)}
+                className="mt-4 w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 font-bold text-slate-200 text-xs transition active:scale-95"
+              >
+                ĐÓNG
+              </button>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* 5. Màn hình chờ tải dùng ui-loading.png làm nền có thanh tiến trình */}
       <div

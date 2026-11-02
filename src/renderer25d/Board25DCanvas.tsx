@@ -6,13 +6,14 @@ import { Tile } from '../game/types';
 import { BOARD_40_TILES } from '../game/boardData';
 import { GameEventBus } from '../game/events';
 import { BOARD_PLATE_WIDTH, BOARD_PLATE_HEIGHT, setGlobalCalibratedTiles, getTileGeometry } from './isoMath';
-import { createBoardRenderer, BoardRendererInstance, CornerConfig } from './boardRenderer';
+import { createBoardRenderer, BoardRendererInstance, CornerConfig, TileLabelStyle } from './boardRenderer';
 import { CameraController } from './cameraController';
 import { createAmbientEffects, AmbientEffects, GraphicsQuality } from './ambientEffects';
 import { createBoardAnimationManager, BoardAnimationManager } from './boardAnimations';
 import { audioManager } from '../lib/audio/audioManager';
 import { createCharacterManager, CharacterManager, PlayerTokenData } from './characterRenderer';
 import { createBuildingRenderer, BuildingRenderer, BuildingsLayout, BuildingLayoutItem } from './buildingRenderer';
+import { waitForGameFonts } from './fontLoader';
 import {
   CalibratedTile,
   Point2D,
@@ -60,6 +61,12 @@ export interface Board25DCanvasProps {
   eventBus?: GameEventBus;
   gameSpeed?: number;
   graphicsQuality?: GraphicsQuality;
+  showTrain?: boolean;
+  hideTileLabels?: boolean;
+  tileLabelStyle?: TileLabelStyle;
+  onCameraReady?: (camera: CameraController) => void;
+  onCharManagerReady?: (charManager: CharacterManager) => void;
+  onAnimManagerReady?: (animManager: BoardAnimationManager) => void;
 }
 
 export function Board25DCanvas({
@@ -87,6 +94,12 @@ export function Board25DCanvas({
   eventBus,
   gameSpeed = 1,
   graphicsQuality = 'HIGH',
+  showTrain = false,
+  hideTileLabels = false,
+  tileLabelStyle = 'affine',
+  onCameraReady,
+  onCharManagerReady,
+  onAnimManagerReady,
 }: Board25DCanvasProps) {
   const ambientEffectsRef = useRef<AmbientEffects | null>(null);
   const animManagerRef = useRef<BoardAnimationManager | null>(null);
@@ -96,6 +109,10 @@ export function Board25DCanvas({
   gameSpeedRef.current = gameSpeed;
   const graphicsQualityRef = useRef<GraphicsQuality>(graphicsQuality);
   graphicsQualityRef.current = graphicsQuality;
+  const showTrainRef = useRef<boolean>(showTrain);
+  showTrainRef.current = showTrain;
+  const tileLabelStyleRef = useRef<TileLabelStyle>(tileLabelStyle);
+  tileLabelStyleRef.current = tileLabelStyle;
   const containerRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
   const cameraRef = useRef<CameraController | null>(null);
@@ -230,6 +247,19 @@ export function Board25DCanvas({
       boardRendererRef.current.updateTiles(tiles, playerColorMap, standingTileIds, cornerConfigs);
     }
   }, [tiles, playerColorMap, standingTileIds, cornerConfigs]);
+
+  // Cập nhật kiểu hiển thị nhãn tên ô (Dán phẳng / Chỉ xoay)
+  useEffect(() => {
+    tileLabelStyleRef.current = tileLabelStyle;
+    boardRendererRef.current?.setTileLabelStyle(tileLabelStyle);
+  }, [tileLabelStyle]);
+
+  // Ẩn/hiện toàn bộ biển tên (ví dụ: ẩn khi đang mở thẻ mua/xây đất)
+  useEffect(() => {
+    if (boardRendererRef.current) {
+      boardRendererRef.current.labelsLayer.visible = !hideTileLabels;
+    }
+  }, [hideTileLabels]);
 
   useEffect(() => {
     setSelectedCornerIndex(-1);
@@ -613,17 +643,29 @@ export function Board25DCanvas({
 
     markers.forEach((m) => {
       if (m.type === 'train_track' && m.points.length >= 2) {
-        const p1 = imageToStage(m.points[0]);
-        const p2 = imageToStage(m.points[1]);
-
+        const pts = m.points.map(imageToStage);
         const trackG = new Graphics();
-        // Ray đôi màu thép sáng
-        trackG.moveTo(p1.x, p1.y).lineTo(p2.x, p2.y).stroke({ width: 4.5, color: 0x94a3b8, alpha: 0.9 });
-        trackG.moveTo(p1.x, p1.y).lineTo(p2.x, p2.y).stroke({ width: 1.5, color: 0x38bdf8, alpha: 0.95 });
 
-        // Chấm 2 đầu mút
-        trackG.circle(p1.x, p1.y, 6).fill({ color: 0x38bdf8 });
-        trackG.circle(p2.x, p2.y, 6).fill({ color: 0x38bdf8 });
+        // Ray đôi màu thép sáng (đường gấp khúc nhiều điểm)
+        trackG.moveTo(pts[0].x, pts[0].y);
+        for (let i = 1; i < pts.length; i++) {
+          trackG.lineTo(pts[i].x, pts[i].y);
+        }
+        trackG.stroke({ width: 4.5, color: 0x94a3b8, alpha: 0.9 });
+
+        trackG.moveTo(pts[0].x, pts[0].y);
+        for (let i = 1; i < pts.length; i++) {
+          trackG.lineTo(pts[i].x, pts[i].y);
+        }
+        trackG.stroke({ width: 1.5, color: 0x38bdf8, alpha: 0.95 });
+
+        // Các mốc điểm trên ray (xanh lá: điểm đầu, đỏ: điểm cuối, xanh dương: điểm giữa)
+        pts.forEach((p, idx) => {
+          trackG.circle(p.x, p.y, 6).fill({
+            color: idx === 0 ? 0x22c55e : idx === pts.length - 1 ? 0xef4444 : 0x38bdf8,
+          });
+          trackG.circle(p.x, p.y, 8).stroke({ width: 1.5, color: 0xffffff, alpha: 0.8 });
+        });
 
         markLayer.addChild(trackG);
       } else if (m.type === 'lanterns') {
@@ -644,6 +686,12 @@ export function Board25DCanvas({
       ambientEffectsRef.current.setQuality(graphicsQuality);
     }
   }, [graphicsQuality]);
+
+  useEffect(() => {
+    if (ambientEffectsRef.current) {
+      ambientEffectsRef.current.setShowTrain(showTrain);
+    }
+  }, [showTrain]);
 
   useEffect(() => {
     if (ambientEffectsRef.current && markers) {
@@ -798,6 +846,7 @@ export function Board25DCanvas({
       const ambient = createAmbientEffects({
         quality: graphicsQualityRef.current,
         markers: markersRef.current,
+        showTrain: showTrainRef.current,
         onPlayBell: () => audioManager.playSfx('train.bell', 0.5),
       });
       world.addChild(ambient.container);
@@ -806,8 +855,13 @@ export function Board25DCanvas({
       const animManager = createBoardAnimationManager();
       world.addChild(animManager.container);
       animManagerRef.current = animManager;
+      onAnimManagerReady?.(animManager);
+      if (typeof window !== 'undefined') (window as any).__animManager = animManager;
 
       // 3. Dựng 40 ô đất Việt Nam
+      onLoadProgress?.(78, 'Đang nạp phông chữ tiếng Việt (Be Vietnam Pro, Baloo 2)...');
+      await waitForGameFonts();
+
       onLoadProgress?.(80, 'Đang dựng 40 phiến đá di sản văn hóa Việt Nam...');
       const handleTileClickInternal = (tileId: number) => {
         onTileClickRef.current?.(tileId);
@@ -821,6 +875,7 @@ export function Board25DCanvas({
         standingTileIds,
         cornerConfigs,
         selectedTileId: selectedTileIdRef.current,
+        tileLabelStyle: tileLabelStyleRef.current,
         onTileClick: handleTileClickInternal,
       });
       world.addChild(boardRenderer.container);
@@ -842,9 +897,12 @@ export function Board25DCanvas({
       entityLayer.addChild(charManager.container);
       charManagerRef.current = charManager;
       charManager.syncPlayers(effectivePlayers);
+      onCharManagerReady?.(charManager);
+      if (typeof window !== 'undefined') (window as any).__charManager = charManager;
 
-      // 4b. Lớp nhãn tên ô và giá tiền (được nâng lên trên cùng, có nền mờ nhẹ, không bị công trình che)
-      world.addChild(boardRenderer.labelsLayer);
+      // 4b. Lớp nhãn tên ô và giá tiền (nằm trên lớp mặt ô & công trình zIndex 5, dưới nhân vật zIndex 20)
+      boardRenderer.labelsLayer.zIndex = 10;
+      entityLayer.addChild(boardRenderer.labelsLayer);
 
       // 4c. Lớp hiệu ứng chữ bay (Floating Text VFX)
       const vfxLayer = new Container();
@@ -884,18 +942,36 @@ export function Board25DCanvas({
       // 8. Camera điều khiển
       if (!isMounted || !app.renderer) return;
       onLoadProgress?.(95, 'Đang căn chỉnh camera phối cảnh 2.5D...');
+      let zoomDebounceTimer: ReturnType<typeof setTimeout> | null = null;
       const camera = new CameraController(app, world, (cam) => {
         setCurrentZoom(cam.state.zoom);
+        if (zoomDebounceTimer) clearTimeout(zoomDebounceTimer);
+        zoomDebounceTimer = setTimeout(() => {
+          boardRendererRef.current?.onZoomChanged(cam.state.zoom, cam.baseCoverScale);
+        }, 200);
       });
       camera.imageSourceWidth = useMobileAsset ? 2048 : 2668;
       camera.calculateCoverScale();
       cameraRef.current = camera;
+      onCameraReady?.(camera);
+      if (typeof window !== 'undefined') (window as any).__testCamera = camera;
       camera.center();
 
       const handleResize = () => {
+        if (appRef.current && appRef.current.renderer) {
+          appRef.current.renderer.resize(window.innerWidth, window.innerHeight);
+        }
         camera.onResize();
       };
       window.addEventListener('resize', handleResize);
+
+      let resizeObserver: ResizeObserver | null = null;
+      if (typeof ResizeObserver !== 'undefined' && containerRef.current) {
+        resizeObserver = new ResizeObserver(() => {
+          handleResize();
+        });
+        resizeObserver.observe(containerRef.current);
+      }
 
       // 9. Xử lý tương tác kéo thả nốt hiệu chỉnh toạ độ trên toàn stage
       app.stage.on('globalpointermove', (e: FederatedPointerEvent) => {
@@ -1123,6 +1199,7 @@ export function Board25DCanvas({
         floatingTextsRef.current.forEach((f) => f.container.destroy({ children: true }));
         floatingTextsRef.current = [];
         window.removeEventListener('resize', handleResize);
+        resizeObserver?.disconnect();
         containerEl?.removeEventListener('wheel', handleWheelScale);
         app.ticker.remove(tickerCallback);
         ambient.destroy();
@@ -1188,6 +1265,17 @@ export function Board25DCanvas({
         if (payload.passedGo) {
           spawnFloatingText('+200.000đ Xuất Phát', '#4ade80', 0);
         }
+        // Camera mượt mà bám theo và phóng to nhẹ 1.2x khi nhân vật di chuyển
+        const targetGeo = getTileGeometry(payload.to);
+        if (targetGeo && cameraRef.current) {
+          cameraRef.current.focusOnPoint(targetGeo.center.x, targetGeo.center.y, 1.2, 500);
+        }
+      }),
+      eventBus.on('turn-ended', () => {
+        // Xong hành động thì camera mượt mà trở về toàn cảnh
+        if (cameraRef.current) {
+          cameraRef.current.returnToOverview(500);
+        }
       }),
       eventBus.on('tile-landed', (payload) => {
         if (payload.tile.id === 20) {
@@ -1213,14 +1301,50 @@ export function Board25DCanvas({
         }
       }),
       eventBus.on('property-upgraded', (payload) => {
-        const tierName = payload.tier === 5 ? 'Landmark' : `Nhà cấp ${payload.tier}`;
-        spawnFloatingText(`-${payload.cost.toLocaleString('vi-VN')}đ ${tierName}`, '#38bdf8', payload.tile.id);
+        const isLandmark = payload.tier >= 4;
+        const tierName = isLandmark ? 'Kỳ Quan Landmark' : `Nhà cấp ${payload.tier}`;
+        spawnFloatingText(`-${payload.cost.toLocaleString('vi-VN')}đ ${tierName}`, isLandmark ? '#f59e0b' : '#38bdf8', payload.tile.id);
         const tileGeo = getTileGeometry(payload.tile.id);
         if (tileGeo) {
-          animManagerRef.current?.spawnUpgradePropertyVfx(tileGeo.center, gameSpeedRef.current >= 2 ? 0.5 : 1.0, () => {
-            buildingRendererRef.current?.updateTiles(tilesRef.current, playerColorMap, buildingsLayoutRef.current);
-          });
+          animManagerRef.current?.spawnUpgradePropertyVfx(
+            tileGeo.center,
+            gameSpeedRef.current >= 2 ? 0.5 : 1.0,
+            () => {
+              buildingRendererRef.current?.updateTiles(tilesRef.current, playerColorMap, buildingsLayoutRef.current);
+            },
+            isLandmark,
+            () => {
+              cameraRef.current?.shake(380, 4);
+            }
+          );
         }
+      }),
+      (eventBus as any).on('property-takeover', (payload: any) => {
+        spawnFloatingText(`Đổi chủ sở hữu!`, '#ec4899', payload.tile.id);
+        const tileGeo = getTileGeometry(payload.tile.id);
+        const buyer = effectivePlayers.find((x) => x.id === payload.buyerId);
+        const seller = effectivePlayers.find((x) => x.id === payload.sellerId);
+        const buyerPos = buyer ? getTileGeometry(buyer.position)?.center || { x: 0, y: 0 } : { x: 0, y: 0 };
+        const sellerPos = seller ? getTileGeometry(seller.position)?.center || { x: 0, y: 0 } : { x: 0, y: 0 };
+        const oldColor = seller ? seller.colorHex : 0x94a3b8;
+        const newColor = buyer ? buyer.colorHex : 0xf59e0b;
+        if (tileGeo) {
+          animManagerRef.current?.spawnPropertyTakeoverVfx(
+            tileGeo.center,
+            buyerPos,
+            sellerPos,
+            oldColor,
+            newColor,
+            gameSpeedRef.current >= 2 ? 0.5 : 1.0,
+            () => {
+              boardRendererRef.current?.updateTiles(tilesRef.current, playerColorMap, standingTileIds, cornerConfigs);
+            }
+          );
+        }
+      }),
+      (eventBus as any).on('color-group-completed', (payload: any) => {
+        spawnFloatingText(`Trọn bộ màu ${payload.colorGroup}! 🌟`, '#fde047', 0);
+        boardRendererRef.current?.flashColorGroup(payload.colorGroup);
       }),
       eventBus.on('rent-paid', (payload) => {
         spawnFloatingText(`-${payload.amount.toLocaleString('vi-VN')}đ Tiền thuê`, '#f87171', payload.tile.id);

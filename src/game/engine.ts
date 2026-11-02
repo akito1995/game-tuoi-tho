@@ -9,10 +9,12 @@ import {
   Player,
   Tile,
   ChanceCard,
+  PlayerSlotConfig,
 } from './types';
 import { BOARD_40_TILES } from './boardData';
 import { CHANCE_CARDS, FATE_CARDS } from './chanceCards';
 import { GameEventBus } from './events';
+import { calculateTileRent, getNextUpgradeCost } from './rulesV2Financials';
 
 export class GameEngine {
   public state: GameState;
@@ -20,7 +22,7 @@ export class GameEngine {
   public events: GameEventBus;
 
   constructor(
-    playersInput?: Array<{ id: string; name: string; character: CharacterId; isBot: boolean }>,
+    playersInput?: PlayerSlotConfig[],
     customSettings?: Partial<GameSettings>,
     eventBus?: GameEventBus
   ) {
@@ -40,6 +42,7 @@ export class GameEngine {
           properties: [],
           bankrupt: false,
           isBot: p.isBot,
+          botDifficulty: p.botDifficulty || 'MEDIUM',
           jailFreeCards: 0,
         }))
       : [
@@ -132,43 +135,12 @@ export class GameEngine {
     return groupTiles.every((t) => t.ownerId === ownerId);
   }
 
-  public calculateRent(tile: Tile): number {
-    if (tile.isMortgaged) return 0;
-
-    // Giao thông (4 ô): Bến Nhà Rồng, Ga Đà Lạt, Hải Vân Quan, Sân bay Nội Bài
-    if (tile.type === 'TRANSPORT' && tile.ownerId) {
-      const ownedCount = this.state.tiles.filter(
-        (t) => t.type === 'TRANSPORT' && t.ownerId === tile.ownerId
-      ).length;
-      const tier = Math.max(0, Math.min(ownedCount - 1, (tile.rentMultiplier?.length || 1) - 1));
-      return tile.rentMultiplier?.[tier] || tile.baseRent || 25000;
-    }
-
-    // Tiện ích (2 ô): Thủy điện Hòa Bình, Nhà máy nước Yên Phụ
-    if (tile.type === 'UTILITY' && tile.ownerId) {
-      const ownedCount = this.state.tiles.filter(
-        (t) => t.type === 'UTILITY' && t.ownerId === tile.ownerId
-      ).length;
-      const tier = Math.max(0, Math.min(ownedCount - 1, (tile.rentMultiplier?.length || 1) - 1));
-      return tile.rentMultiplier?.[tier] || tile.baseRent || 20000;
-    }
-
-    // Đất thông thường
-    const tier = tile.hasLandmark
-      ? (tile.rentMultiplier && tile.rentMultiplier.length >= 6 ? 5 : 4)
-      : Math.min(4, tile.houseCount || 0);
-    let rent = tile.rentMultiplier && tile.rentMultiplier.length > tier
-      ? tile.rentMultiplier[tier]
-      : tile.baseRent || 0;
-
-    // Đủ màu (Monopoly) nhân đôi tiền thuê đất trống
-    if (tile.colorGroup && (tile.houseCount || 0) === 0 && !tile.hasLandmark) {
-      if (this.checkColorMonopoly(tile.colorGroup, tile.ownerId)) {
-        rent *= 2;
-      }
-    }
-
-    return rent;
+  public calculateRent(tile: Tile, diceSum?: number): number {
+    return calculateTileRent(
+      tile,
+      this.state.tiles,
+      diceSum || (this.state.dice ? this.state.dice[0] + this.state.dice[1] : 7)
+    );
   }
 
   /**
@@ -416,6 +388,14 @@ export class GameEngine {
       price: tile.price,
     });
 
+    if (tile.colorGroup && this.checkColorMonopoly(tile.colorGroup, player.id)) {
+      (this.events as any).emit('color-group-completed', {
+        playerId: player.id,
+        colorGroup: tile.colorGroup,
+      });
+      this.addLog(`🌟 ${player.name} đã thâu tóm TRỌN BỘ NHÓM MÀU ${tile.colorGroup}! Tiền thuê được nhân đôi!`);
+    }
+
     this.completeAction();
     return true;
   }
@@ -435,7 +415,7 @@ export class GameEngine {
       return false; // Đã đạt cấp tối đa
     }
 
-    const cost = tile.housePrice || 50000;
+    const cost = getNextUpgradeCost(tile);
     if (player.money < cost) {
       this.addLog(`${player.name} không đủ tiền xây nâng cấp tại ${tile.name}.`);
       return false;
@@ -732,8 +712,14 @@ export class GameEngine {
 
   public armWatchdog(): void {
     this.cancelWatchdog();
+    const active = this.getActivePlayer();
+    // Tuyệt đối không can thiệp vào người chơi thật (Human) khi đang chờ quyết định
+    if (!active.isBot) {
+      return;
+    }
+
     const currentPhase = this.state.gamePhase as string;
-    // Chỉ giám sát khi đang ở các pha tự động (không chờ người chơi bấm nút)
+    // Chỉ giám sát khi đang ở các pha tự động của Bot/hệ thống (không chờ người chơi bấm nút)
     const isInteractive = currentPhase === 'AWAIT_ROLL' || currentPhase === 'AWAIT_DECISION' || currentPhase === 'CARD_DRAWN' || currentPhase === 'GAME_OVER';
     if (!isInteractive) {
       this.watchdogTimer = setTimeout(() => {
@@ -784,7 +770,7 @@ export class GameEngine {
     });
   }
 
-  private addLog(msg: string): void {
+  public addLog(msg: string): void {
     this.state.eventLogs.push(msg);
   }
 }

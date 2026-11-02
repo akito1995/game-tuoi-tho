@@ -9,11 +9,13 @@ export const BOARD_40_TILES: Tile[] = [
   {
     id: 0,
     name: 'Xuất Phát',
+    shortName: 'Xuất Phát',
     type: 'START',
   },
   {
     id: 1,
     name: 'Cà Mau',
+    shortName: 'Cà Mau',
     type: 'PROPERTY',
     colorGroup: 'BROWN',
     price: 60000,
@@ -30,11 +32,13 @@ export const BOARD_40_TILES: Tile[] = [
   {
     id: 2,
     name: 'Khí Vận',
+    shortName: 'Khí Vận',
     type: 'FATE',
   },
   {
     id: 3,
     name: 'Bạc Liêu',
+    shortName: 'Bạc Liêu',
     type: 'PROPERTY',
     colorGroup: 'BROWN',
     price: 80000,
@@ -51,12 +55,14 @@ export const BOARD_40_TILES: Tile[] = [
   {
     id: 4,
     name: 'Thuế thu nhập',
+    shortName: 'Thuế TN',
     type: 'TAX',
     taxAmount: 200000,
   },
   {
     id: 5,
     name: 'Bến Nhà Rồng',
+    shortName: 'Nhà Rồng',
     type: 'TRANSPORT',
     colorGroup: 'TRANSPORT',
     price: 200000,
@@ -72,6 +78,7 @@ export const BOARD_40_TILES: Tile[] = [
   {
     id: 6,
     name: 'Cần Thơ',
+    shortName: 'Cần Thơ',
     type: 'PROPERTY',
     colorGroup: 'LIGHT_BLUE',
     price: 100000,
@@ -88,11 +95,13 @@ export const BOARD_40_TILES: Tile[] = [
   {
     id: 7,
     name: 'Cơ Hội',
+    shortName: 'Cơ Hội',
     type: 'CHANCE',
   },
   {
     id: 8,
     name: 'An Giang',
+    shortName: 'An Giang',
     type: 'PROPERTY',
     colorGroup: 'LIGHT_BLUE',
     price: 100000,
@@ -109,6 +118,7 @@ export const BOARD_40_TILES: Tile[] = [
   {
     id: 9,
     name: 'Vũng Tàu',
+    shortName: 'Vũng Tàu',
     type: 'PROPERTY',
     colorGroup: 'LIGHT_BLUE',
     price: 120000,
@@ -127,11 +137,13 @@ export const BOARD_40_TILES: Tile[] = [
   {
     id: 10,
     name: 'Trại Giam / Thăm tù',
+    shortName: 'Trại Giam',
     type: 'JAIL',
   },
   {
     id: 11,
     name: 'Kon Tum',
+    shortName: 'Kon Tum',
     type: 'PROPERTY',
     colorGroup: 'PINK',
     price: 140000,
@@ -148,7 +160,7 @@ export const BOARD_40_TILES: Tile[] = [
   {
     id: 12,
     name: 'Thủy điện Hòa Bình',
-    shortName: 'TĐ.Hòa Bình',
+    shortName: 'Thủy điện',
     type: 'UTILITY',
     colorGroup: 'UTILITY',
     price: 150000,
@@ -164,6 +176,7 @@ export const BOARD_40_TILES: Tile[] = [
   {
     id: 13,
     name: 'Gia Lai',
+    shortName: 'Gia Lai',
     type: 'PROPERTY',
     colorGroup: 'PINK',
     price: 140000,
@@ -180,6 +193,7 @@ export const BOARD_40_TILES: Tile[] = [
   {
     id: 14,
     name: 'Buôn Ma Thuột',
+    shortName: 'B.M.Thuột',
     type: 'PROPERTY',
     colorGroup: 'PINK',
     price: 160000,
@@ -196,6 +210,7 @@ export const BOARD_40_TILES: Tile[] = [
   {
     id: 15,
     name: 'Ga Đà Lạt',
+    shortName: 'Ga Đà Lạt',
     type: 'TRANSPORT',
     colorGroup: 'TRANSPORT',
     price: 200000,
@@ -211,6 +226,7 @@ export const BOARD_40_TILES: Tile[] = [
   {
     id: 16,
     name: 'Phan Thiết',
+    shortName: 'Phan Thiết',
     type: 'PROPERTY',
     colorGroup: 'ORANGE',
     price: 180000,
@@ -227,11 +243,13 @@ export const BOARD_40_TILES: Tile[] = [
   {
     id: 17,
     name: 'Khí Vận',
+    shortName: 'Khí Vận',
     type: 'FATE',
   },
   {
     id: 18,
     name: 'Nha Trang',
+    shortName: 'Nha Trang',
     type: 'PROPERTY',
     colorGroup: 'ORANGE',
     price: 180000,
@@ -248,6 +266,7 @@ export const BOARD_40_TILES: Tile[] = [
   {
     id: 19,
     name: 'Phú Yên',
+    shortName: 'Phú Yên',
     type: 'PROPERTY',
     colorGroup: 'ORANGE',
     price: 200000,
@@ -266,12 +285,14 @@ export const BOARD_40_TILES: Tile[] = [
   {
     id: 20,
     name: 'Quán Trà Đá',
+    shortName: 'Trà Đá',
     type: 'REST',
     assetKey: 'tra-da',
   },
   {
     id: 21,
     name: 'Hội An',
+    shortName: 'Hội An',
     type: 'PROPERTY',
     colorGroup: 'RED',
     price: 220000,
@@ -288,11 +309,13 @@ export const BOARD_40_TILES: Tile[] = [
   {
     id: 22,
     name: 'Cơ Hội',
+    shortName: 'Cơ Hội',
     type: 'CHANCE',
   },
   {
     id: 23,
     name: 'Huế',
+    shortName: 'Huế',
     type: 'PROPERTY',
     colorGroup: 'RED',
     price: 220000,
@@ -309,6 +332,7 @@ export const BOARD_40_TILES: Tile[] = [
   {
     id: 24,
     name: 'Đà Nẵng',
+    shortName: 'Đà Nẵng',
     type: 'PROPERTY',
     colorGroup: 'RED',
     price: 240000,
@@ -325,6 +349,7 @@ export const BOARD_40_TILES: Tile[] = [
   {
     id: 25,
     name: 'Hải Vân Quan',
+    shortName: 'Hải Vân',
     type: 'TRANSPORT',
     colorGroup: 'TRANSPORT',
     price: 200000,
@@ -340,6 +365,7 @@ export const BOARD_40_TILES: Tile[] = [
   {
     id: 26,
     name: 'Ninh Bình',
+    shortName: 'Ninh Bình',
     type: 'PROPERTY',
     colorGroup: 'YELLOW',
     price: 260000,
@@ -356,6 +382,7 @@ export const BOARD_40_TILES: Tile[] = [
   {
     id: 27,
     name: 'Sa Pa',
+    shortName: 'Sa Pa',
     type: 'PROPERTY',
     colorGroup: 'YELLOW',
     price: 260000,
@@ -388,6 +415,7 @@ export const BOARD_40_TILES: Tile[] = [
   {
     id: 29,
     name: 'Hà Giang',
+    shortName: 'Hà Giang',
     type: 'PROPERTY',
     colorGroup: 'YELLOW',
     price: 280000,
@@ -406,11 +434,13 @@ export const BOARD_40_TILES: Tile[] = [
   {
     id: 30,
     name: 'Vào Tù',
+    shortName: 'Vào Tù',
     type: 'GO_TO_JAIL',
   },
   {
     id: 31,
     name: 'Bắc Ninh',
+    shortName: 'Bắc Ninh',
     type: 'PROPERTY',
     colorGroup: 'GREEN',
     price: 300000,
@@ -427,6 +457,7 @@ export const BOARD_40_TILES: Tile[] = [
   {
     id: 32,
     name: 'Hải Phòng',
+    shortName: 'Hải Phòng',
     type: 'PROPERTY',
     colorGroup: 'GREEN',
     price: 300000,
@@ -443,11 +474,13 @@ export const BOARD_40_TILES: Tile[] = [
   {
     id: 33,
     name: 'Khí Vận',
+    shortName: 'Khí Vận',
     type: 'FATE',
   },
   {
     id: 34,
     name: 'Hạ Long',
+    shortName: 'Hạ Long',
     type: 'PROPERTY',
     colorGroup: 'GREEN',
     price: 320000,
@@ -464,7 +497,7 @@ export const BOARD_40_TILES: Tile[] = [
   {
     id: 35,
     name: 'Sân bay Nội Bài',
-    shortName: 'SB.Nội Bài',
+    shortName: 'Nội Bài',
     type: 'TRANSPORT',
     colorGroup: 'TRANSPORT',
     price: 200000,
@@ -480,6 +513,7 @@ export const BOARD_40_TILES: Tile[] = [
   {
     id: 36,
     name: 'Cơ Hội',
+    shortName: 'Cơ Hội',
     type: 'CHANCE',
   },
   {
@@ -502,6 +536,7 @@ export const BOARD_40_TILES: Tile[] = [
   {
     id: 38,
     name: 'Thuế xa xỉ',
+    shortName: 'Thuế xa xỉ',
     type: 'TAX',
     taxAmount: 100000,
   },

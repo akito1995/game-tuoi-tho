@@ -1,7 +1,10 @@
 import { Container, Graphics, Text, Polygon, Sprite, Assets, MeshSimple } from 'pixi.js';
-import { Tile, COLOR_GROUP_HEX } from '../game/types';
+import { Tile, COLOR_GROUP_HEX, ColorGroup } from '../game/types';
 import { getTileGeometry, TileGeometry } from './isoMath';
 import { getHarmonizedTexture, addHarmonizationListener, isHarmonizationEnabled } from './colorHarmonizer';
+import { areGameFontsLoaded, waitForGameFonts } from './fontLoader';
+
+export type TileLabelStyle = 'affine' | 'rotate_only';
 
 export interface CornerConfig {
   id: number;
@@ -19,6 +22,9 @@ export interface BoardRendererOptions {
   cornerConfigs?: Record<number, CornerConfig>;
   selectedTileId?: number | null;
   debugCornerAnchors?: boolean;
+  tileLabelStyle?: TileLabelStyle;
+  currentZoom?: number;
+  baseCoverScale?: number;
   onTileClick?: (tileId: number) => void;
 }
 
@@ -33,6 +39,10 @@ export interface BoardRendererInstance {
   ) => void;
   setSelectedTileId: (id: number | null) => void;
   setDebugCornerAnchors: (enable: boolean) => void;
+  flashColorGroup: (group: ColorGroup) => void;
+  setTileLabelStyle: (style: TileLabelStyle) => void;
+  onZoomChanged: (zoom: number, baseCoverScale?: number) => void;
+  rebuildLabels: () => void;
   update: (deltaSeconds: number) => void;
   destroy: () => void;
 }
@@ -102,9 +112,10 @@ export function createBoardRenderer(options: BoardRendererOptions): BoardRendere
   container.addChild(debugAnchorLayer);
 
   // Lớp nhãn chữ & giá tiền được nâng lên tầng cao nhất, không bị che bởi công trình
+  // Dùng eventMode = 'passive' để các biển tên (signboards) có thể nhận hover và click
   const labelsLayer = new Container();
   labelsLayer.label = 'tile-labels-layer';
-  labelsLayer.eventMode = 'none';
+  labelsLayer.eventMode = 'passive';
   container.addChild(labelsLayer);
 
   let currentTiles = options.tiles;
@@ -113,6 +124,9 @@ export function createBoardRenderer(options: BoardRendererOptions): BoardRendere
   let currentCornerConfigs = options.cornerConfigs || DEFAULT_CORNER_CONFIGS;
   let currentSelectedTileId = options.selectedTileId ?? null;
   let currentDebugCornerAnchors = Boolean(options.debugCornerAnchors);
+  let currentTileLabelStyle: TileLabelStyle = options.tileLabelStyle || 'affine';
+  let currentZoom = options.currentZoom || 1.0;
+  let currentBaseCoverScale = options.baseCoverScale || 1.0;
 
   // Animation state cho nhịp thở 1.5s
   let animTime = 0;
@@ -121,10 +135,30 @@ export function createBoardRenderer(options: BoardRendererOptions): BoardRendere
   const ownerOverlayGraphics = new Map<number, Graphics>();
   const hoverGraphics = new Map<number, Graphics>();
   const cornerSprites = new Map<number, Sprite>();
+  const labelContainers = new Map<number, Container>();
+
+  // Lưu trữ dải màu theo nhóm để tạo hiệu ứng lấp lánh (Shimmer) khi người chơi sở hữu trọn bộ nhóm màu
+  const groupBands = new Map<ColorGroup, Array<number[]>>();
+  const activeShimmers = new Map<ColorGroup, { elapsed: number; duration: number }>();
 
   // Graphics vẽ viền vàng nhịp thở cho các ô đang đứng
   const standingGlowGraphic = new Graphics();
   glowLayer.addChild(standingGlowGraphic);
+
+  // Graphics vẽ hiệu ứng lấp lánh dải màu nhóm
+  const shimmerGraphic = new Graphics();
+  shimmerGraphic.blendMode = 'add';
+  glowLayer.addChild(shimmerGraphic);
+
+  // Lắng nghe khi tải xong font để tự động vẽ lại nhãn tên sắc nét
+  waitForGameFonts().then(() => {
+    buildTileLabels();
+  });
+  if (typeof document !== 'undefined' && document.fonts) {
+    document.fonts.ready.then(() => {
+      buildTileLabels();
+    });
+  }
 
   const redrawCornerAnchorDebug = () => {
     debugAnchorLayer.removeChildren();
@@ -163,7 +197,7 @@ export function createBoardRenderer(options: BoardRendererOptions): BoardRendere
         text: `F4 Neo ô ${cornerId}`,
         resolution: 2,
         style: {
-          fontFamily: 'sans-serif',
+          fontFamily: '"Be Vietnam Pro", sans-serif',
           fontSize: 10,
           fontWeight: 'bold',
           fill: '#f43f5e',
@@ -189,110 +223,75 @@ export function createBoardRenderer(options: BoardRendererOptions): BoardRendere
       const cfg = currentCornerConfigs[cornerId] || DEFAULT_CORNER_CONFIGS[cornerId];
       if (!cfg) return;
 
-      const cornerContainer = new Container();
-      cornerContainer.eventMode = 'static';
-      cornerContainer.cursor = 'pointer';
+      const sp = new Sprite();
+      sp.eventMode = 'static';
+      sp.cursor = 'pointer';
 
-      // HitArea cho tương tác bấm vào ô góc
-      const cornerPts = geo.polygonPoints.flatMap((p) => [p.x, p.y]);
-      cornerContainer.hitArea = new Polygon(cornerPts);
+      const anchorCfg = CORNER_ANCHORS[cornerId] || { x: 0.5, y: 0.8, nonTransparentWidth: 1700 };
+      sp.anchor.set(anchorCfg.x, anchorCfg.y);
+      sp.position.set(geo.center.x + (cfg.offsetX || 0), geo.center.y + (cfg.offsetY || 0));
 
-      cornerContainer.on('pointerdown', () => {
+      const rawAsset = cfg.asset || DEFAULT_CORNER_CONFIGS[cornerId]?.asset;
+      const cleanAsset = rawAsset.includes('/_clean/') ? rawAsset : rawAsset.replace('/art/corners/', '/art/_clean/corners/');
+
+      Assets.load(cleanAsset)
+        .catch(() => Assets.load(rawAsset))
+        .then((texture) => {
+          (sp as any).__rawTexture = texture;
+          if (isHarmonizationEnabled()) {
+            getHarmonizedTexture(texture, `corner_${cornerId}`, {
+              tileId: cornerId,
+              stageY: geo.center.y,
+            })
+              .then((harmTex) => {
+                (sp as any).__harmonizedTexture = harmTex;
+                sp.texture = isHarmonizationEnabled() ? harmTex : texture;
+              })
+              .catch(() => {
+                sp.texture = texture;
+              });
+          } else {
+            sp.texture = texture;
+          }
+
+          let cornerWidth = 220;
+          if (geo.polygonPoints && geo.polygonPoints.length >= 6) {
+            const pStart = geo.polygonPoints[0];
+            const pEnd = geo.polygonPoints[2];
+            cornerWidth = Math.hypot(pEnd.x - pStart.x, pEnd.y - pStart.y);
+          }
+
+          const targetWidth = cornerWidth * 0.90;
+          const contentRatio = anchorCfg.nonTransparentWidth / Math.max(1, texture.width);
+          const baseScale = targetWidth / Math.max(1, texture.width * contentRatio);
+          const userScaleMultiplier = cfg.scale ? cfg.scale / 0.065 : 1.0;
+          const finalScale = baseScale * userScaleMultiplier;
+
+          sp.scale.set(finalScale);
+        })
+        .catch((err) => {
+          console.warn(`Lỗi nạp ảnh ô góc ${cornerId}:`, err);
+        });
+
+      sp.on('pointerdown', () => {
         options.onTileClick?.(cornerId);
       });
 
-      // Kích thước ô góc: đo chiều rộng ô góc tại vị trí đó
-      const wSeams = Math.hypot(
-        geo.polygonPoints[2].x - geo.polygonPoints[0].x,
-        geo.polygonPoints[2].y - geo.polygonPoints[0].y
-      );
-      // Chân đế ô góc nằm gọn trong ô không tràn sang ô bên cạnh
-      let targetWidth: number;
-      if (cornerId === 0) {
-        targetWidth = wSeams * 0.72; // Xuất Phát vừa vặn trong ô góc không đè sang ô 1 và 39
-      } else if (cornerId === 10 || cornerId === 30) {
-        targetWidth = wSeams * 1.05;
-      } else {
-        targetWidth = wSeams * 0.85;
-      }
-
-      // Tải và đặt sprite góc (nướng hoà sắc đồng bộ với ảnh nền)
-      Assets.load(cfg.asset).then(async (texture) => {
-        const harmonizedTex = await getHarmonizedTexture(texture, `corner_${cornerId}`, {
-          tileId: cornerId,
-          stageY: geo.center.y,
-          isCorner: true,
-        });
-        const sp = new Sprite(isHarmonizationEnabled() ? harmonizedTex : texture);
-        (sp as any).__rawTexture = texture;
-        (sp as any).__harmonizedTexture = harmonizedTex;
-
-        const anchorInfo = CORNER_ANCHORS[cornerId] || { x: 0.5, y: 0.93, nonTransparentWidth: 1700 };
-        // Neo tại điểm giữa-đáy phần không trong suốt
-        sp.anchor.set(anchorInfo.x, anchorInfo.y);
-        // Đặt đúng TÂM ô góc, KHÔNG áp độ lệch về phía mép trong
-        sp.position.set(geo.center.x, geo.center.y);
-        // Scale để chiều rộng đạt 90% ô góc, chân đế nằm gọn trong ô
-        const scale = targetWidth / anchorInfo.nonTransparentWidth;
-        sp.scale.set(scale);
-
-        // 1. Bóng tiếp xúc sát chân đế góc (elip mờ tối, alpha 0.55)
-        const contactShadow = new Graphics();
-        const rx = (anchorInfo.nonTransparentWidth * scale) * 0.42;
-        const ry = rx * 0.38;
-        contactShadow
-          .ellipse(geo.center.x, geo.center.y, rx, ry)
-          .fill({ color: 0x080402, alpha: 0.55 });
-        cornerContainer.addChild(contactShadow);
-
-        // Ambient occlusion mờ nhẹ quanh chân trên mặt đá
-        const aoShadow = new Graphics();
-        const rxAo = rx * 1.35;
-        const ryAo = ry * 1.35;
-        aoShadow
-          .ellipse(geo.center.x, geo.center.y, rxAo, ryAo)
-          .fill({ color: 0x140a04, alpha: 0.20 });
-        cornerContainer.addChild(aoShadow);
-
-        // 2. Bóng hắt xiên theo hướng nắng (trên-trái -> dưới-phải, alpha 0.28, #24160c)
-        const castShadow = new Sprite(texture);
-        castShadow.tint = 0x24160c;
-        castShadow.alpha = 0.28;
-        castShadow.anchor.set(anchorInfo.x, anchorInfo.y);
-        castShadow.scale.x = scale * 1.05;
-        castShadow.scale.y = scale * 0.28;
-        castShadow.rotation = 0.52;
-        castShadow.position.set(geo.center.x + 22 * geo.depthScale, geo.center.y + 14 * geo.depthScale);
-        cornerContainer.addChild(castShadow);
-
-        cornerContainer.addChild(sp);
-        cornerSprites.set(cornerId, sp);
-        if (typeof window !== 'undefined') {
-          (window as any).__CORNER_DEBUG__ = (window as any).__CORNER_DEBUG__ || {};
-          (window as any).__CORNER_DEBUG__[cornerId] = {
-            center: { x: geo.center.x, y: geo.center.y },
-            targetWidth,
-            scale,
-            anchor: { x: anchorInfo.x, y: anchorInfo.y },
-            pos: { x: sp.position.x, y: sp.position.y },
-          };
-        }
-      }).catch((err) => {
-        console.warn(`Lỗi nạp tranh góc ${cfg.asset}:`, err);
-      });
-
-      cornersLayer.addChild(cornerContainer);
+      cornersLayer.addChild(sp);
+      cornerSprites.set(cornerId, sp);
     });
+
+    redrawCornerAnchorDebug();
   };
 
   /**
-   * Dựng các phiến đá và nhãn chữ in trên mặt đá
+   * Dựng 36 ô đất thông thường: bề mặt phiến đá, dải màu nhóm, cờ sở hữu, huy hiệu tròn
    */
   const buildRegularTiles = () => {
     tilesLayer.removeChildren();
-    labelsLayer.removeChildren();
     ownerOverlayGraphics.clear();
     hoverGraphics.clear();
+    groupBands.clear();
 
     currentTiles.forEach((tile) => {
       // 4 ô góc xử lý riêng ở cornersLayer
@@ -307,19 +306,64 @@ export function createBoardRenderer(options: BoardRendererOptions): BoardRendere
       const tilePts = geo.polygonPoints.flatMap((p) => [p.x, p.y]);
       tileContainer.hitArea = new Polygon(tilePts);
 
-      // 2. Lớp phủ màu người chơi 20% khi ô có chủ
+      // 2. Lớp phủ màu sở hữu, viền sáng mảnh & cờ đuôi nheo
       const ownerGraphic = new Graphics();
       tileContainer.addChild(ownerGraphic);
       ownerOverlayGraphics.set(tile.id, ownerGraphic);
 
       const renderOwnerOverlay = () => {
         ownerGraphic.clear();
+
+        // Ô đã có chủ: Viền mảnh màu chủ sở hữu phát sáng nhẹ + cờ đuôi nheo
         if (tile.ownerId && currentColorMap[tile.ownerId]) {
           const pColor = currentColorMap[tile.ownerId];
+
+          // Phủ màu nhẹ 12%
           ownerGraphic
             .poly(tilePts)
-            .fill({ color: pColor, alpha: 0.20 }) // Phủ màu 20%
-            .stroke({ width: 1.2, color: pColor, alpha: 0.50 });
+            .fill({ color: pColor, alpha: 0.12 });
+
+          // Viền ngoài phát sáng nhẹ
+          ownerGraphic
+            .poly(tilePts)
+            .stroke({ width: 3.5, color: pColor, alpha: 0.28 });
+
+          // Viền mảnh sắc nét
+          ownerGraphic
+            .poly(tilePts)
+            .stroke({ width: 1.5, color: pColor, alpha: 0.95 });
+
+          // Cờ đuôi nheo cắm ở góc mép ngoài của phiến đá
+          const flagBase = geo.outerStart;
+          const poleH = 20 * geo.depthScale;
+          const flagW = 14 * geo.depthScale;
+          const flagH = 9 * geo.depthScale;
+
+          // Cột cờ bạc mảnh
+          ownerGraphic
+            .moveTo(flagBase.x, flagBase.y)
+            .lineTo(flagBase.x, flagBase.y - poleH)
+            .stroke({ width: 1.5, color: 0xf8fafc, alpha: 0.95 });
+          ownerGraphic
+            .circle(flagBase.x, flagBase.y - poleH, 2.0)
+            .fill({ color: 0xfde047 });
+
+          // Lá cờ đuôi nheo tam giác mang màu chủ sở hữu
+          ownerGraphic
+            .poly([
+              flagBase.x, flagBase.y - poleH,
+              flagBase.x + flagW, flagBase.y - poleH + flagH * 0.5,
+              flagBase.x, flagBase.y - poleH + flagH,
+            ])
+            .fill({ color: pColor, alpha: 0.95 });
+        }
+
+        // Ô cầm cố: Phủ xám tối 60% và viền xám tro
+        if (tile.isMortgaged) {
+          ownerGraphic
+            .poly(tilePts)
+            .fill({ color: 0x1e293b, alpha: 0.60 })
+            .stroke({ width: 1.5, color: 0x64748b, alpha: 0.85 });
         }
       };
       renderOwnerOverlay();
@@ -342,18 +386,18 @@ export function createBoardRenderer(options: BoardRendererOptions): BoardRendere
 
       // 4. Dải màu nhóm:
       // - Chỉ ô đất (PROPERTY) có dải màu nhóm (22% chiều sâu, màu theo colorGroup).
-      // - Ô giao thông (5, 15, 25, 35) & tiện ích (12, 28) dùng dải xám đá mảnh hơn (12% chiều sâu ô, #64748B), không bao giờ lấy màu nhóm bên cạnh.
+      // - Ô giao thông (5, 15, 25, 35) & tiện ích (12, 28) dùng dải xám đá mảnh hơn (12% chiều sâu ô, #64748B).
       // - Ô Khí Vận, Cơ Hội, Thuế KHÔNG có dải màu.
       const isProperty = tile.type === 'PROPERTY';
       const isTransportOrUtility = tile.type === 'TRANSPORT' || tile.type === 'UTILITY';
       const hasColorBand = isProperty || isTransportOrUtility;
 
       if (hasColorBand) {
-        let groupColorHex = '#64748B'; // Mặc định xám đá mảnh cho giao thông & tiện ích
-        let bandDepthRatio = 0.12; // 12% chiều sâu ô
+        let groupColorHex = '#64748B';
+        let bandDepthRatio = 0.12;
 
         if (isProperty) {
-          bandDepthRatio = 0.22; // 22% chiều sâu cho ô đất
+          bandDepthRatio = 0.22;
           if (tile.colorGroup && COLOR_GROUP_HEX[tile.colorGroup]) {
             groupColorHex = COLOR_GROUP_HEX[tile.colorGroup];
           }
@@ -367,7 +411,6 @@ export function createBoardRenderer(options: BoardRendererOptions): BoardRendere
         const outS = geo.outerStart;
         const outE = geo.outerEnd;
 
-        // Chiều sâu từ mép trong ra ngoài theo phối cảnh ô
         const topS = {
           x: inS.x + (outS.x - inS.x) * bandDepthRatio,
           y: inS.y + (outS.y - inS.y) * bandDepthRatio,
@@ -377,18 +420,23 @@ export function createBoardRenderer(options: BoardRendererOptions): BoardRendere
           y: inE.y + (outE.y - inE.y) * bandDepthRatio,
         };
 
-        // Hình thang màu đặc, độ đục 90%
         colorBar
           .poly([inS.x, inS.y, inE.x, inE.y, topE.x, topE.y, topS.x, topS.y])
           .fill({ color: colorVal, alpha: 0.90 });
 
-        // Viền sáng mảnh phía trên để trông như được sơn lên đá
         colorBar
           .moveTo(topS.x, topS.y)
           .lineTo(topE.x, topE.y)
           .stroke({ width: 1.2, color: 0xffffff, alpha: 0.65 });
 
         tileContainer.addChild(colorBar);
+
+        if (isProperty && tile.colorGroup) {
+          const quad = [inS.x, inS.y, inE.x, inE.y, topE.x, topE.y, topS.x, topS.y];
+          const curList = groupBands.get(tile.colorGroup) || [];
+          curList.push(quad);
+          groupBands.set(tile.colorGroup, curList);
+        }
       }
 
       // 5. Đường chỉ chia cách tinh tế giữa 2 phiến đá kề nhau
@@ -400,10 +448,6 @@ export function createBoardRenderer(options: BoardRendererOptions): BoardRendere
       tileContainer.addChild(divider);
 
       // 6. In tile-*.png lên mặt ô Khí Vận, Cơ Hội, 2 ô Thuế:
-      // - Biến dạng ảnh theo phối cảnh ô bằng homography / MeshSimple (hình tròn thành hình elip nằm phẳng trên mặt đá)
-      // - Đặt đúng TÂM ô, rộng 60% chiều rộng ô, KHÔNG có độ lệch về mép trong
-      // - Thêm bóng tối mờ quanh viền như được khảm vào đá
-      // - In chữ trên ô, cùng kiểu chữ tên ô: "KHÍ VẬN", "CƠ HỘI", "THUẾ THU NHẬP −200K", "THUẾ XA XỈ −100K"
       const isSpecialIllustratedTile =
         tile.type === 'FATE' ||
         tile.type === 'CHANCE' ||
@@ -411,24 +455,10 @@ export function createBoardRenderer(options: BoardRendererOptions): BoardRendere
 
       if (isSpecialIllustratedTile) {
         let tileAsset = '';
-        let specialTitle = '';
-        let specialSub = '';
-
-        if (tile.type === 'FATE') {
-          tileAsset = '/art/_clean/tiles/tile-khi-van.png';
-          specialTitle = 'KHÍ VẬN';
-        } else if (tile.type === 'CHANCE') {
-          tileAsset = '/art/_clean/tiles/tile-co-hoi.png';
-          specialTitle = 'CƠ HỘI';
-        } else if (tile.id === 4) {
-          tileAsset = '/art/_clean/tiles/tile-thue-thu-nhap.png';
-          specialTitle = 'THUẾ THU NHẬP';
-          specialSub = '−200K';
-        } else if (tile.id === 38) {
-          tileAsset = '/art/_clean/tiles/tile-thue-xa-xi.png';
-          specialTitle = 'THUẾ XA XỈ';
-          specialSub = '−100K';
-        }
+        if (tile.type === 'FATE') tileAsset = '/art/_clean/tiles/tile-khi-van.png';
+        else if (tile.type === 'CHANCE') tileAsset = '/art/_clean/tiles/tile-co-hoi.png';
+        else if (tile.id === 4) tileAsset = '/art/_clean/tiles/tile-thue-thu-nhap.png';
+        else if (tile.id === 38) tileAsset = '/art/_clean/tiles/tile-thue-xa-xi.png';
 
         if (tileAsset) {
           const inS = geo.innerStart;
@@ -454,12 +484,10 @@ export function createBoardRenderer(options: BoardRendererOptions): BoardRendere
           const tileWidth = Math.hypot(outE.x - outS.x, outE.y - outS.y);
           const tileDepth = Math.hypot(inS.x - outS.x, inS.y - outS.y);
 
-          // Rộng đúng 60% chiều rộng ô, đặt đúng TÂM ô (u = 0.5, v = 0.5)
           const halfU = 0.30;
           const u0 = 0.5 - halfU;
           const u1 = 0.5 + halfU;
 
-          // Độ sâu tương đương để vòng tròn biến dạng thành hình elip nằm phẳng tự nhiên trên đá
           const targetDiam = 0.60 * tileWidth;
           const halfV = Math.min(0.35, (targetDiam / tileDepth) * 0.5);
           const v0 = 0.5 - halfV;
@@ -483,20 +511,18 @@ export function createBoardRenderer(options: BoardRendererOptions): BoardRendere
             p3 = interpTile(u1, v0);
           }
 
-          // Bóng tối mờ quanh viền như được khảm vào đá
+          const centerPt = interpTile(0.5, 0.5);
           const shadowG = new Graphics();
-          const sp0 = interpTile(u0 - 0.02, v0 - 0.02);
-          const sp1 = interpTile(u1 + 0.02, v0 - 0.02);
-          const sp2 = interpTile(u1 + 0.02, v1 + 0.02);
-          const sp3 = interpTile(u0 - 0.02, v1 + 0.02);
+          shadowG.position.set(centerPt.x, centerPt.y);
+          shadowG.rotation = geo.angle;
+          const radU = tileWidth * 0.31;
+          const radV = radU * 0.58;
 
           shadowG
-            .poly([sp0.x, sp0.y, sp1.x, sp1.y, sp2.x, sp2.y, sp3.x, sp3.y])
-            .fill({ color: 0x140c06, alpha: 0.32 })
-            .stroke({ width: 1.5, color: 0x140c06, alpha: 0.45 });
+            .ellipse(0, 2, radU * 1.04, radV * 1.04)
+            .fill({ color: 0x140c06, alpha: 0.28 });
           tileContainer.addChild(shadowG);
 
-          // MeshSimple nằm phẳng trên mặt đá
           Assets.load(tileAsset)
             .catch(() => Assets.load(tileAsset.replace('/_clean/', '/')))
             .then((texture) => {
@@ -511,73 +537,226 @@ export function createBoardRenderer(options: BoardRendererOptions): BoardRendere
             .catch((err) => {
               console.warn(`Lỗi nạp ảnh tile ${tileAsset}:`, err);
             });
+        }
+      }
 
-          // In chữ trên ô, cùng kiểu chữ tên ô
-          const textV = side === 1 || side === 2 ? 0.16 : 0.84;
-          const textPos = interpTile(0.5, textV);
+      // Tương tác chuột:
+      tileContainer.on('pointerdown', () => {
+        options.onTileClick?.(tile.id);
+      });
 
-          const labelGroup = new Container();
-          labelGroup.position.set(textPos.x, textPos.y);
+      tileContainer.on('pointerover', () => {
+        drawHover(true);
+        // Tăng độ đục biển tên lên 100% khi rê chuột vào ô
+        const sc = labelContainers.get(tile.id);
+        if (sc) sc.alpha = 1.0;
+      });
 
-          let textAngle = geo.angle;
-          while (textAngle > Math.PI / 2) textAngle -= Math.PI;
-          while (textAngle < -Math.PI / 2) textAngle += Math.PI;
-          labelGroup.rotation = textAngle;
+      tileContainer.on('pointerout', () => {
+        drawHover(false);
+        // Khôi phục độ đục 70% nếu có công trình phía sau
+        const sc = labelContainers.get(tile.id);
+        if (sc) {
+          const hasBld = Boolean(tile.buildingLevel && tile.buildingLevel > 0);
+          sc.alpha = hasBld ? 0.70 : 1.0;
+        }
+      });
 
-          const nameFontSize = Math.max(7.5, Math.round(9.5 * geo.depthScale));
-          const priceFontSize = Math.max(8.0, Math.round(10.5 * geo.depthScale));
+      tilesLayer.addChild(tileContainer);
+    });
+  };
 
-          const nameText = new Text({
-            text: specialTitle,
-            resolution: 2.5,
-            style: {
-              fontFamily: 'Be Vietnam Pro, sans-serif',
-              fontSize: nameFontSize,
-              fontWeight: 'bold',
-              fill: '#3A2A1A',
-              stroke: { color: '#FFF9E6', width: Math.max(1.5, 2.0 * geo.depthScale), join: 'round' },
-              align: 'center',
-            },
-          });
-          nameText.anchor.set(0.5, 0.5);
-          nameText.position.set(0, specialSub ? -5.5 * geo.depthScale : 0);
-          labelGroup.addChild(nameText);
+// Góc định hướng chính xác từ homography trong board-calibration.json:
+// Trục Tây Nam - Đông Bắc (Side 0 & Side 2): ~30.71°
+const HOMOGRAPHY_ANGLE_AXIS_A = 0.53605;
+// Trục Tây Bắc - Đông Nam (Side 1 & Side 3): ~-26.96°
+const HOMOGRAPHY_ANGLE_AXIS_B = -0.47057;
 
-          if (specialSub) {
-            const priceText = new Text({
-              text: specialSub,
-              resolution: 2.5,
-              style: {
-                fontFamily: 'Baloo 2, cursive, sans-serif',
-                fontSize: priceFontSize,
-                fontWeight: '800',
-                fill: '#3A2A1A',
-                stroke: { color: '#FFF9E6', width: Math.max(1.6, 2.2 * geo.depthScale), join: 'round' },
-                align: 'center',
-              },
-            });
-            priceText.anchor.set(0.5, 0.5);
-            priceText.position.set(0, 6.2 * geo.depthScale);
-            labelGroup.addChild(priceText);
-          }
+let measureCanvasCtx: CanvasRenderingContext2D | null = null;
+function measureTextWidth(text: string, fontSize: number, fontWeight = '800', fontFamily = '"Be Vietnam Pro", sans-serif'): number {
+  if (typeof document !== 'undefined') {
+    if (!measureCanvasCtx) {
+      const c = document.createElement('canvas');
+      measureCanvasCtx = c.getContext('2d');
+    }
+    if (measureCanvasCtx) {
+      measureCanvasCtx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+      return measureCanvasCtx.measureText(text).width;
+    }
+  }
+  return text.length * fontSize * 0.65;
+}
 
-          // Nền mờ nhẹ phía sau chữ
-          const pillBg = new Graphics();
-          const pillPadX = Math.max(5, 6 * geo.depthScale);
-          const pillPadY = Math.max(3, 4 * geo.depthScale);
-          const totalW = Math.max(nameText.width, specialSub ? 38 * geo.depthScale : 0) + pillPadX * 2;
-          const totalH = (specialSub ? 24 * geo.depthScale : 15 * geo.depthScale) + pillPadY;
+function fitTileName(rawName: string, maxW: number): { text: string; fontSize: number; isTwoLines: boolean } {
+  const cleanName = rawName.replace(/\n/g, ' ').trim();
+  // 1. Thử 1 dòng từ cỡ 16px xuống 11px
+  for (let s = 16; s >= 11; s -= 0.5) {
+    if (measureTextWidth(cleanName, s) <= maxW) {
+      return { text: cleanName, fontSize: s, isTwoLines: false };
+    }
+  }
 
-          pillBg
-            .roundRect(-totalW / 2, -totalH / 2, totalW, totalH, Math.max(3, 4 * geo.depthScale))
-            .fill({ color: 0x140c06, alpha: 0.55 })
-            .stroke({ width: 1.0, color: 0xffffff, alpha: 0.16 });
-          labelGroup.addChildAt(pillBg, 0);
+  // 2. Nếu ở 11px vẫn quá dài: Tự động xuống 2 dòng, không bao giờ cắt cụt chữ
+  const words = cleanName.split(/\s+/);
+  if (words.length > 1) {
+    let bestSplit = 1;
+    let minDiff = Infinity;
+    for (let i = 1; i < words.length; i++) {
+      const l1 = words.slice(0, i).join(' ');
+      const l2 = words.slice(i).join(' ');
+      const diff = Math.abs(l1.length - l2.length);
+      if (diff < minDiff) {
+        minDiff = diff;
+        bestSplit = i;
+      }
+    }
+    const line1 = words.slice(0, bestSplit).join(' ');
+    const line2 = words.slice(bestSplit).join(' ');
+    const twoLineStr = `${line1}\n${line2}`;
 
-          labelsLayer.addChild(labelGroup);
+    for (let s = 12; s >= 9.5; s -= 0.5) {
+      const w1 = measureTextWidth(line1, s);
+      const w2 = measureTextWidth(line2, s);
+      if (Math.max(w1, w2) <= maxW) {
+        return { text: twoLineStr, fontSize: s, isTwoLines: true };
+      }
+    }
+    return { text: twoLineStr, fontSize: 9.5, isTwoLines: true };
+  }
+
+  return { text: cleanName, fontSize: 10.5, isTwoLines: false };
+}
+
+  /**
+   * =========================================================================
+   * BẢN VẼ TÊN Ô: NGAY NGẮN, SONG SONG CẠNH BÀN CỜ
+   * =========================================================================
+   * 1. Hướng chữ: Dòng chữ chạy song song cạnh bàn cờ. Cả 4 cạnh chỉ có 2 hướng
+   *    (cạnh đối diện song song nhau), lấy chính xác từ homography board-calibration.json.
+   *    Chữ luôn đọc từ trái sang phải trên màn hình, không bao giờ lộn ngược.
+   * 2. Hai chế độ hiển thị:
+   *    - "Dán phẳng" (Mặc định): biến đổi affine (xoay + xiên) để cạnh trên/dưới
+   *      song song cạnh bàn cờ, cạnh trái/phải song song cạnh bên ô, biển nằm khít
+   *      như in trên mặt đá. KHÔNG thu nhỏ phối cảnh: giữ cỡ chữ chuẩn.
+   *    - "Chỉ xoay": chỉ xoay biển song song cạnh bàn cờ, không xiên.
+   * 3. Vị trí & Kích thước:
+   *    - Ô thường: dải giữa-ngoài (t = 0.62), giữa dải màu và mép ngoài, rộng tối đa 88%.
+   *    - Ô Khí Vận / Cơ Hội / Thuế: huy hiệu tròn ở giữa, biển tên ngay dưới huy hiệu, cùng hướng.
+   *    - 4 ô góc: song song cạnh ngoài gần người xem nhất, đặt sát mép ngoài.
+   * 4. Chữ:
+   *    - Dòng 1: shortName, Be Vietnam Pro 800, chữ trắng, viền chữ nâu đậm 2px.
+   *    - Dòng 2: giá "140K" Baloo 2 700 màu vàng nhạt #FFE08A (hoặc "Thuê 120K" màu chủ).
+   *    - Nền biển: nâu gỗ sẫm #3A2414 độ đục 88%, bo góc 5px, viền mảnh màu nhóm ở cạnh phía dải màu.
+   *    - Tự co cỡ chữ 11-16px, nếu dài tự xuống 2 dòng, không cắt cụt chữ.
+   * 5. Lớp và va chạm:
+   *    - Biển tên nằm trên lớp mặt ô, dưới nhân vật. Nếu có công trình che: biển nâng lên
+   *      trên công trình với độ đục 75%, rê chuột vào thì 100%.
+   *    - Biển của các ô kề nhau không chạm nhau (khoảng cách an toàn >= 14% bề ngang ô).
+   * =========================================================================
+   */
+  const buildTileLabels = () => {
+    labelsLayer.removeChildren();
+    labelContainers.clear();
+
+    const zoomRatio = currentBaseCoverScale > 0 ? currentZoom / currentBaseCoverScale : 1.0;
+    const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
+    // Độ phân giải chữ = devicePixelRatio * mức phóng to
+    const textResolution = Math.min(4.5, Math.max(2.0, Number((dpr * Math.max(1.0, zoomRatio)).toFixed(2))));
+
+    // Target font scale for signboards:
+    // Cỡ chữ cố định theo màn hình ở khung nhìn mặc định, co giãn nhẹ nhưng giới hạn rõ ràng
+    const targetScaleRatio = Math.min(18 / 13.5, Math.max(12 / 13.5, zoomRatio));
+    const localScale = targetScaleRatio / zoomRatio;
+
+    currentTiles.forEach((tile) => {
+      const geo = getTileGeometry(tile.id);
+      if (!geo) return;
+
+      const side = Math.floor(tile.id / 10) % 4;
+      const isCorner = tile.id % 10 === 0;
+      const isOwned = Boolean(tile.ownerId && currentColorMap[tile.ownerId]);
+      const hasBuilding = Boolean(tile.buildingLevel && tile.buildingLevel > 0);
+      const isProperty = tile.type === 'PROPERTY';
+      const isSpecialIllustrated = tile.type === 'FATE' || tile.type === 'CHANCE' || tile.type === 'TAX';
+
+      // Tiền thuê / Giá hiển thị
+      let rentVal = 0;
+      if (isOwned) {
+        rentVal =
+          tile.currentRent ||
+          (tile.rentMultiplier && tile.buildingLevel !== undefined && tile.rentMultiplier[tile.buildingLevel] !== undefined
+            ? tile.rentMultiplier[tile.buildingLevel]
+            : tile.baseRent) ||
+          0;
+      }
+
+      // Tên ngắn (shortName, không cắt cụt)
+      const rawName = (tile.shortName || tile.name).trim();
+
+      // Nội dung dòng 2 (giá / tiền thuê / mô tả ngắn)
+      let line2Text = '';
+      if (isOwned) {
+        line2Text = `Thuê ${Math.round(rentVal / 1000)}K`;
+      } else if (tile.price) {
+        line2Text = `${Math.round(tile.price / 1000)}K`;
+      } else {
+        if (tile.id === 0) line2Text = '+200K';
+        else if (tile.id === 10) line2Text = 'Thăm tù';
+        else if (tile.id === 20) line2Text = 'Nghỉ chân';
+        else if (tile.id === 30) line2Text = 'Vào tù';
+        else if (tile.type === 'FATE') line2Text = 'Khí Vận';
+        else if (tile.type === 'CHANCE') line2Text = 'Cơ Hội';
+        else if (tile.id === 4) line2Text = '−10%';
+        else if (tile.id === 38) line2Text = '−100K';
+      }
+
+      // -------------------------------------------------------------
+      // 1. TÍNH TOÁN GÓC HƯỚNG CHỮ VÀ VỊ TRÍ BIỂN
+      // -------------------------------------------------------------
+      let edgeAngle = 0;
+      let sideAngle = 0;
+      let posX = geo.center.x;
+      let posY = geo.center.y;
+      let tileWidth = 80;
+
+      if (isCorner) {
+        // 4 Ô GÓC: biển tên đặt ở mép ngoài ô, thấp hơn và không che nhân vật / công trình góc
+        if (tile.id === 0) {
+          // Nam - Xuất Phát: đặt ở mép ngoài ô (phía dưới), thấp hơn để không che 4 nhân vật đứng trên ô
+          edgeAngle = 0;
+          sideAngle = Math.PI / 2;
+          posX = geo.center.x;
+          posY = geo.outerStart.y + 24;
+          tileWidth = 110;
+        } else if (tile.id === 10) {
+          // Tây - Trại Giam: đặt ở mép ngoài ô góc phía Tây, không đè lên công trình Trại Giam
+          edgeAngle = HOMOGRAPHY_ANGLE_AXIS_A;
+          sideAngle = HOMOGRAPHY_ANGLE_AXIS_B;
+          posX = geo.outerStart.x - 24;
+          posY = geo.outerStart.y + 20;
+          tileWidth = 90;
+        } else if (tile.id === 20) {
+          // Bắc - Quán Trà Đá: đặt ở mép ngoài ô phía Bắc
+          edgeAngle = 0;
+          sideAngle = Math.PI / 2;
+          posX = geo.center.x;
+          posY = geo.outerStart.y - 12;
+          tileWidth = 85;
+        } else {
+          // Đông - Vào Tù: đặt ở mép ngoài ô góc phía Đông, không đè lên công trình Vào Tù
+          edgeAngle = HOMOGRAPHY_ANGLE_AXIS_B;
+          sideAngle = HOMOGRAPHY_ANGLE_AXIS_A;
+          posX = geo.outerStart.x + 24;
+          posY = geo.outerStart.y + 20;
+          tileWidth = 90;
         }
       } else {
-        // 7. Nhãn chữ in trên mặt đá: đặt ở vùng mép ô GẦN người xem
+        // CÁC Ô DÃY THƯỜNG (Side 0..3):
+        // Cả 4 cạnh chỉ có 2 hướng (2 cạnh đối diện song song nhau):
+        // Side 0 & Side 2: HOMOGRAPHY_ANGLE_AXIS_A (~30.71°)
+        // Side 1 & Side 3: HOMOGRAPHY_ANGLE_AXIS_B (~-26.96°)
+        edgeAngle = (side === 0 || side === 2) ? HOMOGRAPHY_ANGLE_AXIS_A : HOMOGRAPHY_ANGLE_AXIS_B;
+
         const inMid = {
           x: (geo.innerStart.x + geo.innerEnd.x) / 2,
           y: (geo.innerStart.y + geo.innerEnd.y) / 2,
@@ -587,127 +766,179 @@ export function createBoardRenderer(options: BoardRendererOptions): BoardRendere
           y: (geo.outerStart.y + geo.outerEnd.y) / 2,
         };
 
-        const side = Math.floor(tile.id / 10) % 4;
-        // Dời tên ô và giá sang mép ô GẦN người xem:
-        // - Cạnh Nam (side 0 & 3): gần người xem là phía mép ngoài (outMid -> t = 0.80)
-        // - Cạnh Bắc (side 1 & 2): gần người xem là phía mép trong (inMid -> t = 0.22, cạnh dải màu)
-        const isFarSide = side === 1 || side === 2;
-        const tNear = isFarSide ? 0.22 : 0.80;
-        const textPos = {
-          x: inMid.x + (outMid.x - inMid.x) * tNear,
-          y: inMid.y + (outMid.y - inMid.y) * tNear,
-        };
+        tileWidth = Math.hypot(geo.outerEnd.x - geo.outerStart.x, geo.outerEnd.y - geo.outerStart.y);
 
-        const labelGroup = new Container();
-        labelGroup.position.set(textPos.x, textPos.y);
+        // Hướng cạnh bên ô (transverse: từ ngoài vào trong)
+        const vTrans = { x: inMid.x - outMid.x, y: inMid.y - outMid.y };
+        sideAngle = Math.atan2(vTrans.y, vTrans.x);
 
-        // Góc xoay: luôn đọc được từ phía người xem (không bị lộn ngược)
-        let textAngle = geo.angle;
-        while (textAngle > Math.PI / 2) textAngle -= Math.PI;
-        while (textAngle < -Math.PI / 2) textAngle += Math.PI;
-        labelGroup.rotation = textAngle;
-
-        let priceLabel = tile.price ? `${tile.price / 1000}K` : '';
-
-        const nameFontSize = Math.max(7.5, Math.round(9.5 * geo.depthScale));
-        const priceFontSize = Math.max(8.0, Math.round(10.5 * geo.depthScale));
-
-        const tileLength = Math.hypot(geo.outerEnd.x - geo.outerStart.x, geo.outerEnd.y - geo.outerStart.y);
-        const maxTextWidth = Math.max(42, tileLength * 0.88);
-
-        // Xử lý tên ô dài: tự động xuống tối đa 2 dòng hoặc dùng shortName
-        let displayName = tile.name;
-        if (tile.id === 37) {
-          displayName = 'TP. Hồ\nChí Minh';
-        } else if (tile.id === 39) {
-          displayName = 'Thủ Đô\nHà Nội';
-        } else if (tile.id === 12) {
-          displayName = 'Thủy điện\nHòa Bình';
-        } else if (tile.id === 28) {
-          displayName = 'Nhà máy\nnước';
-        } else if (tile.id === 35) {
-          displayName = 'Sân bay\nNội Bài';
-        } else if (displayName.length > 13 && tile.shortName) {
-          displayName = tile.shortName;
+        if (isSpecialIllustrated) {
+          // Ô Khí Vận / Cơ Hội / Thuế: huy hiệu tròn ở giữa ô, biển tên ngay dưới huy hiệu, cùng hướng
+          const isOuterNearViewer = outMid.y >= inMid.y;
+          const tSign = isOuterNearViewer ? 0.78 : 0.22;
+          posX = inMid.x + (outMid.x - inMid.x) * tSign;
+          posY = inMid.y + (outMid.y - inMid.y) * tSign;
+        } else {
+          // Ô thường: biển nằm ở dải giữa-ngoài (t = 0.62), giữa vùng dải màu (t=0.22) và mép ngoài (t=1.0)
+          posX = inMid.x + (outMid.x - inMid.x) * 0.62;
+          posY = inMid.y + (outMid.y - inMid.y) * 0.62;
         }
-
-        // Tên ô (Font Be Vietnam Pro, màu #3A2A1A, viền sáng kem mảnh)
-        const nameText = new Text({
-          text: displayName,
-          resolution: 2.5,
-          style: {
-            fontFamily: 'Be Vietnam Pro, sans-serif',
-            fontSize: nameFontSize,
-            fontWeight: 'bold',
-            fill: '#3A2A1A',
-            stroke: { color: '#FFF9E6', width: Math.max(1.5, 2.0 * geo.depthScale), join: 'round' },
-            align: 'center',
-            wordWrap: true,
-            wordWrapWidth: maxTextWidth,
-            lineHeight: Math.max(9, Math.round(11 * geo.depthScale)),
-          },
-        });
-        nameText.anchor.set(0.5, 0.5);
-        nameText.position.set(0, priceLabel ? -5.5 * geo.depthScale : 0);
-        labelGroup.addChild(nameText);
-
-        // Giá tiền (Font Baloo 2 đậm hơn, đặt dưới tên)
-        let priceText: Text | null = null;
-        if (priceLabel) {
-          priceText = new Text({
-            text: priceLabel,
-            resolution: 2.5,
-            style: {
-              fontFamily: 'Baloo 2, cursive, sans-serif',
-              fontSize: priceFontSize,
-              fontWeight: '800',
-              fill: '#3A2A1A',
-              stroke: { color: '#FFF9E6', width: Math.max(1.6, 2.2 * geo.depthScale), join: 'round' },
-              align: 'center',
-            },
-          });
-          priceText.anchor.set(0.5, 0.5);
-          priceText.position.set(0, 6.2 * geo.depthScale);
-          labelGroup.addChild(priceText);
-        }
-
-        // Nền mờ nhẹ phía sau chữ để chữ luôn nổi rõ kể cả khi bị che
-        const pillBg = new Graphics();
-        const pillPadX = Math.max(5, 6 * geo.depthScale);
-        const pillPadY = Math.max(3, 4 * geo.depthScale);
-        const textW = Math.max(nameText.width, priceLabel && priceText ? priceText.width : 0);
-        const totalW = textW + pillPadX * 2;
-        const totalH = (priceLabel ? 24 * geo.depthScale : 15 * geo.depthScale) + pillPadY;
-
-        pillBg
-          .roundRect(-totalW / 2, -totalH / 2, totalW, totalH, Math.max(3, 4 * geo.depthScale))
-          .fill({ color: 0x140c06, alpha: 0.55 })
-          .stroke({ width: 1.0, color: 0xffffff, alpha: 0.16 });
-        labelGroup.addChildAt(pillBg, 0);
-
-        labelsLayer.addChild(labelGroup);
       }
 
-      // Tương tác chuột
-      tileContainer.on('pointerdown', () => {
-        options.onTileClick?.(tile.id);
-      });
+      // Đảm bảo chữ luôn đọc từ trái sang phải trên màn hình, không bao giờ lộn ngược:
+      while (edgeAngle > Math.PI / 2) edgeAngle -= Math.PI;
+      while (edgeAngle < -Math.PI / 2) edgeAngle += Math.PI;
 
-      tileContainer.on('pointerover', () => {
-        drawHover(true);
-      });
+      // -------------------------------------------------------------
+      // 2. TẠO CONTAINER BIỂN TÊN VÀ BIẾN ĐỔI (AFFINE / CHỈ XOAY)
+      // -------------------------------------------------------------
+      const signboard = new Container();
+      signboard.position.set(posX, posY);
+      signboard.rotation = edgeAngle;
 
-      tileContainer.on('pointerout', () => {
-        drawHover(false);
-      });
+      if (currentTileLabelStyle === 'affine' && !isCorner) {
+        // "Dán phẳng": Biến đổi affine (xoay + xiên) để cạnh trên/dưới song song cạnh bàn cờ,
+        // cạnh trái/phải song song cạnh bên của ô, biển nằm khít trong ô như in trên mặt đá.
+        let skewX = edgeAngle + Math.PI / 2 - sideAngle;
+        while (skewX > Math.PI / 2) skewX -= Math.PI;
+        while (skewX < -Math.PI / 2) skewX += Math.PI;
+        signboard.skew.set(skewX, 0);
+      } else {
+        // "Chỉ xoay": chỉ xoay biển cho chữ chạy song song cạnh bàn cờ, không xiên
+        signboard.skew.set(0, 0);
+      }
 
-      tilesLayer.addChild(tileContainer);
+      // Giữ cỡ chữ theo mục 4, KHÔNG thu nhỏ theo phối cảnh:
+      signboard.scale.set(localScale, localScale);
+
+      // Độ đục: Nếu công trình của ô che biển: biển nâng lên trên công trình với độ đục 75%, rê chuột vào thì 100%
+      const defaultAlpha = hasBuilding ? 0.75 : 1.0;
+      signboard.alpha = defaultAlpha;
+      signboard.eventMode = 'static';
+      signboard.cursor = 'pointer';
+
+      signboard.on('pointerover', () => { signboard.alpha = 1.0; });
+      signboard.on('pointerout', () => { signboard.alpha = defaultAlpha; });
+      signboard.on('pointerdown', () => { options.onTileClick?.(tile.id); });
+
+      // -------------------------------------------------------------
+      // 3. TỰ CO CỠ CHỮ & XUỐNG DÒNG (KHÔNG CẮT CỤT)
+      // -------------------------------------------------------------
+      // Chiều rộng tối đa 88% chiều rộng ô, không tràn sang ô bên cạnh (đặt 85% để an toàn tuyệt đối)
+      const maxSignW = Math.max(48, tileWidth * 0.85);
+      const availTextW = maxSignW - 10;
+
+      const fittedName = fitTileName(rawName, availTextW);
+
+      const nameText = new Text({
+        text: fittedName.text,
+        resolution: textResolution,
+        style: {
+          fontFamily: '"Be Vietnam Pro", sans-serif',
+          fontSize: fittedName.fontSize,
+          fontWeight: '800',
+          fill: '#FFFFFF',
+          stroke: {
+            color: '#3A2414',
+            width: 2,
+            join: 'round',
+          },
+          align: 'center',
+          lineHeight: fittedName.isTwoLines ? fittedName.fontSize * 1.15 : undefined,
+        },
+      });
+      nameText.anchor.set(0.5, 0.5);
+
+      // Dòng 2: Giá "140K" Baloo 2 700 vàng nhạt #FFE08A, ô đã có chủ thành "Thuê 120K"
+      const priceColor = isOwned ? '#FFFFFF' : '#FFE08A';
+      // Cỡ chữ dòng 2 tự co trong khoảng 10-14px
+      let priceFontSize = Math.min(13, Math.max(10, fittedName.fontSize - 1.5));
+      if (measureTextWidth(line2Text, priceFontSize, '700', '"Baloo 2", cursive, sans-serif') > availTextW) {
+        priceFontSize = 10;
+      }
+
+      const priceText = new Text({
+        text: line2Text,
+        resolution: textResolution,
+        style: {
+          fontFamily: '"Baloo 2", cursive, sans-serif',
+          fontSize: priceFontSize,
+          fontWeight: '700',
+          fill: priceColor,
+          stroke: {
+            color: '#2B180B',
+            width: 1.2,
+            join: 'round',
+          },
+          align: 'center',
+        },
+      });
+      priceText.anchor.set(0.5, 0.5);
+
+      // Kích thước tấm biển:
+      const contentW = Math.max(nameText.width, priceText.width);
+      const signW = Math.min(maxSignW, Math.max(contentW + 12, 50));
+      const signH = fittedName.isTwoLines ? 37 : 27;
+
+      // -------------------------------------------------------------
+      // 4. VẼ NỀN BIỂN VÀ DẢI MÀU NHÓM
+      // -------------------------------------------------------------
+      const bgG = new Graphics();
+      if (isOwned && tile.ownerId && currentColorMap[tile.ownerId]) {
+        const ownerCol = currentColorMap[tile.ownerId];
+        // Ô đã có chủ: nền biển đổi sang màu người chơi
+        bgG.roundRect(-signW / 2, -signH / 2, signW, signH, 5)
+          .fill({ color: ownerCol, alpha: 0.90 })
+          .stroke({ width: 1.2, color: 0xFFF2DB, alpha: 0.90 });
+      } else {
+        // Nền biển: nâu gỗ sẫm #3A2414 độ đục 88%, bo góc 5px
+        bgG.roundRect(-signW / 2, -signH / 2, signW, signH, 5)
+          .fill({ color: 0x3A2414, alpha: 0.88 })
+          .stroke({ width: 1, color: 0x5C3A21, alpha: 0.75 });
+      }
+      signboard.addChild(bgG);
+
+      // Viền mảnh màu nhóm ở cạnh phía dải màu (cạnh trên của biển):
+      let barColor = 0x718096; // Mặc định xám đá
+      if (isProperty && tile.colorGroup && COLOR_GROUP_HEX[tile.colorGroup]) {
+        barColor = parseInt(COLOR_GROUP_HEX[tile.colorGroup].replace('#', '0x'), 16);
+      } else if (tile.type === 'FATE') {
+        barColor = 0x0EA5E9; // Khí Vận xanh ngọc
+      } else if (tile.type === 'CHANCE') {
+        barColor = 0xEF4444; // Cơ Hội đỏ
+      } else if (tile.type === 'TAX') {
+        barColor = 0x8B5CF6; // Thuế tím
+      } else if (tile.type === 'TRANSPORT' || tile.type === 'UTILITY') {
+        barColor = 0x718096;
+      } else if (isCorner) {
+        barColor = 0xF59E0B;
+      }
+
+      const topBar = new Graphics();
+      topBar.roundRect(-signW / 2 + 1, -signH / 2 + 1, signW - 2, 2.5, 1.5)
+        .fill({ color: barColor, alpha: 0.95 });
+      signboard.addChild(topBar);
+
+      // Định vị chữ trong biển:
+      if (fittedName.isTwoLines) {
+        nameText.position.set(0, -signH / 2 + 12);
+        priceText.position.set(0, -signH / 2 + 28);
+      } else {
+        nameText.position.set(0, -signH / 2 + 8.5);
+        priceText.position.set(0, -signH / 2 + 19.5);
+      }
+      signboard.addChild(nameText);
+      signboard.addChild(priceText);
+
+      labelsLayer.addChild(signboard);
+      labelContainers.set(tile.id, signboard);
     });
   };
 
   // Khởi tạo ban đầu
   buildRegularTiles();
   buildCornerTiles();
+  buildTileLabels();
 
   /**
    * Cập nhật danh sách ô, màu người chơi, vị trí người chơi và cấu hình góc
@@ -728,6 +959,7 @@ export function createBoardRenderer(options: BoardRendererOptions): BoardRendere
 
     buildRegularTiles();
     buildCornerTiles();
+    buildTileLabels();
   };
 
   const setSelectedTileId = (id: number | null) => {
@@ -753,56 +985,65 @@ export function createBoardRenderer(options: BoardRendererOptions): BoardRendere
     redrawCornerAnchorDebug();
   };
 
-  /**
-   * Ticker update: Hoạt ảnh nhịp thở 1.5 giây cho các ô đang có người chơi đứng
-   * - Vẽ đúng theo 4 góc của ô (ô góc là hình vuông theo phối cảnh)
-   * - Viền vàng dày 3px + vầng sáng mờ bên trong
-   */
+  const flashColorGroup = (group: ColorGroup) => {
+    activeShimmers.set(group, { elapsed: 0, duration: 1.2 });
+  };
+
+  const setTileLabelStyle = (style: TileLabelStyle) => {
+    currentTileLabelStyle = style;
+    buildTileLabels();
+  };
+
+  const onZoomChanged = (zoom: number, baseCoverScale?: number) => {
+    currentZoom = zoom;
+    if (baseCoverScale) currentBaseCoverScale = baseCoverScale;
+    buildTileLabels();
+  };
+
+  const rebuildLabels = () => {
+    buildTileLabels();
+  };
+
   const update = (deltaSeconds: number) => {
     animTime += deltaSeconds;
 
-    // Chu kỳ nhịp thở 1.5 giây
-    const breath = (Math.sin((animTime * 2 * Math.PI) / 1.5) + 1) / 2; // 0..1
-    const glowAlpha = 0.35 + 0.60 * breath;
-
+    // 1. Nhịp thở 1.5s cho viền sáng các ô đang có người chơi đứng
     standingGlowGraphic.clear();
+    if (currentStandingIds.length > 0) {
+      const breathPhase = (animTime % 1.5) / 1.5;
+      const breathAlpha = 0.40 + 0.50 * Math.sin(breathPhase * Math.PI * 2);
 
-    if (currentStandingIds && currentStandingIds.length > 0) {
       currentStandingIds.forEach((tileId) => {
         const geo = getTileGeometry(tileId);
-        let quadPts: number[];
+        if (!geo || !geo.polygonPoints || geo.polygonPoints.length < 4) return;
 
-        if (geo.isCorner && geo.polygonPoints && geo.polygonPoints.length >= 6) {
-          // Ô góc là hình vuông theo phối cảnh 4 đỉnh: [outerApex, outerEnd, innerApex, outerStart]
-          const pApex = geo.polygonPoints[1];
-          const pEnd = geo.polygonPoints[2];
-          const pInApex = geo.polygonPoints[4];
-          const pStart = geo.polygonPoints[0];
-          quadPts = [pApex.x, pApex.y, pEnd.x, pEnd.y, pInApex.x, pInApex.y, pStart.x, pStart.y];
-        } else {
-          // Ô thông thường: 4 đỉnh hình học của phiến đá
-          quadPts = [
-            geo.outerStart.x, geo.outerStart.y,
-            geo.outerEnd.x, geo.outerEnd.y,
-            geo.innerEnd.x, geo.innerEnd.y,
-            geo.innerStart.x, geo.innerStart.y,
-          ];
+        const pts = geo.polygonPoints.flatMap((p) => [p.x, p.y]);
+        standingGlowGraphic
+          .poly(pts)
+          .stroke({ width: 3.0, color: 0xfde047, alpha: breathAlpha });
+      });
+    }
+
+    // 2. Diễn hoạt hiệu ứng Lấp lánh (Shimmer) khi người chơi sở hữu trọn bộ nhóm màu
+    shimmerGraphic.clear();
+    if (activeShimmers.size > 0) {
+      activeShimmers.forEach((anim, group) => {
+        anim.elapsed += deltaSeconds;
+        const progress = Math.min(1.0, anim.elapsed / anim.duration);
+        const shimmerAlpha = Math.sin(progress * Math.PI) * 0.85;
+
+        const quads = groupBands.get(group);
+        if (quads && quads.length > 0) {
+          quads.forEach((quad) => {
+            shimmerGraphic
+              .poly(quad)
+              .fill({ color: 0xffffff, alpha: shimmerAlpha });
+          });
         }
 
-        // Vầng sáng mờ bên trong
-        standingGlowGraphic
-          .poly(quadPts)
-          .fill({ color: 0xfef08a, alpha: 0.16 * glowAlpha });
-
-        // Viền hào quang vàng mờ
-        standingGlowGraphic
-          .poly(quadPts)
-          .stroke({ width: 5.5, color: 0xfbbf24, alpha: 0.35 * glowAlpha });
-
-        // Viền vàng dày 3px sắc nét
-        standingGlowGraphic
-          .poly(quadPts)
-          .stroke({ width: 3.0, color: 0xf59e0b, alpha: glowAlpha });
+        if (progress >= 1.0) {
+          activeShimmers.delete(group);
+        }
       });
     }
   };
@@ -824,6 +1065,9 @@ export function createBoardRenderer(options: BoardRendererOptions): BoardRendere
     ownerOverlayGraphics.clear();
     hoverGraphics.clear();
     cornerSprites.clear();
+    labelContainers.clear();
+    activeShimmers.clear();
+    groupBands.clear();
   };
 
   return {
@@ -832,6 +1076,10 @@ export function createBoardRenderer(options: BoardRendererOptions): BoardRendere
     updateTiles,
     setSelectedTileId,
     setDebugCornerAnchors,
+    flashColorGroup,
+    setTileLabelStyle,
+    onZoomChanged,
+    rebuildLabels,
     update,
     destroy,
   };

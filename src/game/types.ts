@@ -109,8 +109,21 @@ export interface Tile {
   assetKey?: string;
   ownerId?: string | null;
   houseCount?: number;
+  buildingLevel?: number;
+  currentRent?: number;
+  landmarkAsset?: string;
   hasLandmark?: boolean;
   isMortgaged?: boolean;
+}
+
+export type BotDifficulty = 'EASY' | 'MEDIUM' | 'HARD';
+
+export interface PlayerSlotConfig {
+  id: string;
+  name: string;
+  character: CharacterId;
+  isBot: boolean;
+  botDifficulty?: BotDifficulty;
 }
 
 export interface Player {
@@ -125,6 +138,7 @@ export interface Player {
   properties: number[];
   bankrupt: boolean;
   isBot: boolean;
+  botDifficulty?: BotDifficulty;
   jailFreeCards: number;
 }
 

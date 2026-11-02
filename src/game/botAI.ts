@@ -1,5 +1,6 @@
 import { GameEngine } from './engine';
 import { Player, Tile } from './types';
+import { getNextUpgradeCost, calculateTileRent } from './rulesV2Financials';
 
 export const BOT_BANTER: Record<
   'BUY' | 'UPGRADE' | 'RENT_COLLECT' | 'RENT_PAY' | 'JAIL' | 'BANKRUPT',
@@ -54,6 +55,10 @@ export function evaluateBotBuy(player: Player, tile: Tile, allTiles: Tile[]): bo
   if (!tile || tile.ownerId != null || !tile.price) return false;
   if (player.money < tile.price) return false;
 
+  const diff = player.botDifficulty || 'MEDIUM';
+  const minReserve = diff === 'HARD' ? 100000 : diff === 'EASY' ? 350000 : 200000;
+  const comfortReserve = diff === 'HARD' ? 200000 : diff === 'EASY' ? 500000 : 300000;
+
   // Kiểm tra nếu mua ô này sẽ hoàn thành cụm màu độc quyền (Monopoly) -> ƯU TIÊN MUA NGAY
   if (tile.colorGroup) {
     const groupTiles = allTiles.filter((t) => t.colorGroup === tile.colorGroup);
@@ -66,13 +71,12 @@ export function evaluateBotBuy(player: Player, tile: Tile, allTiles: Tile[]): bo
   }
 
   const remainingCash = player.money - tile.price;
-  // Cần giữ ít nhất 200k an toàn
-  if (remainingCash < 200000) return false;
+  if (remainingCash < minReserve) return false;
 
-  // Dư dả trên 300k thì mua thoải mái
-  if (remainingCash >= 300000) return true;
+  // Dư dả thì mua thoải mái
+  if (remainingCash >= comfortReserve) return true;
 
-  // Trong khoảng 200k - 300k: mua nếu đã sở hữu ít nhất 1 ô cùng màu
+  // Trong khoảng trung gian: mua nếu đã sở hữu ít nhất 1 ô cùng màu
   const hasGroupProgress = Boolean(
     tile.colorGroup &&
       allTiles.some(
@@ -80,15 +84,18 @@ export function evaluateBotBuy(player: Player, tile: Tile, allTiles: Tile[]): bo
       )
   );
 
-  return hasGroupProgress;
+  return diff === 'HARD' ? true : hasGroupProgress;
 }
 
 export function evaluateBotUpgrade(player: Player, allTiles: Tile[]): number | null {
+  const diff = player.botDifficulty || 'MEDIUM';
+  const minReserve = diff === 'HARD' ? 150000 : diff === 'EASY' ? 450000 : 300000;
+
   const ownedCandidates = allTiles.filter((t) => {
     if (t.ownerId !== player.id || t.type !== 'PROPERTY') return false;
     if (t.hasLandmark) return false;
-    const cost = t.housePrice || 50000;
-    if (player.money - cost < 300000) return false; // Giữ quỹ an toàn 300k
+    const cost = getNextUpgradeCost(t);
+    if (player.money - cost < minReserve) return false;
     return true;
   });
 
@@ -105,8 +112,8 @@ export function evaluateBotUpgrade(player: Player, allTiles: Tile[]): number | n
 
   // Sắp xếp ưu tiên ô có giá trị thuê tăng cao nhất
   pool.sort((a, b) => {
-    const rentA = a.baseRent || 0;
-    const rentB = b.baseRent || 0;
+    const rentA = calculateTileRent(a, allTiles);
+    const rentB = calculateTileRent(b, allTiles);
     return rentB - rentA;
   });
 

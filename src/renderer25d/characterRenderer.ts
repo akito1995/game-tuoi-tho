@@ -18,6 +18,7 @@ export interface CharacterManager {
   setSpeedMultiplier: (speed: number) => void;
   update: (deltaSeconds: number) => void;
   destroy: () => void;
+  onTokenStep?: (playerId: string, tileId: number, pos: { x: number; y: number }) => void;
 }
 
 export const CHARACTER_PROFILES: Record<string, { name: string; avatarUrl: string; colorHex: number }> = {
@@ -384,6 +385,27 @@ export function createCharacterManager(): CharacterManager {
     const token = tokens.get(playerId);
     if (!token) return;
 
+    // Kiểm tra bất biến: Cảnh báo nếu có nhân vật khác đang di chuyển
+    const otherMoving: string[] = [];
+    tokens.forEach((t) => {
+      if (t.data.id !== playerId && (t.isHopping || t.hopQueue.length > 0)) {
+        otherMoving.push(`${t.data.name} (id: ${t.data.id})`);
+      }
+    });
+    if (otherMoving.length > 0) {
+      console.error(
+        `[INVARIANT_VIOLATION: characterRenderer.movePlayerTo] Gọi di chuyển ${token.data.name} trong khi nhân vật khác đang di chuyển: ${otherMoving.join(', ')}`
+      );
+      if (typeof window !== 'undefined') {
+        (window as any).__invariantViolations = (window as any).__invariantViolations || [];
+        (window as any).__invariantViolations.push({
+          timestamp: Date.now(),
+          message: `Gọi di chuyển ${token.data.name} trong khi ${otherMoving.join(', ')} đang di chuyển`,
+          caller: 'characterRenderer.movePlayerTo',
+        });
+      }
+    }
+
     // Xây dựng lộ trình nhảy từng bước từ ô hiện tại tới ô mục tiêu
     const queue: number[] = [];
     let cur = token.currentTile;
@@ -428,6 +450,10 @@ export function createCharacterManager(): CharacterManager {
     const nextTile = token.hopQueue.shift()!;
     token.currentTile = nextTile;
     token.hopToPos = getTilePosition(nextTile);
+
+    if (managerInstance && managerInstance.onTokenStep) {
+      managerInstance.onTokenStep(token.data.id, nextTile, token.hopToPos);
+    }
   };
 
   let speedMultiplier = 1.0;
@@ -436,12 +462,40 @@ export function createCharacterManager(): CharacterManager {
   };
 
   const update = (deltaSeconds: number) => {
+    // Kiểm tra bất biến: Cảnh báo nếu có hơn 1 nhân vật cùng đang di chuyển
+    let movingCount = 0;
+    const movingTokens: string[] = [];
+    tokens.forEach((t) => {
+      if (t.isHopping || t.hopQueue.length > 0) {
+        movingCount++;
+        movingTokens.push(`${t.data.name} (id: ${t.data.id}, ô: ${t.currentTile})`);
+      }
+    });
+
+    if (movingCount > 1) {
+      console.error(
+        `[INVARIANT_VIOLATION: characterRenderer.update] ${movingCount} nhân vật cùng đang di chuyển đồng thời: ${movingTokens.join(', ')}`
+      );
+      if (typeof window !== 'undefined') {
+        (window as any).__invariantViolations = (window as any).__invariantViolations || [];
+        (window as any).__invariantViolations.push({
+          timestamp: Date.now(),
+          count: movingCount,
+          tokens: movingTokens,
+          caller: 'characterRenderer.update',
+        });
+      }
+    }
+    if (typeof window !== 'undefined') {
+      (window as any).__movingTokensCount = movingCount;
+    }
+
     tokens.forEach((token) => {
       token.idleElapsed += deltaSeconds;
 
       // 1. Diễn hoạt chuyển động nhảy bước (Hop Animation)
       if (token.isHopping) {
-        const hopDuration = Math.max(0.04, 0.22 / speedMultiplier);
+        const hopDuration = Math.max(0.04, 0.35 / speedMultiplier);
         token.hopProgress += deltaSeconds / hopDuration;
 
         if (token.hopProgress >= 1.0) {
@@ -542,7 +596,7 @@ export function createCharacterManager(): CharacterManager {
     tokens.clear();
   };
 
-  return {
+  const managerInstance: CharacterManager = {
     container,
     syncPlayers,
     movePlayerTo,
@@ -550,4 +604,5 @@ export function createCharacterManager(): CharacterManager {
     update,
     destroy,
   };
+  return managerInstance;
 }

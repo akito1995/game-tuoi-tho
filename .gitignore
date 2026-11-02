@@ -36,3 +36,4 @@ scratch/
 next-env.d.ts
 
 .agents/
+public/screenshots/

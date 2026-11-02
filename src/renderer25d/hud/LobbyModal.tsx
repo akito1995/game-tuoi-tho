@@ -2,12 +2,19 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { CharacterId } from '../../game/types';
-import { Play, Users, Bot, Sparkles, Check, Info } from 'lucide-react';
+import { CharacterId, PlayerSlotConfig, BotDifficulty } from '../../game/types';
+import { Play, Users, Bot, Sparkles, Check, User, Cpu } from 'lucide-react';
+
+export type SlotRole = 'HUMAN' | 'BOT_EASY' | 'BOT_MEDIUM' | 'BOT_HARD';
 
 interface LobbyModalProps {
   isOpen: boolean;
-  onStartGame: (selectedChar: CharacterId, count: 2 | 3 | 4, isAutoBot: boolean) => void;
+  onStartGame: (
+    selectedChar: CharacterId,
+    count: 2 | 3 | 4,
+    isAutoBot: boolean,
+    slotConfigs?: PlayerSlotConfig[]
+  ) => void;
   onClose?: () => void;
 }
 
@@ -68,6 +75,61 @@ export const LobbyModal: React.FC<LobbyModalProps> = ({
   const [selectedChar, setSelectedChar] = useState<CharacterId>('be-ti');
   const [playerCount, setPlayerCount] = useState<2 | 3 | 4>(4);
   const [isAutoBot, setIsAutoBot] = useState(false);
+  const [characterRoles, setCharacterRoles] = useState<Record<CharacterId, SlotRole>>({
+    'be-ti': 'HUMAN',
+    'co-hoa': 'BOT_MEDIUM',
+    'ong-bay': 'BOT_MEDIUM',
+    'chi-may': 'BOT_HARD',
+  });
+
+  const handleSelectRole = (charId: CharacterId, role: SlotRole) => {
+    setCharacterRoles((prev) => {
+      const next = { ...prev, [charId]: role };
+      if (role === 'HUMAN') {
+        setSelectedChar(charId);
+        // Chuyển nhân vật human cũ sang BOT_MEDIUM nếu khác charId
+        (Object.keys(next) as CharacterId[]).forEach((id) => {
+          if (id !== charId && next[id] === 'HUMAN') {
+            next[id] = 'BOT_MEDIUM';
+          }
+        });
+      }
+      return next;
+    });
+  };
+
+  const handleSelectChar = (charId: CharacterId) => {
+    setSelectedChar(charId);
+    handleSelectRole(charId, 'HUMAN');
+  };
+
+  const handleStart = () => {
+    const humanCharId = (Object.keys(characterRoles) as CharacterId[]).find(
+      (k) => characterRoles[k] === 'HUMAN'
+    ) || selectedChar;
+
+    const chosen = CHARACTERS.find((c) => c.id === humanCharId) || CHARACTERS[0];
+    const others = CHARACTERS.filter((c) => c.id !== chosen.id);
+    const orderedChars = [chosen, ...others];
+
+    const slotConfigs: PlayerSlotConfig[] = orderedChars.slice(0, playerCount).map((char, idx) => {
+      const role = characterRoles[char.id];
+      const isBot = isAutoBot ? true : role !== 'HUMAN';
+      let botDifficulty: BotDifficulty = 'MEDIUM';
+      if (role === 'BOT_EASY') botDifficulty = 'EASY';
+      if (role === 'BOT_HARD') botDifficulty = 'HARD';
+
+      return {
+        id: `player-${idx + 1}`,
+        name: isBot ? `${char.name} 🤖` : char.name,
+        character: char.id,
+        isBot,
+        botDifficulty,
+      };
+    });
+
+    onStartGame(humanCharId, playerCount, isAutoBot, slotConfigs);
+  };
 
   if (!isOpen) return null;
 
@@ -110,11 +172,13 @@ export const LobbyModal: React.FC<LobbyModalProps> = ({
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
             {CHARACTERS.map((char) => {
               const isSelected = selectedChar === char.id;
+              const currentRole = characterRoles[char.id];
+              const isHuman = currentRole === 'HUMAN';
+
               return (
-                <button
+                <div
                   key={char.id}
-                  onClick={() => setSelectedChar(char.id)}
-                  className={`relative flex flex-col items-center rounded-2xl p-2.5 sm:p-3 border-2 transition-all cursor-pointer text-left ${
+                  className={`relative flex flex-col items-center rounded-2xl p-2.5 sm:p-3 border-2 transition-all text-left ${
                     isSelected
                       ? 'border-amber-400 bg-gradient-to-b from-amber-500/20 to-slate-900 shadow-[0_0_18px_rgba(245,158,11,0.4)] scale-102 ring-2 ring-amber-400/30'
                       : 'border-slate-800 bg-slate-900/60 hover:border-slate-700 hover:bg-slate-900'
@@ -122,37 +186,42 @@ export const LobbyModal: React.FC<LobbyModalProps> = ({
                 >
                   {/* Dấu tích chọn */}
                   {isSelected && (
-                    <div className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-slate-950 shadow">
+                    <div className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-slate-950 shadow z-10">
                       <Check className="h-3.5 w-3.5 stroke-[3]" />
                     </div>
                   )}
 
-                  {/* Ảnh Idle Character pose-1.png */}
-                  <div className="relative h-28 sm:h-36 w-full flex items-center justify-center">
-                    <Image
-                      src={char.poseSrc}
-                      alt={char.name}
-                      fill
-                      className="object-contain drop-shadow-md"
-                      onError={(e) => {
-                        (e.target as any).src = char.avatarSrc;
-                      }}
-                    />
-                  </div>
-
-                  {/* Tên nhân vật */}
-                  <div className="mt-2 w-full text-center">
-                    <div className="flex items-center justify-center gap-1.5">
-                      <span
-                        className="h-2.5 w-2.5 rounded-full"
-                        style={{ backgroundColor: char.colorHex }}
+                  {/* Ảnh Idle Character & Tên - Click để chọn */}
+                  <div
+                    onClick={() => handleSelectChar(char.id)}
+                    className="w-full flex flex-col items-center cursor-pointer"
+                  >
+                    <div className="relative h-28 sm:h-36 w-full flex items-center justify-center">
+                      <Image
+                        src={char.poseSrc}
+                        alt={char.name}
+                        fill
+                        className="object-contain drop-shadow-md"
+                        onError={(e) => {
+                          (e.target as any).src = char.avatarSrc;
+                        }}
                       />
-                      <span className="font-baloo text-base font-bold text-white">
-                        {char.name}
-                      </span>
                     </div>
-                    <div className="text-[10px] font-bold text-amber-400/90 uppercase tracking-tight">
-                      {char.title}
+
+                    {/* Tên nhân vật */}
+                    <div className="mt-2 w-full text-center">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <span
+                          className="h-2.5 w-2.5 rounded-full"
+                          style={{ backgroundColor: char.colorHex }}
+                        />
+                        <span className="font-baloo text-base font-bold text-white">
+                          {char.name}
+                        </span>
+                      </div>
+                      <div className="text-[10px] font-bold text-amber-400/90 uppercase tracking-tight">
+                        {char.title}
+                      </div>
                     </div>
                   </div>
 
@@ -160,7 +229,31 @@ export const LobbyModal: React.FC<LobbyModalProps> = ({
                   <div className="mt-1.5 w-full rounded-lg bg-slate-950/70 p-1.5 text-[10px] text-slate-300 leading-tight min-h-[38px] flex items-center justify-center text-center">
                     {char.trait}
                   </div>
-                </button>
+
+                  {/* Lựa chọn vai trò: Người chơi / Máy (Dễ / Thường / Khó) */}
+                  <div className="mt-2 w-full pt-1.5 border-t border-slate-800/80">
+                    <div className="flex items-center justify-between text-[10px] font-bold text-slate-300 mb-1 px-0.5">
+                      <span>Vai trò:</span>
+                      <span className={`px-1.5 py-0.2 rounded font-mono text-[9px] ${
+                        isHuman
+                          ? 'bg-amber-400 text-slate-950 font-bold'
+                          : 'bg-slate-800 text-sky-300'
+                      }`}>
+                        {isHuman ? 'Người chơi' : 'Máy'}
+                      </span>
+                    </div>
+                    <select
+                      value={currentRole}
+                      onChange={(e) => handleSelectRole(char.id, e.target.value as SlotRole)}
+                      className="w-full rounded-lg bg-slate-950 border border-slate-700 text-[11px] font-bold text-slate-200 px-2 py-1 focus:border-amber-400 focus:outline-none cursor-pointer"
+                    >
+                      <option value="HUMAN">👤 Người chơi (Bạn)</option>
+                      <option value="BOT_EASY">🤖 Máy (Dễ)</option>
+                      <option value="BOT_MEDIUM">🤖 Máy (Thường)</option>
+                      <option value="BOT_HARD">🤖 Máy (Khó)</option>
+                    </select>
+                  </div>
+                </div>
               );
             })}
           </div>
@@ -223,7 +316,7 @@ export const LobbyModal: React.FC<LobbyModalProps> = ({
           )}
 
           <button
-            onClick={() => onStartGame(selectedChar, playerCount, isAutoBot)}
+            onClick={handleStart}
             className="flex-1 min-h-[48px] rounded-2xl bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 hover:brightness-110 active:scale-98 transition text-slate-950 font-baloo text-base sm:text-lg font-black tracking-wider uppercase flex items-center justify-center gap-2 border-2 border-amber-200 shadow-xl shadow-amber-500/40 cursor-pointer"
           >
             <Play className="h-5 w-5 fill-slate-950" />
