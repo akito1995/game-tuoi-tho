@@ -42,8 +42,10 @@ export const BottomRightPanel: React.FC<BottomRightPanelProps> = ({
 }) => {
   const canRoll =
     isMyTurn &&
+    !activePlayer.bankrupt &&
+    !activePlayer.isBot &&
     !isAutoBotMatch &&
-    (gamePhase === 'AWAIT_ROLL' || gamePhase === 'ACTION_COMPLETED' || canRollAgain) &&
+    gamePhase === 'AWAIT_ROLL' &&
     !isRolling &&
     !isMoving;
 
@@ -57,10 +59,13 @@ export const BottomRightPanel: React.FC<BottomRightPanelProps> = ({
     const rawName = activePlayer?.name ? activePlayer.name.replace(' 🤖', '') : 'Đối thủ';
     rollButtonLabel = `Lượt của ${rawName}`;
     buttonDisabled = true;
-  } else if (isRolling || isMoving) {
+  } else if (isRolling) {
+    rollButtonLabel = 'Đang tung...';
+    buttonDisabled = true;
+  } else if (isMoving) {
     rollButtonLabel = 'Đang đi...';
     buttonDisabled = true;
-  } else if (canRollAgain && isMyTurn) {
+  } else if (canRollAgain && canRoll) {
     rollButtonLabel = 'Đổ tiếp (đôi)';
     buttonDisabled = false;
   }
@@ -190,13 +195,15 @@ export const BottomRightPanel: React.FC<BottomRightPanelProps> = ({
 
       {/* ================= NÚT TRÒN VÀNG LỚN 96px "ĐỔ XÚC XẮC" ================= */}
       <button
+        type="button"
         onClick={onRoll}
         disabled={buttonDisabled}
-        className={`relative h-24 w-24 min-h-[96px] min-w-[96px] rounded-full flex flex-col items-center justify-center p-2 transition-all duration-200 select-none cursor-pointer ${
+        aria-busy={!isBotActing && isRolling}
+        className={`relative h-24 w-24 min-h-[96px] min-w-[96px] rounded-full flex flex-col items-center justify-center p-2 transition-all duration-200 motion-reduce:transition-none motion-reduce:animate-none select-none focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-100 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${
           canRoll
-            ? 'bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 border-4 border-amber-100 shadow-[0_0_35px_rgba(245,158,11,0.85)] hover:brightness-110 active:scale-95 ring-4 ring-amber-400/50 animate-bounce'
+            ? 'bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 border-4 border-amber-100 shadow-[0_0_35px_rgba(245,158,11,0.85)] hover:brightness-110 active:scale-95 ring-4 ring-amber-400/50 cursor-pointer'
             : isRolling || isMoving
-            ? 'bg-gradient-to-b from-amber-500 to-orange-600 border-4 border-amber-300/80 shadow-lg animate-pulse'
+            ? 'bg-gradient-to-b from-amber-500 to-orange-600 border-4 border-amber-300/80 shadow-lg animate-pulse cursor-wait'
             : 'bg-slate-800 border-4 border-slate-700 opacity-60 cursor-not-allowed'
         }`}
         title={canRoll ? `${rollButtonLabel} (Phím Space)` : rollButtonLabel}
@@ -204,11 +211,11 @@ export const BottomRightPanel: React.FC<BottomRightPanelProps> = ({
       >
         <Dices
           className={`h-8 w-8 text-amber-950 drop-shadow-sm ${
-            isRolling || isMoving ? 'animate-spin' : canRoll ? 'scale-110' : 'opacity-60 text-slate-400'
+            isRolling || isMoving ? 'animate-spin motion-reduce:animate-none' : canRoll ? 'scale-110' : 'opacity-60 text-slate-400'
           }`}
         />
         <span className={`font-baloo font-black uppercase tracking-tight leading-tight mt-1 text-center px-1 ${
-          canRoll ? 'text-amber-950 text-[12px]' : 'text-slate-300 text-[10px]'
+          canRoll ? 'text-amber-950 text-[12px]' : isRolling || isMoving ? 'text-amber-950 text-[11px]' : 'text-slate-300 text-[10px]'
         }`}>
           {rollButtonLabel}
         </span>

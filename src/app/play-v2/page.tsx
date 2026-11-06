@@ -172,6 +172,8 @@ export default function PlayV2Page() {
   const [bridgeState, setBridgeState] = useState<GameV2State | null>(null);
   const [showDiceOverlay, setShowDiceOverlay] = useState(false);
   const [isRollingDice, setIsRollingDice] = useState(false);
+  // Chặn click/Space liên tiếp ngay cả trước khi React kịp render trạng thái đang tung.
+  const humanRollPendingRef = useRef(false);
   const [diceOverlayData, setDiceOverlayData] = useState<{
     dice: [number, number];
     isDouble: boolean;
@@ -269,6 +271,7 @@ export default function PlayV2Page() {
       const rollDuration = Math.max(350, Math.round(900 / bridge.speed));
       setTimeout(() => {
         setIsRollingDice(false);
+        humanRollPendingRef.current = false;
       }, rollDuration);
 
       const hideDuration = Math.max(700, Math.round(1800 / bridge.speed));
@@ -350,6 +353,7 @@ export default function PlayV2Page() {
     bridge.startTurnLoop();
 
     return () => {
+      humanRollPendingRef.current = false;
       unsubState();
       unsubPassedGo();
       unsubBought();
@@ -445,20 +449,31 @@ export default function PlayV2Page() {
   };
 
   const handleHumanRoll = () => {
-    if (!bridgeRef.current || isRollingDice) return;
-    if (selectedSkill) {
-      const key = selectedSkill === 'SHORT' ? 'short' : selectedSkill === 'LONG' ? 'long' : 'double';
-      if (skillCharges[key] > 0) {
-        setSkillCharges((prev) => ({
-          ...prev,
-          [key]: Math.max(0, prev[key] - 1),
-        }));
-        bridgeRef.current.rollWithSkill(selectedSkill);
-        setSelectedSkill(null);
-        return;
+    const bridge = bridgeRef.current;
+    if (!bridge || humanRollPendingRef.current || isRollingDice) return;
+    // Đọc trạng thái hiện tại thay vì snapshot React có thể còn thuộc lượt trước.
+    const active = bridge.engine.getActivePlayer();
+    if (bridge.isTurnExecuting || bridge.isAutoMatch || active.isBot || active.bankrupt ||
+        bridge.engine.state.gamePhase !== 'AWAIT_ROLL') return;
+    humanRollPendingRef.current = true;
+    try {
+      if (selectedSkill) {
+        const key = selectedSkill === 'SHORT' ? 'short' : selectedSkill === 'LONG' ? 'long' : 'double';
+        if (skillCharges[key] > 0) {
+          setSkillCharges((prev) => ({
+            ...prev,
+            [key]: Math.max(0, prev[key] - 1),
+          }));
+          bridge.rollWithSkill(selectedSkill);
+          setSelectedSkill(null);
+          return;
+        }
       }
+      bridge.rollDice();
+    } catch (error) {
+      humanRollPendingRef.current = false;
+      throw error;
     }
-    bridgeRef.current.rollDice();
   };
 
   const handleSurrender = () => {
@@ -514,7 +529,7 @@ export default function PlayV2Page() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [bridgeState, isAutoBotMatch, calibrationMode, isRollingDice]);
+  }, [bridgeState, isAutoBotMatch, calibrationMode, isRollingDice, selectedSkill, skillCharges]);
 
   // Calibration state (F2)
   const [calibratedTiles, setCalibratedTiles] = useState<CalibratedTile[]>([]);
