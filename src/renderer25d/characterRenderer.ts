@@ -18,18 +18,8 @@ export interface CharacterManager {
   setSpeedMultiplier: (speed: number) => void;
   update: (deltaSeconds: number) => void;
   destroy: () => void;
-  verifyIntegrity: (expectedPlayerCount?: number) => {
-    isValid: boolean;
-    tokenCount: number;
-    spriteCount: number;
-    badgeCount: number;
-    shadowCount: number;
-    expectedCount?: number;
-    errors: string[];
-  };
-  getTokensCount: () => number;
-  clearTokens: () => void;
-  onTokenStep?: (playerId: string, tileId: number, pos: { x: number; y: number }) => void;
+  isAnyHopping: () => boolean;
+  getActiveHopPosition: () => { x: number; y: number } | null;
 }
 
 export const CHARACTER_PROFILES: Record<string, { name: string; avatarUrl: string; colorHex: number }> = {
@@ -71,15 +61,17 @@ interface TokenInstance {
   hopFromPos: { x: number; y: number };
   hopToPos: { x: number; y: number };
   isHopping: boolean;
+  targetScale: number; // Tỷ lệ thu phóng (1.0 khi 1 người, 0.8 khi >= 2 người)
+  slotIndex: number;
   onHopComplete?: () => void;
   idleElapsed: number;
   isHovered: boolean;
-  isLoadingAsset?: boolean;
 }
 
 // Tính vị trí đứng của nhân vật trong ô:
-// - Ở ô góc: 4 vị trí đứng xếp thành hàng chéo dọc theo mép ngoài của ô (phía trước công trình góc, gần người xem hơn công trình), cách nhau >= 0.55 lần chiều rộng nhân vật.
-// - Ở ô thường: 1 người đứng giữa; 2-4 người xếp thành hàng dọc theo chiều dài ô, đứng trước công trình (phía mép ngoài).
+// - Ở ô góc: 1 người đứng giữa; 2 người lệch trái/phải; 3-4 người xếp lưới 2x2.
+// - Ở ô thường: đứng lệch về mép trong (v < 0.5) để KHÔNG CHE tên ô và giá tiền (v > 0.6).
+//   1 người đứng giữa trong; 2 người lệch trái/phải; 3-4 người xếp lưới 2x2.
 export function getTileSlotPosition(tileId: number, slotIndex: number = 0, totalAtTile: number = 1): { x: number; y: number } {
   const geo = getTileGeometry(tileId);
 
@@ -87,36 +79,30 @@ export function getTileSlotPosition(tileId: number, slotIndex: number = 0, total
   if (geo.isCorner) {
     const pts = geo.polygonPoints && geo.polygonPoints.length >= 6 ? geo.polygonPoints : null;
     const count = Math.max(1, totalAtTile);
-    const sIdx = slotIndex % count;
 
     if (!pts) {
       return { x: geo.center.x, y: geo.center.y };
     }
 
-    // Xác định hướng "phía trước công trình" (hướng gần người xem nhất, tức là hướng Y tăng)
-    // Và hướng dàn hàng ngang/chéo của 4 nhân vật
     let forwardVec = { x: 0, y: 1 };
     let spanVec = { x: 1, y: 0 };
     let forwardDist = 32 * geo.depthScale;
     let slotSpacing = 34 * geo.depthScale;
 
     if (tileId === 0) {
-      // Góc Nam (Xuất Phát): phía trước là hướng ra mũi đỉnh ngoài p[1] (Y tăng)
       const apex = pts[1];
       const dX = apex.x - geo.center.x;
       const dY = apex.y - geo.center.y;
       const len = Math.hypot(dX, dY) || 1;
       forwardVec = { x: dX / len, y: dY / len };
-      forwardDist = len * 0.28; // Đứng cách tâm 28% về phía trước (an toàn tuyệt đối cách xa mũi nhọn)
+      forwardDist = len * 0.28;
 
-      // Dàn hàng song song với đường nối p[2] -> p[0]
       const sX = pts[0].x - pts[2].x;
       const sY = pts[0].y - pts[2].y;
       const sLen = Math.hypot(sX, sY) || 1;
       spanVec = { x: sX / sLen, y: sY / sLen };
       slotSpacing = Math.min(38 * geo.depthScale, (sLen * 0.55) / Math.max(1, count));
     } else if (tileId === 20) {
-      // Góc Bắc (Quán Trà Đá): phía trước về phía người xem là hướng ra lòng hồ p[4]
       const apex = pts[4];
       const dX = apex.x - geo.center.x;
       const dY = apex.y - geo.center.y;
@@ -130,7 +116,6 @@ export function getTileSlotPosition(tileId: number, slotIndex: number = 0, total
       spanVec = { x: sX / sLen, y: sY / sLen };
       slotSpacing = Math.min(34 * geo.depthScale, (sLen * 0.55) / Math.max(1, count));
     } else if (tileId === 10) {
-      // Góc Tây (Trại Giam): phía trước về người xem là hướng mép ngoài phía dưới
       const midFront = { x: (pts[0].x + pts[5].x) / 2, y: (pts[0].y + pts[5].y) / 2 };
       const dX = midFront.x - geo.center.x;
       const dY = midFront.y - geo.center.y;
@@ -144,7 +129,6 @@ export function getTileSlotPosition(tileId: number, slotIndex: number = 0, total
       spanVec = { x: sX / sLen, y: sY / sLen };
       slotSpacing = Math.min(32 * geo.depthScale, (sLen * 0.60) / Math.max(1, count));
     } else {
-      // Góc Đông (Vào Tù - Ô 30): phía trước về người xem
       const midFront = { x: (pts[2].x + pts[3].x) / 2, y: (pts[2].y + pts[3].y) / 2 };
       const dX = midFront.x - geo.center.x;
       const dY = midFront.y - geo.center.y;
@@ -159,46 +143,32 @@ export function getTileSlotPosition(tileId: number, slotIndex: number = 0, total
       slotSpacing = Math.min(32 * geo.depthScale, (sLen * 0.60) / Math.max(1, count));
     }
 
-    // Tâm hàng nhân vật ở phía trước công trình
-    const rowCenter = {
-      x: geo.center.x + forwardVec.x * forwardDist,
-      y: geo.center.y + forwardVec.y * forwardDist,
-    };
+    // 4 vị trí cố định dạng lưới 2×2 cho 4 người chơi
+    const sIdx = Math.abs(slotIndex) % 4;
+    const isTopRow = sIdx < 2;
+    const isLeftCol = sIdx % 2 === 0;
+    const colOffset = isLeftCol ? -0.85 : 0.85;
+    const rowOffset = isTopRow ? -forwardDist * 0.55 : forwardDist * 0.55;
 
-    if (count === 1) {
-      return rowCenter;
-    }
-
-    // Phân bổ các vị trí cách nhau đều đặn
-    const offsetIndex = sIdx - (count - 1) / 2;
     return {
-      x: rowCenter.x + spanVec.x * (offsetIndex * slotSpacing),
-      y: rowCenter.y + spanVec.y * (offsetIndex * slotSpacing),
+      x: geo.center.x + spanVec.x * (colOffset * slotSpacing) + forwardVec.x * rowOffset,
+      y: geo.center.y + spanVec.y * (colOffset * slotSpacing) + forwardVec.y * rowOffset,
     };
   }
 
   // 2. Ô thông thường:
-  // - 1 nhân vật: đứng giữa
-  // - 2-4 nhân vật: xếp thành 1 hàng dọc theo chiều dài ô, đứng trước công trình (v = 0.78, phía mép ngoài)
-  if (totalAtTile <= 1) {
-    return { x: geo.center.x, y: geo.center.y };
-  }
+  // Chia thành 4 vị trí đứng cố định dạng lưới 2×2 (Slot 0..3)
+  // Lệch về mép của ô để KHÔNG CHE tên ô và giá tiền
+  const fixedSlots = [
+    { u: 0.30, v: 0.28 }, // Slot 0: Trái - Trong
+    { u: 0.70, v: 0.28 }, // Slot 1: Phải - Trong
+    { u: 0.30, v: 0.50 }, // Slot 2: Trái - Ngoài
+    { u: 0.70, v: 0.50 }, // Slot 3: Phải - Ngoài
+  ];
 
-  const count = Math.max(1, totalAtTile);
-  const sIdx = slotIndex % count;
-  let u = 0.5;
-
-  if (count === 2) {
-    u = sIdx === 0 ? 0.32 : 0.68;
-  } else if (count === 3) {
-    const us = [0.20, 0.50, 0.80];
-    u = us[sIdx];
-  } else {
-    const us = [0.14, 0.38, 0.62, 0.86];
-    u = us[sIdx % 4];
-  }
-
-  const v = 0.78; // Đứng trước công trình (phía mép ngoài gần người xem)
+  const pos = fixedSlots[Math.abs(slotIndex) % 4];
+  const u = pos.u;
+  const v = pos.v;
 
   const inP = {
     x: geo.innerStart.x + (geo.innerEnd.x - geo.innerStart.x) * u,
@@ -261,9 +231,7 @@ export function createCharacterManager(): CharacterManager {
       (charSprite as any).__harmonizedTexture = harmonizedTex;
       spriteContainer.addChild(charSprite);
       instance.charSprite = charSprite;
-      instance.isLoadingAsset = false;
     }).catch((err) => {
-      instance.isLoadingAsset = false;
       console.warn(`Lỗi tải ảnh nhân vật ${profile.avatarUrl}:`, err);
     });
 
@@ -306,9 +274,10 @@ export function createCharacterManager(): CharacterManager {
       hopFromPos: { ...initialPos },
       hopToPos: { ...initialPos },
       isHopping: false,
+      targetScale: 1.0,
+      slotIndex: 0,
       idleElapsed: Math.random() * 2,
       isHovered: false,
-      isLoadingAsset: true,
     };
 
     // Tương tác chuột / chạm để hiện nhãn tên khi hover
@@ -356,17 +325,6 @@ export function createCharacterManager(): CharacterManager {
   };
 
   const syncPlayers = (players: PlayerTokenData[]) => {
-    // 0. Quy tắc: Mỗi người chơi có ĐÚNG MỘT sprite nhân vật trong Map theo id.
-    // Xoá và huỷ (destroy) bất kỳ token nào không còn trong danh sách incoming players (người chơi phá sản, đổi ván, hot reload...)
-    const incomingIds = new Set(players.map((p) => p.id));
-    tokens.forEach((token, id) => {
-      if (!incomingIds.has(id)) {
-        container.removeChild(token.container);
-        token.container.destroy({ children: true });
-        tokens.delete(id);
-      }
-    });
-
     // Thống kê số lượng người ở từng ô để tạo lưới 2x2
     const tileOccupancy = new Map<number, number>();
     players.forEach((p) => {
@@ -376,26 +334,22 @@ export function createCharacterManager(): CharacterManager {
 
     const tileSlotIndex = new Map<number, number>();
 
-    players.forEach((player) => {
+    players.forEach((player, pIdx) => {
       let token = tokens.get(player.id);
       if (!token) {
         token = createToken(player);
       } else {
         token.data = player;
         token.badgeText.text = player.name;
-        // Nếu ô thay đổi khi không đang nhảy, cập nhật currentTile
-        if (!token.isHopping && token.hopQueue.length === 0) {
-          token.currentTile = player.position;
-        }
       }
+      token.slotIndex = pIdx % 4;
 
       // Cập nhật vị trí tĩnh nếu không đang nhảy
-      if (!token.isHopping && token.hopQueue.length === 0) {
-        const totalAtTile = tileOccupancy.get(player.position) || 1;
-        const currentSlot = tileSlotIndex.get(player.position) || 0;
-        tileSlotIndex.set(player.position, currentSlot + 1);
+      const totalAtTile = tileOccupancy.get(player.position) || 1;
+      token.targetScale = totalAtTile > 1 ? 0.80 : 1.0;
 
-        const slotPos = getTileSlotPosition(player.position, currentSlot, totalAtTile);
+      if (!token.isHopping && token.hopQueue.length === 0) {
+        const slotPos = getTileSlotPosition(player.position, token.slotIndex, totalAtTile);
         token.container.position.set(slotPos.x, slotPos.y);
       }
 
@@ -409,33 +363,11 @@ export function createCharacterManager(): CharacterManager {
     });
 
     updateBadgePositions();
-    verifyIntegrity(players.length);
   };
 
   const movePlayerTo = (playerId: string, targetTile: number, onComplete?: () => void) => {
     const token = tokens.get(playerId);
     if (!token) return;
-
-    // Kiểm tra bất biến: Cảnh báo nếu có nhân vật khác đang di chuyển
-    const otherMoving: string[] = [];
-    tokens.forEach((t) => {
-      if (t.data.id !== playerId && (t.isHopping || t.hopQueue.length > 0)) {
-        otherMoving.push(`${t.data.name} (id: ${t.data.id})`);
-      }
-    });
-    if (otherMoving.length > 0) {
-      console.error(
-        `[INVARIANT_VIOLATION: characterRenderer.movePlayerTo] Gọi di chuyển ${token.data.name} trong khi nhân vật khác đang di chuyển: ${otherMoving.join(', ')}`
-      );
-      if (typeof window !== 'undefined') {
-        (window as any).__invariantViolations = (window as any).__invariantViolations || [];
-        (window as any).__invariantViolations.push({
-          timestamp: Date.now(),
-          message: `Gọi di chuyển ${token.data.name} trong khi ${otherMoving.join(', ')} đang di chuyển`,
-          caller: 'characterRenderer.movePlayerTo',
-        });
-      }
-    }
 
     // Xây dựng lộ trình nhảy từng bước từ ô hiện tại tới ô mục tiêu
     const queue: number[] = [];
@@ -480,10 +412,11 @@ export function createCharacterManager(): CharacterManager {
 
     const nextTile = token.hopQueue.shift()!;
     token.currentTile = nextTile;
-    token.hopToPos = getTilePosition(nextTile);
-
-    if (managerInstance && managerInstance.onTokenStep) {
-      managerInstance.onTokenStep(token.data.id, nextTile, token.hopToPos);
+    if (token.hopQueue.length === 0) {
+      // Ô đích cuối cùng: nhảy vào đúng slot cố định của mình
+      token.hopToPos = getTileSlotPosition(nextTile, token.slotIndex, 2);
+    } else {
+      token.hopToPos = getTilePosition(nextTile);
     }
   };
 
@@ -493,40 +426,23 @@ export function createCharacterManager(): CharacterManager {
   };
 
   const update = (deltaSeconds: number) => {
-    // Kiểm tra bất biến: Cảnh báo nếu có hơn 1 nhân vật cùng đang di chuyển
-    let movingCount = 0;
-    const movingTokens: string[] = [];
-    tokens.forEach((t) => {
-      if (t.isHopping || t.hopQueue.length > 0) {
-        movingCount++;
-        movingTokens.push(`${t.data.name} (id: ${t.data.id}, ô: ${t.currentTile})`);
-      }
-    });
-
-    if (movingCount > 1) {
-      console.error(
-        `[INVARIANT_VIOLATION: characterRenderer.update] ${movingCount} nhân vật cùng đang di chuyển đồng thời: ${movingTokens.join(', ')}`
-      );
-      if (typeof window !== 'undefined') {
-        (window as any).__invariantViolations = (window as any).__invariantViolations || [];
-        (window as any).__invariantViolations.push({
-          timestamp: Date.now(),
-          count: movingCount,
-          tokens: movingTokens,
-          caller: 'characterRenderer.update',
-        });
-      }
-    }
-    if (typeof window !== 'undefined') {
-      (window as any).__movingTokensCount = movingCount;
-    }
-
     tokens.forEach((token) => {
       token.idleElapsed += deltaSeconds;
 
-      // 1. Diễn hoạt chuyển động nhảy bước (Hop Animation - 0.40s cơ bản ở 1x)
+      // Cập nhật tỷ lệ thu phóng mượt mà (80% khi đứng chung ô, 100% khi đứng 1 mình)
+      const currentScale = token.container.scale.x;
+      const targetS = token.isHopping ? 1.0 : token.targetScale;
+      const scaleDiff = targetS - currentScale;
+      if (Math.abs(scaleDiff) > 0.005) {
+        const nextScale = currentScale + scaleDiff * Math.min(1.0, deltaSeconds * 8);
+        token.container.scale.set(nextScale);
+      } else {
+        token.container.scale.set(targetS);
+      }
+
+      // 1. Diễn hoạt chuyển động nhảy bước (Hop Animation)
       if (token.isHopping) {
-        const hopDuration = Math.max(0.04, 0.40 / speedMultiplier);
+        const hopDuration = Math.max(0.04, 0.22 / speedMultiplier);
         token.hopProgress += deltaSeconds / hopDuration;
 
         if (token.hopProgress >= 1.0) {
@@ -563,8 +479,8 @@ export function createCharacterManager(): CharacterManager {
         token.badgeContainer.y = -90 + breath * 0.7;
       }
 
-      // Sắp xếp Z-Index theo trục Y
-      token.container.zIndex = Math.round(token.container.y * 10);
+      // Sắp xếp Z-Index theo trục Y kết hợp slotIndex để không bao giờ đè nhau
+      token.container.zIndex = Math.round(token.container.y * 10) + token.slotIndex;
 
       // 1. Bóng đổ chân thực trên mặt đá (bám mặt đường, không bay theo bước nhảy)
       token.shadowGraphic.clear();
@@ -621,141 +537,40 @@ export function createCharacterManager(): CharacterManager {
     });
   });
 
-  const getTokensCount = (): number => {
-    return tokens.size;
-  };
-
-  const clearTokens = () => {
+  const isAnyHopping = (): boolean => {
+    let hopping = false;
     tokens.forEach((token) => {
-      container.removeChild(token.container);
-      token.container.destroy({ children: true });
+      if (token.isHopping || token.hopQueue.length > 0) {
+        hopping = true;
+      }
     });
-    tokens.clear();
+    return hopping;
   };
 
-  const verifyIntegrity = (expectedPlayerCount?: number): {
-    isValid: boolean;
-    tokenCount: number;
-    spriteCount: number;
-    badgeCount: number;
-    shadowCount: number;
-    expectedCount?: number;
-    errors: string[];
-  } => {
-    const errors: string[] = [];
-    const tokenCount = tokens.size;
-    const containerChildrenCount = container.children.length;
-
-    let spriteCount = 0;
-    let badgeCount = 0;
-    let shadowCount = 0;
-
-    tokens.forEach((token, id) => {
-      // 1. Kiểm tra sprite nhân vật (spriteContainer + charSprite hoặc đang nạp texture)
-      if (token.spriteContainer && (token.charSprite || token.spriteContainer.children.length > 0 || token.isLoadingAsset)) {
-        spriteCount++;
-      } else {
-        errors.push(`Token id='${id}' (${token.data.name}) thiếu sprite nhân vật hợp lệ`);
-      }
-
-      // 2. Kiểm tra nhãn tên
-      if (token.badgeContainer && token.badgeText) {
-        badgeCount++;
-      } else {
-        errors.push(`Token id='${id}' (${token.data.name}) thiếu nhãn tên`);
-      }
-
-      // 3. Kiểm tra bóng đổ dưới chân
-      if (token.shadowGraphic) {
-        shadowCount++;
-      } else {
-        errors.push(`Token id='${id}' (${token.data.name}) thiếu bóng chân`);
+  const getActiveHopPosition = (): { x: number; y: number } | null => {
+    let pos: { x: number; y: number } | null = null;
+    tokens.forEach((token) => {
+      if ((token.isHopping || token.hopQueue.length > 0) && !pos) {
+        pos = { x: token.container.x, y: token.container.y };
       }
     });
-
-    if (expectedPlayerCount !== undefined && tokenCount !== expectedPlayerCount) {
-      errors.push(`Số lượng token (${tokenCount}) không bằng số người chơi còn lại (${expectedPlayerCount})`);
-    }
-
-    if (containerChildrenCount !== tokenCount) {
-      errors.push(`Số lượng children trong entity container (${containerChildrenCount}) không khớp tokenCount (${tokenCount})`);
-    }
-
-    if (spriteCount !== tokenCount) {
-      errors.push(`Số lượng sprite (${spriteCount}) không khớp tokenCount (${tokenCount})`);
-    }
-
-    if (badgeCount !== tokenCount) {
-      errors.push(`Số lượng nhãn tên (${badgeCount}) không khớp tokenCount (${tokenCount})`);
-    }
-
-    if (shadowCount !== tokenCount) {
-      errors.push(`Số lượng bóng chân (${shadowCount}) không khớp tokenCount (${tokenCount})`);
-    }
-
-    const isValid = errors.length === 0;
-    if (!isValid) {
-      console.error(
-        `[INVARIANT_VIOLATION: characterRenderer.verifyIntegrity] Phát hiện lỗi bất biến nhân vật:\n${errors.map((e) => `  - ${e}`).join('\n')}`
-      );
-      if (typeof window !== 'undefined') {
-        (window as any).__characterInvariantViolations = (window as any).__characterInvariantViolations || [];
-        (window as any).__characterInvariantViolations.push({
-          timestamp: Date.now(),
-          caller: 'characterRenderer.verifyIntegrity',
-          errors,
-          tokenCount,
-          expectedPlayerCount,
-          spriteCount,
-          badgeCount,
-          shadowCount,
-        });
-      }
-    }
-
-    if (typeof window !== 'undefined') {
-      (window as any).__characterIntegrityState = {
-        isValid,
-        tokenCount,
-        spriteCount,
-        badgeCount,
-        shadowCount,
-        expectedPlayerCount,
-        timestamp: Date.now(),
-      };
-      (window as any).__verifyCharacterIntegrity = verifyIntegrity;
-    }
-
-    return {
-      isValid,
-      tokenCount,
-      spriteCount,
-      badgeCount,
-      shadowCount,
-      expectedCount: expectedPlayerCount,
-      errors,
-    };
+    return pos;
   };
 
   const destroy = () => {
     unsubscribeHarmonize();
-    tokens.forEach((token) => {
-      token.container.destroy({ children: true });
-    });
-    tokens.clear();
     container.destroy({ children: true });
+    tokens.clear();
   };
 
-  const managerInstance: CharacterManager = {
+  return {
     container,
     syncPlayers,
     movePlayerTo,
     setSpeedMultiplier,
     update,
     destroy,
-    verifyIntegrity,
-    getTokensCount,
-    clearTokens,
+    isAnyHopping,
+    getActiveHopPosition,
   };
-  return managerInstance;
 }

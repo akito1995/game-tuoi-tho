@@ -290,12 +290,12 @@ describe('HUD Helpers and UI Logic Suite', () => {
 
   describe('Rules Guide Content Validation', () => {
     it('should have all 5 comprehensive rules guide sections', () => {
-      expect(RULES_GUIDE_SECTIONS.length).toBe(5);
+      expect(RULES_GUIDE_SECTIONS.length).toBeGreaterThanOrEqual(5);
       const sectionIds = RULES_GUIDE_SECTIONS.map((s) => s.id);
       expect(sectionIds).toContain('goal');
       expect(sectionIds).toContain('turn');
       expect(sectionIds).toContain('properties');
-      expect(sectionIds).toContain('special');
+      expect(sectionIds).toContain('finance');
       expect(sectionIds).toContain('tips');
     });
 

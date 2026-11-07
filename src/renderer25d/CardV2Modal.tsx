@@ -1,14 +1,17 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Image from 'next/image';
 import { ChanceCard } from '../game/types';
 import { getTileGeometry } from './isoMath';
+import { formatCardCashDisplay } from '../game/chanceCards';
 
 export interface CardV2ModalProps {
   card: ChanceCard;
   deckType?: 'CHANCE' | 'FATE';
   tileId?: number;
+  playerName?: string;
+  isBot?: boolean;
   onConfirm: () => void;
 }
 
@@ -16,21 +19,24 @@ export function CardV2Modal({
   card,
   deckType = 'CHANCE',
   tileId,
+  playerName,
+  isBot = false,
   onConfirm,
 }: CardV2ModalProps) {
   const isFate = deckType === 'FATE';
 
   // Đường dẫn ảnh mặt trước và mặt sau tương ứng với bộ thẻ
   const backImage = isFate
-    ? '/art/cards/card-back-khi-van.png'
-    : '/art/cards/card-back-co-hoi.png';
+    ? '/art/cards/card-back-khi-van.webp'
+    : '/art/cards/card-back-co-hoi.webp';
   const frontImage = isFate
-    ? '/art/cards/card-front-khi-van.png'
-    : '/art/cards/card-front-co-hoi.png';
+    ? '/art/cards/card-front-khi-van.webp'
+    : '/art/cards/card-front-co-hoi.webp';
 
   // Trạng thái hoạt ảnh: FLY_IN -> FLIPPING -> IDLE -> FLY_OUT
   const [stage, setStage] = useState<'FLY_IN' | 'FLIPPING' | 'IDLE' | 'FLY_OUT'>('FLY_IN');
   const [isFlipped, setIsFlipped] = useState(false);
+  const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Vị trí ô xuất phát (ô người chơi vừa bước vào)
   const originPos = useMemo(() => {
@@ -63,7 +69,7 @@ export function CardV2Modal({
       setIsFlipped(true);
     }, 380);
 
-    // 3. Hoàn tất lật 3D (380ms + 400ms = 780ms), hiển thị nút Đồng ý
+    // 3. Hoàn tất lật 3D (380ms + 400ms = 780ms), hiển thị nội dung & nút Đồng ý
     const readyTimer = setTimeout(() => {
       setStage('IDLE');
     }, 820);
@@ -72,12 +78,29 @@ export function CardV2Modal({
       clearTimeout(flyTimer);
       clearTimeout(flipTimer);
       clearTimeout(readyTimer);
+      if (autoCloseTimerRef.current) clearTimeout(autoCloseTimerRef.current);
     };
   }, []);
+
+  // Xử lý tự động đóng khi đọc xong
+  useEffect(() => {
+    if (stage === 'IDLE') {
+      // Nếu là bot, tự động áp dụng sau 2.2 giây để người chơi kịp đọc
+      // Nếu là người thật, tự động áp dụng sau 5.0 giây phòng trường hợp người chơi quên bấm
+      const autoDelay = isBot ? 2200 : 5000;
+      autoCloseTimerRef.current = setTimeout(() => {
+        handleConfirm();
+      }, autoDelay);
+    }
+    return () => {
+      if (autoCloseTimerRef.current) clearTimeout(autoCloseTimerRef.current);
+    };
+  }, [stage, isBot]);
 
   // Xử lý khi người chơi bấm nút "ĐỒNG Ý": Bay về chồng bài rồi mới áp dụng hiệu ứng
   const handleConfirm = () => {
     if (stage === 'FLY_OUT') return;
+    if (autoCloseTimerRef.current) clearTimeout(autoCloseTimerRef.current);
     setStage('FLY_OUT');
 
     // Sau khi thẻ bay về chồng bài và biến mất (380ms), gọi onConfirm()
@@ -129,12 +152,20 @@ export function CardV2Modal({
         stage === 'FLY_OUT' ? 'opacity-0 pointer-events-none' : 'opacity-100'
       }`}
       style={{
-        backgroundColor: 'rgba(0, 0, 0, 0.72)',
+        backgroundColor: 'rgba(0, 0, 0, 0.78)',
         backdropFilter: 'none', // GEMINI.md: không dùng backdrop-filter
       }}
     >
       {/* Vùng chứa thẻ bài có hiệu ứng bay */}
       <div style={cardPositionStyle} className="pointer-events-auto flex flex-col items-center">
+        {/* Banner thông báo người chơi rút thẻ */}
+        <div className="mb-3 px-5 py-2 rounded-2xl bg-slate-950/95 border-2 border-amber-400/80 shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-top-3 duration-300">
+          <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
+          <span className="font-baloo text-base sm:text-lg font-bold text-amber-300 drop-shadow">
+            {playerName ? `${playerName} rút thẻ ${isFate ? 'Khí Vận' : 'Cơ Hội'}` : `Rút thẻ ${isFate ? 'Khí Vận' : 'Cơ Hội'}`}
+          </span>
+        </div>
+
         {/* Khung 3D Perspective */}
         <div
           style={{
@@ -251,20 +282,28 @@ export function CardV2Modal({
                   </p>
                 </div>
 
-                {/* Giá trị tác động tiền hoặc điểm đến */}
-                {card.amount && (
-                  <div
-                    className="mt-1 inline-flex items-center px-4 py-0.5 rounded-full border border-amber-900/25 bg-amber-950/10 shadow-sm"
-                    style={{
-                      fontFamily: 'Baloo 2, cursive, sans-serif',
-                      fontWeight: 800,
-                      fontSize: 'clamp(13px, 2.6vw, 15px)',
-                      color: card.amount > 0 ? '#15803d' : '#b91c1c',
-                    }}
-                  >
-                    {card.amount > 0 ? '+' : ''}{card.amount.toLocaleString('vi-VN')}đ
-                  </div>
-                )}
+                {/* Giá trị tác động tiền: Lấy trực tiếp từ logic thực thi (âm đỏ, dương xanh) */}
+                {(() => {
+                  const display = formatCardCashDisplay(card);
+                  if (!display) return null;
+                  return (
+                    <div
+                      className={`mt-1 inline-flex items-center px-4 py-0.5 rounded-full border shadow-sm ${
+                        display.isLoss
+                          ? 'border-rose-900/30 bg-rose-950/20 text-rose-600'
+                          : 'border-emerald-900/30 bg-emerald-950/20 text-emerald-600'
+                      }`}
+                      style={{
+                        fontFamily: 'Baloo 2, cursive, sans-serif',
+                        fontWeight: 800,
+                        fontSize: 'clamp(13px, 2.6vw, 15px)',
+                        color: display.colorHex,
+                      }}
+                    >
+                      {display.text}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>
@@ -279,13 +318,13 @@ export function CardV2Modal({
           <button
             onClick={handleConfirm}
             disabled={stage !== 'IDLE'}
-            className="flex items-center justify-center px-10 py-3 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 text-slate-950 font-black tracking-wider shadow-2xl shadow-amber-500/50 hover:brightness-110 active:scale-95 transition border-2 border-amber-200 ring-4 ring-amber-500/25 cursor-pointer"
+            className="flex items-center justify-center px-10 py-3 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 text-slate-950 font-black tracking-wider shadow-2xl shadow-amber-500/50 hover:brightness-110 active:scale-95 transition border-2 border-amber-200 ring-4 ring-amber-500/25 cursor-pointer min-h-[44px]"
             style={{
               fontFamily: 'Baloo 2, cursive, sans-serif',
               fontSize: '16px',
             }}
           >
-            ĐỒNG Ý
+            {isBot ? 'BỎ QUA CHỜ' : 'ĐỒNG Ý'}
           </button>
         </div>
       </div>

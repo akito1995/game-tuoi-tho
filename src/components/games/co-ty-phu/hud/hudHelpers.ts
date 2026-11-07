@@ -308,9 +308,20 @@ export function getLeaderboard(
 /**
  * Determines whether human active player can roll dice
  */
-export function canPlayerRoll(activePlayer: Player | undefined, gamePhase: GamePhase): boolean {
+export function canPlayerRoll(activePlayer: Player | undefined, gamePhase: GamePhase | string): boolean {
   if (!activePlayer || activePlayer.isBot || activePlayer.bankrupt) return false;
-  return gamePhase === 'WAITING' || gamePhase === 'AWAIT_ROLL';
+  const phaseStr = gamePhase as string;
+  if (
+    phaseStr === 'AWAIT_DECISION' ||
+    phaseStr === 'CARD_DRAWN' ||
+    phaseStr === 'AWAIT_TAKEOVER' ||
+    phaseStr === 'DEBT_RELIEF' ||
+    phaseStr === 'ACTION_REQUIRED' ||
+    phaseStr === 'ACTION'
+  ) {
+    return false;
+  }
+  return phaseStr === 'WAITING' || phaseStr === 'AWAIT_ROLL';
 }
 
 /**
@@ -318,10 +329,20 @@ export function canPlayerRoll(activePlayer: Player | undefined, gamePhase: GameP
  */
 export function canPlayerEndTurn(
   activePlayer: Player | undefined,
-  gamePhase: GamePhase
+  gamePhase: GamePhase | string
 ): boolean {
-  if (!activePlayer || activePlayer.isBot) return false;
-  return gamePhase === 'TURN_END' || gamePhase === 'ACTION' || gamePhase === 'AWAIT_DECISION';
+  if (!activePlayer || activePlayer.isBot || activePlayer.bankrupt) return false;
+  const phaseStr = gamePhase as string;
+  if (
+    phaseStr === 'AWAIT_DECISION' ||
+    phaseStr === 'CARD_DRAWN' ||
+    phaseStr === 'AWAIT_TAKEOVER' ||
+    phaseStr === 'DEBT_RELIEF' ||
+    phaseStr === 'ACTION_REQUIRED'
+  ) {
+    return false;
+  }
+  return phaseStr === 'TURN_END' || phaseStr === 'ACTION';
 }
 
 /**
@@ -339,117 +360,126 @@ export interface RuleSection {
 export const RULES_GUIDE_SECTIONS: RuleSection[] = [
   {
     id: 'goal',
-    tabLabel: 'Mục Tiêu',
-    icon: '🎯',
-    title: 'Mục Tiêu Trò Chơi',
-    subtitle: 'Chinh phục Đảo Ngọc Việt Nam và trở thành Tỷ Phú độc tôn',
+    tabLabel: 'Vốn & Lương',
+    icon: '💰',
+    title: 'Vốn Khởi Đầu & Dòng Tiền',
+    subtitle: 'Hành trình làm giàu từ vốn 800.000đ dọc miền đất nước',
     bullets: [
       {
-        icon: '🏆',
-        title: 'Trở thành Tỷ Phú độc tôn',
-        desc: 'Loại bỏ tất cả các đối thủ bằng cách khiến họ phá sản khi giẫm vào khu đất và resort sang trọng của bạn.',
+        icon: '💵',
+        title: 'Vốn Khởi Điểm: 800.000đ',
+        desc: 'Mỗi người chơi bắt đầu với 800.000đ (có thể chọn 600K / 800K / 1.000K ở màn hình tạo ván). Đầu game cần chọn lọc mua 3–5 ô đất rẻ để tích lũy.',
       },
       {
-        icon: '💰',
-        title: 'Đạt Giá Trị Tài Sản Khủng Nhất',
-        desc: 'Nếu ván chơi giới hạn số vòng, người chơi có tổng giá trị tài sản (tiền mặt + đất đai + nhà cửa) cao nhất sẽ giành cúp vô địch.',
+        icon: '🚩',
+        title: 'Lương Qua Xuất Phát: +200.000đ',
+        desc: 'Mỗi vòng vượt qua ô Xuất Phát, ngân hàng trả lương 200.000đ (chiếm 25% vốn ban đầu). Dừng đúng ô Xuất Phát thưởng nóng 300.000đ.',
       },
       {
         icon: '🛡️',
-        title: 'Quản Lý Dòng Tiền Khôn Khéo',
-        desc: 'Đừng tiêu sạch tiền mặt để mua đất! Luôn giữ lại một khoản dự phòng để trả tiền thuê hoặc nộp phạt khi gặp xui xẻo.',
+        title: 'Dự Phòng Tiền Mặt An Toàn',
+        desc: 'Luôn giữ ít nhất 150.000đ tiền mặt để sẵn sàng nộp thuế hoặc trả tiền thuê, tránh bị rơi vào thế nợ nần buộc phải bán tháo tài sản.',
       },
     ],
   },
   {
     id: 'turn',
-    tabLabel: 'Cách Chơi 1 Lượt',
+    tabLabel: 'Xúc Xắc & Tù',
     icon: '🎲',
-    title: 'Quy Trình 1 Lượt Đi',
-    subtitle: 'Chuỗi hành động từng bước khi tới lượt của bạn',
+    title: 'Quy Luật Xúc Xắc & Trại Giam',
+    subtitle: 'Đổ đôi thêm lượt, 3 lần đôi đi tù và cách thoát tù',
     bullets: [
       {
-        icon: '1️⃣',
+        icon: '🎲',
         title: 'Đổ 2 Xúc Xắc',
-        desc: 'Nhấn nút "ĐỔ XÚC XẮC". Tổng số nút 2 viên sẽ quyết định số bước bạn di chuyển theo chiều kim đồng hồ.',
+        desc: 'Nhấn nút "ĐỔ XÚC XẮC" để di chuyển theo chiều kim đồng hồ theo tổng 2 viên xúc xắc.',
       },
       {
-        icon: '2️⃣',
-        title: 'Thưởng Đổ Đôi & Thêm Lượt',
-        desc: 'Nếu 2 viên xúc xắc cùng số nút (Đôi), bạn nhận thưởng ngay +50.000đ và được đi thêm 1 lượt! (Chú ý: Đổ đôi 3 lần liên tiếp sẽ bị bắt vào tù vì đi bão!).',
+        icon: '⚡',
+        title: 'Đổ Đôi & Giới Hạn 3 Lần',
+        desc: 'Đổ ra 2 viên giống nhau (Đôi) được đi thêm 1 lượt. Chú ý: Đổ đôi liên tiếp 3 lần sẽ bị áp giải ngay vào Trại Giam!',
       },
       {
-        icon: '3️⃣',
-        title: 'Hành Động Tại Ô Dừng Chân',
-        desc: 'Tùy ô bạn đáp xuống: mua đất chưa có chủ, nâng cấp nhà của mình, trả tiền thuê cho đối thủ, rút thẻ cơ hội, hoặc nhận thưởng quỹ heo đất.',
-      },
-      {
-        icon: '4️⃣',
-        title: 'Kết Thúc Lượt',
-        desc: 'Nhấn nút "Kết Thúc Lượt" để chuyển quyền đi cho người chơi kế tiếp trong bàn.',
+        icon: '🔒',
+        title: 'Cách Thoát Trại Giam',
+        desc: 'Ở trong tù tối đa 3 lượt. Có 3 cách ra tù: (1) Đổ được Đôi khi tới lượt, (2) Nộp tiền bảo lãnh 50.000đ, hoặc (3) Dùng Thẻ Thoát Tù.',
       },
     ],
   },
   {
     id: 'properties',
-    tabLabel: 'Nhà & Độc Quyền',
+    tabLabel: 'Đất & Nhà',
     icon: '🏘️',
-    title: 'Nâng Cấp Bất Động Sản & Độc Quyền Màu',
-    subtitle: 'Xây dựng đế chế resort nghỉ dưỡng dọc miền đất nước',
+    title: 'Xây Dựng, Cắm Cờ & Nâng Cấp BĐS',
+    subtitle: 'Quy trình từ cắm cờ đất trống đến Landmark nguy nga',
     bullets: [
       {
-        icon: '🌱',
-        title: 'Đất Trống',
-        desc: 'Mua ô đất đầu tiên để xác lập chủ quyền. Đối thủ đi vào sẽ phải trả tiền thuê đất cơ bản.',
+        icon: '🚩',
+        title: 'Đất Trống Đã Mua (Cắm Cờ)',
+        desc: 'Khi mua đất chưa xây nhà: ô được cắm cờ và viền màu của chủ sở hữu. Đối thủ dẫm vào trả tiền thuê đất trống.',
       },
       {
         icon: '🏠',
-        title: 'Nhà Cấp 1 & Nhà Cấp 2',
-        desc: 'Khi quay lại ô đất của mình, chi trả phí xây dựng để nâng cấp nhà, tăng tiền thuê đất lên gấp nhiều lần.',
+        title: 'Nhà Cấp 1 Đến Cấp 4',
+        desc: 'Xây nhà để nhân bội tiền thuê. Cấp 1 tăng ~5x, cấp 2 tăng ~15x, cấp 3 tăng ~40x, cấp 4 tăng ~70x tiền thuê đất.',
       },
       {
         icon: '🏰',
-        title: 'Biệt Thự (Villa)',
-        desc: 'Cấp độ 3 với kiến trúc nguy nga, biến ô đất thành nguồn thu lợi nhuận cực lớn.',
+        title: 'Kỳ Quan (Landmark)',
+        desc: 'Cấp độ cao nhất mang kiến trúc địa danh đặc trưng (Chợ Bến Thành, Cầu Rồng...). Kỳ quan KHÔNG THỂ bị đối thủ mua lại!',
       },
       {
-        icon: '👑',
-        title: 'Siêu Resort 5 Sao (Cấp Tối Thượng)',
-        desc: 'Đỉnh cao bất động sản nghỉ dưỡng! Bất kỳ ai vô tình dừng chân sẽ phải trả khoản tiền thuê khổng lồ, dễ dẫn tới phá sản.',
-      },
-      {
-        icon: '🌈',
-        title: 'Độc Quyền Trọn Bộ Màu (x2 Tiền Thuê)',
-        desc: 'Nếu bạn gom đủ tất cả các ô trong cùng 1 miền địa lý (cùng màu), tiền thuê trên TOÀN BỘ các ô đó được nhân đôi tự động!',
+        icon: '🤝',
+        title: 'Mua Lại Đất Đối Thủ (1.5x)',
+        desc: 'Khi dừng ở đất đối thủ (chưa phải Kỳ Quan), bạn có thể chi gấp 1.5 lần tổng tiền đất + nhà để cướp quyền sở hữu.',
       },
     ],
   },
   {
-    id: 'special',
-    tabLabel: 'Ô Đặc Biệt',
-    icon: '🎪',
-    title: 'Các Ô Sự Kiện & Thần Tài',
-    subtitle: 'Những điểm dừng chân định đoạt vận mệnh ván đấu',
+    id: 'finance',
+    tabLabel: 'Cầm Cố & Bán Nhà',
+    icon: '⚖️',
+    title: 'Xoay Xở Tài Chính Khi Nợ Nần',
+    subtitle: 'Giải cứu dòng tiền: bán nhà 50%, cầm cố 50%, chuộc lại 55%',
     bullets: [
       {
-        icon: '🚩',
-        title: 'Ô Xuất Phát (Cổng Làng)',
-        desc: 'Mỗi lần hoàn thành 1 vòng tròn vượt qua Cổng Làng, ngân hàng thưởng nóng cho bạn +200.000đ tiền mặt.',
+        icon: '🏚️',
+        title: 'Bán Nhà Hoàn 50%',
+        desc: 'Khi cần tiền trả nợ, bạn có thể bán bớt các cấp nhà với mức thu hồi 50% chi phí xây dựng ban đầu.',
       },
       {
-        icon: '🐖',
-        title: 'Ô Lễ Hội (Ẵm Quỹ Heo Đất)',
-        desc: 'Dừng chân tại đây, bạn sẽ ẵm trọn toàn bộ số tiền phạt tích lũy trong "Quỹ Heo Đất" Jackpot!',
+        icon: '📜',
+        title: 'Cầm Cố Đất Nhận 50%',
+        desc: 'Cầm cố ô đất trống (hoặc đã bán hết nhà) nhận ngay 50% giá đất. Trong thời gian bị cầm cố, ô đất sẽ KHÔNG thu được tiền thuê!',
       },
       {
-        icon: '🚨',
-        title: 'Ô Đi Bão Vào Tù & Trại Giam',
-        desc: 'Bị bắt áp giải vào Trại Giam! Muốn ra tù bạn phải đổ được Đôi, hoặc nộp tiền phạt 100.000đ vào Quỹ Heo Đất, hoặc dùng Kim Bài Thoát Tù.',
+        icon: '🔓',
+        title: 'Chuộc Lại Đất: 55%',
+        desc: 'Để gỡ cầm cố và thu tiền thuê trở lại, bạn chi trả 55% giá đất (bao gồm 50% tiền gốc đã nhận + 10% tiền lãi phát sinh).',
+      },
+    ],
+  },
+  {
+    id: 'auction_ranks',
+    tabLabel: 'Đấu Giá & Danh Hiệu',
+    icon: '🏆',
+    title: 'Đấu Giá Nhanh 10s & Danh Hiệu Tài Sản',
+    subtitle: 'Tranh mua đất khi bỏ qua và 5 mốc vinh danh người giàu',
+    bullets: [
+      {
+        icon: '🔨',
+        title: 'Đấu Giá Khi Bỏ Qua (Tùy Chọn)',
+        desc: 'Khi bật tính năng này trong cài đặt: nếu người dẫm vào ô chọn "Bỏ qua", mở phiên đấu giá 10s giữa tất cả người chơi. Bot trả giá tối đa 90% nếu còn tiền dự phòng.',
       },
       {
-        icon: '🃏',
-        title: 'Ô Cơ Hội & Khí Vận',
-        desc: 'Rút các lá bài bất ngờ mang phong cách Việt: nhận tiền trúng số, du lịch miễn phí, hoặc bị CSGT phạt vi phạm nồng độ cồn.',
+        icon: '👑',
+        title: '5 Cấp Bậc Danh Hiệu Tài Sản',
+        desc: '🌱 Tay trắng (0đ) ➔ 🛒 Tiểu thương (1 triệu) ➔ 🏘️ Chủ trọ (2 triệu) ➔ 💎 Đại gia (4 triệu) ➔ 👑 Tỷ phú (7 triệu).',
+      },
+      {
+        icon: '💥',
+        title: 'Phá Sản & Thắng Cuộc',
+        desc: 'Nếu không đủ tài sản giải cứu nợ, bạn sẽ phá sản. Người sống sót cuối cùng hoặc người có tổng tài sản cao nhất sau 25 vòng sẽ thắng!',
       },
     ],
   },

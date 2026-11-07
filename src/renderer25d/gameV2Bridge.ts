@@ -1,39 +1,33 @@
 import { GameEngine } from '../game/engine';
-import { GameEventBus } from '../game/events';
-import { Player, Tile, ChanceCard, CharacterId, PlayerSlotConfig } from '../game/types';
-import { evaluateBotBuy, evaluateBotUpgrade, evaluateBotJailDecision } from '../game/botAI';
-import { getNextUpgradeCost } from '../game/rulesV2Financials';
+import { GameEventBus, GameEventMap } from '../game/events';
+import { Player, Tile, ChanceCard, CharacterId, VictoryType, PendingDebt, BotDifficulty, PlayerRankingItem } from '../game/types';
+import { GAME_CONFIG } from '../game/gameConfig';
+import {
+  evaluateBotBuy,
+  evaluateBotUpgrade,
+  evaluateBotTakeover,
+  executeBotDebtRelief,
+  evaluateBotJailDecision,
+} from '../game/botAI';
 import { PlayerTokenData } from './characterRenderer';
 
 export type GameSpeed = 1 | 2 | 4;
 
-export interface TurnScenarioCallbacks {
-  onShowBanner?: (player: Player) => Promise<void> | void;
-  onHideBanner?: () => void;
-  onCameraFocus?: (tileId: number, zoom?: number, durationMs?: number) => void;
-  onCameraOverview?: (durationMs?: number) => void;
-  onRollDiceAnimation?: (
-    dice: [number, number],
-    sum: number,
-    isDouble: boolean,
-    playerName: string,
-    durationMs: number
-  ) => Promise<void>;
-  onMoveToken?: (playerId: string, targetTile: number, durationPerHopSec: number) => Promise<void>;
-  onShowToast?: (message: string, type?: 'info' | 'success' | 'warn' | 'danger') => void;
-  onShowReadOnlyCard?: (
-    tile: Tile,
-    action: 'BUY' | 'SKIP' | 'UPGRADE',
-    botName: string,
-    durationMs: number
-  ) => Promise<void>;
-  onHideReadOnlyCard?: () => void;
-  onMoneyFly?: (
-    fromPlayerId: string,
-    toPlayerId: string | null,
-    amount: number,
-    durationMs: number
-  ) => Promise<void>;
+export interface AuctionState {
+  tileId: number;
+  tileName: string;
+  tilePrice: number;
+  currentBid: number;
+  highestBidderId: string | null;
+  highestBidderName: string | null;
+  timeLeft: number;
+}
+
+export interface GameV2Listener {
+  onStateChange: (state: GameV2State) => void;
+  onDiceRollStart?: (payload: { playerId: string; dice: [number, number]; isDouble: boolean }) => void;
+  onCardDrawn?: (card: ChanceCard) => void;
+  onGameOver?: (winner: Player) => void;
 }
 
 export interface GameV2State {
@@ -42,17 +36,21 @@ export interface GameV2State {
   activePlayer: Player;
   dice: [number, number];
   isDouble: boolean;
-  canRollAgain: boolean;
   gamePhase: string;
   currentCard: ChanceCard | null;
+  piggyBank: number;
   winner: Player | null;
+  victoryType: VictoryType | null;
+  victoryReason: string | null;
+  pendingDebt: PendingDebt | null;
   logs: string[];
   roundCount: number;
   turnCount: number;
   speed: GameSpeed;
   isAutoMatch: boolean;
-  isTurnExecuting: boolean;
-  skipBotAnimations: boolean;
+  rankings: PlayerRankingItem[];
+  netWorthHistory?: Record<string, number[]>;
+  currentAuction?: AuctionState | null;
 }
 
 export class GameV2Bridge {
@@ -61,45 +59,45 @@ export class GameV2Bridge {
   public speed: GameSpeed = 1;
   public isAutoMatch: boolean = false;
   public humanChar: CharacterId = 'be-ti';
-  public isTurnExecuting: boolean = false;
-  public currentTurnBot: Player | null = null;
-  public skipBotAnimations: boolean = false;
+  public botDifficulty: BotDifficulty = 'NORMAL';
+  public initialMoney: number = 800_000;
+  public auctionOnSkip: boolean = false;
+  public currentAuction: AuctionState | null = null;
+  public botActionsBuffer: string[] = [];
 
   private listeners: Set<(state: GameV2State) => void> = new Set();
+  private botTimer: any = null;
+  private auctionTimer: any = null;
   private isDestroyed: boolean = false;
-  private loopRunning: boolean = false;
-  private humanTurnResolver: (() => void) | null = null;
-  private callbacks: TurnScenarioCallbacks | null = null;
+  private isPausedByModal: boolean = false;
 
   constructor(
     playerCount: 2 | 3 | 4 = 4,
     allBots: boolean = false,
     speed: GameSpeed = 1,
     humanChar: CharacterId = 'be-ti',
-    slotConfigs?: PlayerSlotConfig[]
+    botDifficulty: BotDifficulty = 'NORMAL',
+    initialMoney: number = 800_000,
+    auctionOnSkip: boolean = false
   ) {
     this.speed = speed;
     this.isAutoMatch = allBots;
     this.humanChar = humanChar;
+    this.botDifficulty = botDifficulty;
+    this.initialMoney = initialMoney;
+    this.auctionOnSkip = auctionOnSkip;
     this.eventBus = new GameEventBus();
-    this.engine = this.createEngine(playerCount, allBots, humanChar, slotConfigs);
+    this.engine = this.createEngine(playerCount, allBots, humanChar, botDifficulty, initialMoney);
     this.setupInternalListeners();
-  }
-
-  public setCallbacks(cb: TurnScenarioCallbacks | null): void {
-    this.callbacks = cb;
   }
 
   private createEngine(
     playerCount: number,
     allBots: boolean,
     humanChar: CharacterId,
-    slotConfigs?: PlayerSlotConfig[]
+    botDifficulty: BotDifficulty,
+    initialMoney: number = 800_000
   ): GameEngine {
-    if (slotConfigs && slotConfigs.length > 0) {
-      return new GameEngine(slotConfigs.slice(0, playerCount), {}, this.eventBus);
-    }
-
     const allCharList: Array<{ name: string; character: CharacterId }> = [
       { name: 'Bé Tí', character: 'be-ti' },
       { name: 'Cô Hoa', character: 'co-hoa' },
@@ -111,7 +109,13 @@ export class GameV2Bridge {
     const others = allCharList.filter((c) => c.character !== chosen.character);
     const orderedChars = [chosen, ...others];
 
-    const characters: PlayerSlotConfig[] = [
+    const characters: Array<{
+      id: string;
+      name: string;
+      character: CharacterId;
+      isBot: boolean;
+      botDifficulty?: BotDifficulty;
+    }> = [
       {
         id: 'player-1',
         name: orderedChars[0].name,
@@ -123,73 +127,116 @@ export class GameV2Bridge {
         name: `${orderedChars[1].name} 🤖`,
         character: orderedChars[1].character,
         isBot: true,
-        botDifficulty: 'MEDIUM' as const,
+        botDifficulty,
       },
       {
         id: 'player-3',
         name: `${orderedChars[2].name} 🤖`,
         character: orderedChars[2].character,
         isBot: true,
-        botDifficulty: 'MEDIUM' as const,
+        botDifficulty,
       },
       {
         id: 'player-4',
         name: `${orderedChars[3].name} 🤖`,
         character: orderedChars[3].character,
         isBot: true,
-        botDifficulty: 'HARD' as const,
+        botDifficulty,
       },
     ].slice(0, playerCount);
 
-    return new GameEngine(characters, {}, this.eventBus);
+    return new GameEngine(characters, { initialMoney }, this.eventBus);
   }
 
   public resetGame(
     playerCount: 2 | 3 | 4 = 4,
     allBots: boolean = false,
     humanChar: CharacterId = this.humanChar,
-    slotConfigs?: PlayerSlotConfig[]
+    botDifficulty: BotDifficulty = this.botDifficulty,
+    initialMoney: number = this.initialMoney,
+    auctionOnSkip: boolean = this.auctionOnSkip
   ): void {
-    if (this.humanTurnResolver) {
-      this.humanTurnResolver();
-      this.humanTurnResolver = null;
+    if (this.botTimer) {
+      clearTimeout(this.botTimer);
+      this.botTimer = null;
     }
+    if (this.auctionTimer) {
+      clearInterval(this.auctionTimer);
+      this.auctionTimer = null;
+    }
+    this.currentAuction = null;
+    this.botActionsBuffer = [];
+    this.isPausedByModal = false;
     this.isAutoMatch = allBots;
     this.humanChar = humanChar;
-    this.isTurnExecuting = false;
-    this.engine = this.createEngine(playerCount, allBots, humanChar, slotConfigs);
+    this.botDifficulty = botDifficulty;
+    this.initialMoney = initialMoney;
+    this.auctionOnSkip = auctionOnSkip;
+    this.engine = this.createEngine(playerCount, allBots, humanChar, botDifficulty, initialMoney);
     this.setupInternalListeners();
     this.notify();
-    this.startTurnLoop();
+    this.checkAutoBotTurn();
   }
 
   private setupInternalListeners(): void {
     this.eventBus.on('turn-ended', () => {
       this.notify();
-      if (this.humanTurnResolver) {
-        const r = this.humanTurnResolver;
-        this.humanTurnResolver = null;
-        r();
-      }
+      this.checkAutoBotTurn();
+    });
+
+    this.eventBus.on('double-roll-bonus', () => {
+      this.notify();
+      this.checkAutoBotTurn();
     });
 
     this.eventBus.on('player-bankrupt', () => {
       this.notify();
-      if (this.humanTurnResolver) {
-        const r = this.humanTurnResolver;
-        this.humanTurnResolver = null;
-        r();
-      }
     });
 
     this.eventBus.on('game-over', () => {
       this.notify();
-      if (this.humanTurnResolver) {
-        const r = this.humanTurnResolver;
-        this.humanTurnResolver = null;
-        r();
+    });
+
+    this.engine.events.on('rent-paid', (payload) => {
+      const payer = this.engine.state.players.find((p) => p.id === payload.debtorId);
+      const owner = this.engine.state.players.find((p) => p.id === payload.creditorId);
+      const human = this.engine.state.players.find((p) => !p.isBot);
+      if (payer && payer.isBot) {
+        if (owner && human && owner.id === human.id) {
+          this.botActionsBuffer.push(`${payer.name} trả bạn ${Math.round(payload.amount / 1000)}K tiền thuê`);
+        } else if (owner) {
+          this.botActionsBuffer.push(`${payer.name} trả ${owner.name} ${Math.round(payload.amount / 1000)}K`);
+        }
       }
     });
+
+    this.engine.events.on('jail-entered', (payload) => {
+      const p = this.engine.state.players.find((x) => x.id === payload.playerId);
+      if (p && p.isBot) {
+        this.botActionsBuffer.push(`${p.name} vào tù`);
+      }
+    });
+  }
+
+  public pauseBot(): void {
+    this.isPausedByModal = true;
+    if (this.botTimer) {
+      clearTimeout(this.botTimer);
+      this.botTimer = null;
+    }
+  }
+
+  public resumeBot(): void {
+    this.isPausedByModal = false;
+    if (!this.isDestroyed && !this.currentAuction) {
+      this.checkAutoBotTurn();
+    }
+  }
+
+  public getAndClearBotActions(): string[] {
+    const actions = [...this.botActionsBuffer];
+    this.botActionsBuffer = [];
+    return actions;
   }
 
   public subscribe(cb: (state: GameV2State) => void): () => void {
@@ -205,51 +252,49 @@ export class GameV2Bridge {
   }
 
   public getSnapshot(): GameV2State {
-    const engineActive = this.engine.getActivePlayer();
-    const effectiveActive = (this.isTurnExecuting && this.currentTurnBot) ? this.currentTurnBot : engineActive;
     return {
-      players: [...this.engine.state.players],
-      tiles: [...this.engine.state.tiles],
-      activePlayer: { ...effectiveActive },
+      players: this.engine.state.players.map((p) => ({ ...p, properties: [...p.properties] })),
+      tiles: this.engine.state.tiles.map((t) => ({ ...t })),
+      activePlayer: { ...this.engine.getActivePlayer(), properties: [...this.engine.getActivePlayer().properties] },
       dice: [...this.engine.state.dice] as [number, number],
       isDouble: this.engine.state.isDouble,
-      canRollAgain: Boolean(
-        this.engine.state.isDouble &&
-        !this.engine.getActivePlayer().inJail &&
-        this.engine.state.doubleStreak < 3
-      ),
       gamePhase: this.engine.state.gamePhase,
       currentCard: this.engine.state.currentCard ? { ...this.engine.state.currentCard } : null,
+      piggyBank: this.engine.state.piggyBank,
       winner: this.engine.state.winner ? { ...this.engine.state.winner } : null,
+      victoryType: this.engine.state.victoryType,
+      victoryReason: this.engine.state.victoryReason,
+      pendingDebt: this.engine.state.pendingDebt ? { ...this.engine.state.pendingDebt } : null,
       logs: [...this.engine.state.eventLogs],
       roundCount: this.engine.state.roundCount,
       turnCount: this.engine.state.turnCount,
       speed: this.speed,
       isAutoMatch: this.isAutoMatch,
-      isTurnExecuting: this.isTurnExecuting,
-      skipBotAnimations: this.skipBotAnimations,
+      rankings: this.engine.getPlayerRankings(),
+      netWorthHistory: this.engine.state.netWorthHistory
+        ? JSON.parse(JSON.stringify(this.engine.state.netWorthHistory))
+        : undefined,
+      currentAuction: this.currentAuction ? { ...this.currentAuction } : null,
     };
   }
 
   public getPlayerTokenData(): PlayerTokenData[] {
     const active = this.engine.getActivePlayer();
-    return this.engine.state.players
-      .filter((p) => !p.bankrupt)
-      .map((p) => {
-        let colorHex = 0xe5484d;
-        if (p.character === 'co-hoa') colorHex = 0x19b8a6;
-        else if (p.character === 'ong-bay') colorHex = 0xf5b83d;
-        else if (p.character === 'chi-may') colorHex = 0x8b6cf0;
+    return this.engine.state.players.map((p) => {
+      let colorHex = 0xe5484d;
+      if (p.character === 'co-hoa') colorHex = 0x19b8a6;
+      else if (p.character === 'ong-bay') colorHex = 0xf5b83d;
+      else if (p.character === 'chi-may') colorHex = 0x8b6cf0;
 
-        return {
-          id: p.id,
-          name: p.name,
-          characterKey: p.character,
-          colorHex,
-          position: p.position,
-          isCurrentTurn: p.id === active.id && !p.bankrupt,
-        };
-      });
+      return {
+        id: p.id,
+        name: p.name,
+        characterKey: p.character,
+        colorHex,
+        position: p.position,
+        isCurrentTurn: p.id === active.id && !p.bankrupt,
+      };
+    });
   }
 
   public setSpeed(speed: GameSpeed): void {
@@ -257,381 +302,62 @@ export class GameV2Bridge {
     this.notify();
   }
 
-  public setSkipBotAnimations(skip: boolean): void {
-    this.skipBotAnimations = skip;
-    this.notify();
-  }
-
   public setAutoMatch(auto: boolean): void {
     this.isAutoMatch = auto;
     this.notify();
-    if (auto && !this.isTurnExecuting) {
-      if (this.humanTurnResolver) {
-        this.humanTurnResolver();
-        this.humanTurnResolver = null;
-      }
-      this.startTurnLoop();
+    if (auto) {
+      this.checkAutoBotTurn();
     }
   }
 
-  // =========================================================================
-  // VÒNG LẶP LƯỢT ĐI TUẦN TỰ DUY NHẤT (ASYNC) CÓ KHOÁ (MUTEX)
-  // =========================================================================
-  public startTurnLoop(): void {
-    if (this.loopRunning || this.isDestroyed) return;
-    this.loopRunning = true;
-    this.runLoopAsync().catch((err) => {
-      console.error('[GameV2Bridge] Lỗi vòng lặp lượt:', err);
-      this.loopRunning = false;
-    });
-  }
-
-  private async runLoopAsync(): Promise<void> {
-    while (!this.isDestroyed && this.engine.state.gamePhase !== 'GAME_OVER') {
-      const active = this.engine.getActivePlayer();
-
-      if (active.bankrupt) {
-        this.engine.endTurn();
-        this.notify();
-        continue;
-      }
-
-      const isBot = active.isBot || this.isAutoMatch;
-
-      if (isBot) {
-        // MUTEX: Khoá lượt, chỉ có đúng một người chơi đang hành động
-        this.currentTurnBot = active;
-        this.isTurnExecuting = true;
-        this.notify();
-
-        try {
-          await this.executeSequentialBotTurn(active);
-        } catch (e) {
-          console.error(`[GameV2Bridge] Lỗi trong lượt của ${active.name}:`, e);
-        } finally {
-          this.isTurnExecuting = false;
-          this.currentTurnBot = null;
-          this.notify();
-        }
-      } else {
-        // LƯỢT CỦA NGƯỜI CHƠI THẬT:
-        // Đợi người chơi thật hoàn tất đổ xúc xắc, mua/xây, và kết thúc lượt
-        this.currentTurnBot = null;
-        this.isTurnExecuting = false;
-        this.notify();
-
-        await new Promise<void>((resolve) => {
-          this.humanTurnResolver = resolve;
-        });
-        this.humanTurnResolver = null;
-      }
-    }
-    this.loopRunning = false;
-  }
-
-  /**
-   * KỊCH BẢN LƯỢT BOT Ở TỐC ĐỘ 1X / 2X / 4X (Hoặc Bỏ qua hiệu ứng)
-   */
-  private async executeSequentialBotTurn(bot: Player): Promise<void> {
-    if (this.isDestroyed || this.engine.state.gamePhase === 'GAME_OVER') return;
-
-    const S = this.speed;
-    const t = (ms: number) => Math.max(50, Math.round(ms / S));
-    const cb = this.callbacks;
-
-    // -------------------------------------------------------------
-    // TUỲ CHỌN: BỎ QUA HIỆU ỨNG CỦA BOT
-    // (Chỉ hiện kết quả cuối mỗi lượt bot trong 1 giây)
-    // -------------------------------------------------------------
-    if (this.skipBotAnimations) {
-      if (bot.inJail) {
-        const jailDecision = evaluateBotJailDecision(bot);
-        if (jailDecision === 'USE_CARD') this.engine.useJailFreeCard(bot.id);
-        else if (jailDecision === 'PAY_BAIL') this.engine.payJailBail(bot.id);
-      }
-
-      const rollRes = this.engine.rollDice();
-      const d1 = rollRes.dice[0];
-      const d2 = rollRes.dice[1];
-      const sum = rollRes.sum;
-      const isDouble = rollRes.isDouble;
-      const tile = this.engine.getTile(bot.position);
-      let actionText = 'dừng chân';
-
-      if (this.engine.state.gamePhase === 'AWAIT_DECISION') {
-        if (tile && tile.ownerId == null) {
-          if (evaluateBotBuy(bot, tile, this.engine.state.tiles)) {
-            this.engine.buyProperty(bot.id, tile.id);
-            actionText = `mua ${tile.price?.toLocaleString('vi-VN')}đ`;
-          } else {
-            this.engine.completeAction();
-            actionText = 'bỏ qua';
-          }
-        } else if (tile && tile.ownerId === bot.id) {
-          const upgradeTileId = evaluateBotUpgrade(bot, this.engine.state.tiles);
-          if (upgradeTileId !== null) {
-            this.engine.upgradeProperty(bot.id, upgradeTileId);
-            actionText = `nâng cấp ${getNextUpgradeCost(tile).toLocaleString('vi-VN')}đ`;
-          } else {
-            this.engine.completeAction();
-            actionText = 'bỏ qua';
-          }
-        }
-      } else if (this.engine.state.gamePhase === 'CARD_DRAWN' && this.engine.state.currentCard) {
-        this.engine.applyCardEffect(this.engine.state.currentCard);
-        actionText = `rút thẻ '${this.engine.state.currentCard.title}'`;
-      }
-
-      const summary = `${bot.name.replace(' 🤖', '')} đổ ${d1} + ${d2} = ${sum}${
-        isDouble ? ' (Đôi)' : ''
-      } → dừng ở ${tile?.shortName || tile?.name || 'ô'} → ${actionText}`;
-
-      this.engine.addLog(summary);
-      cb?.onShowToast?.(summary, 'info');
-      this.notify();
-
-      // Hiện kết quả cuối trong đúng 1 giây (1000ms)
-      await new Promise((r) => setTimeout(r, 1000));
-
-      if (this.isDestroyed) return;
-      if (this.engine.getActivePlayer().id === bot.id) {
-        this.engine.endTurn();
-      }
-      this.notify();
-      return;
-    }
-
-    // -------------------------------------------------------------
-    // BƯỚC 1: Camera chuyển tới bot + băng "Lượt của <tên>" giữa màn hình: 1.2 giây
-    // -------------------------------------------------------------
-    cb?.onCameraFocus?.(bot.position, 1.2, t(400));
-    if (cb?.onShowBanner) {
-      await cb.onShowBanner(bot);
-    }
-    await new Promise((r) => setTimeout(r, t(1200)));
-    cb?.onHideBanner?.();
-
-    if (this.isDestroyed) return;
-
-    // Xử lý nếu đang trong tù
-    if (bot.inJail) {
-      const jailDecision = evaluateBotJailDecision(bot);
-      if (jailDecision === 'USE_CARD') {
-        this.engine.useJailFreeCard(bot.id);
-        cb?.onShowToast?.(`${bot.name.replace(' 🤖', '')} dùng thẻ ra tù miễn phí 🕊️`, 'success');
-      } else if (jailDecision === 'PAY_BAIL') {
-        this.engine.payJailBail(bot.id);
-        cb?.onShowToast?.(`${bot.name.replace(' 🤖', '')} nộp phạt 100.000đ để ra tù 💰`, 'info');
-      }
-    }
-
-    // -------------------------------------------------------------
-    // BƯỚC 2: Bot "suy nghĩ": 1.0 giây, rồi xúc xắc lăn 1.5 giây, hiện kết quả 0.8 giây
-    // -------------------------------------------------------------
-    cb?.onShowToast?.(`${bot.name.replace(' 🤖', '')} đang suy nghĩ... 🤔`, 'info');
-    await new Promise((r) => setTimeout(r, t(1000)));
-
-    if (this.isDestroyed) return;
-
-    const d1 = Math.floor(Math.random() * 6) + 1;
-    const d2 = Math.floor(Math.random() * 6) + 1;
-    const sum = d1 + d2;
-    const isDouble = d1 === d2;
-
-    // Xúc xắc lăn 1.5 giây
-    if (cb?.onRollDiceAnimation) {
-      await cb.onRollDiceAnimation([d1, d2], sum, isDouble, bot.name, t(1500));
-    } else {
-      await new Promise((r) => setTimeout(r, t(1500)));
-    }
-
-    // Hiện kết quả 0.8 giây
-    await new Promise((r) => setTimeout(r, t(800)));
-
-    if (this.isDestroyed) return;
-
-    // -------------------------------------------------------------
-    // BƯỚC 3: Nhảy từng ô: 0.40 giây mỗi ô, camera bám theo
-    // -------------------------------------------------------------
-    const oldPos = bot.position;
-    const targetPos = (oldPos + sum) % 40;
-    const hopDurationSec = 0.40 / S;
-
-    if (cb?.onMoveToken) {
-      await cb.onMoveToken(bot.id, targetPos, hopDurationSec);
-    } else {
-      await new Promise((r) => setTimeout(r, Math.round(sum * hopDurationSec * 1000)));
-    }
-
-    if (this.isDestroyed) return;
-
-    // Di chuyển chính thức trong engine
-    this.engine.rollDice([d1, d2]);
-    this.notify();
-
-    // -------------------------------------------------------------
-    // BƯỚC 4: Dừng chân: toast tên ô và sự kiện 2.0 giây.
-    // Nếu bot mua/xây: hiện thẻ mua ở chế độ chỉ xem (không có nút) 2.0 giây
-    // với dòng chữ "<tên> quyết định MUA/BỎ QUA", rồi mới chạy hiệu ứng mua
-    // -------------------------------------------------------------
-    const tile = this.engine.getTile(bot.position);
-    let stepActionSummary = 'dừng chân';
-
-    if (this.engine.state.gamePhase === 'AWAIT_DECISION') {
-      const isBuy = tile.ownerId == null;
-      let botDecisionText = '';
-      let willAct = false;
-
-      if (isBuy) {
-        const willBuy = evaluateBotBuy(bot, tile, this.engine.state.tiles);
-        const canAfford = bot.money >= (tile.price || 0);
-        willAct = willBuy && canAfford;
-        botDecisionText = willAct
-          ? `${bot.name.replace(' 🤖', '')} quyết định MUA`
-          : `${bot.name.replace(' 🤖', '')} quyết định BỎ QUA`;
-      } else {
-        const upgradeTileId = evaluateBotUpgrade(bot, this.engine.state.tiles);
-        const cost = getNextUpgradeCost(tile);
-        willAct = upgradeTileId !== null && bot.money >= cost;
-        botDecisionText = willAct
-          ? `${bot.name.replace(' 🤖', '')} quyết định NÂNG CẤP`
-          : `${bot.name.replace(' 🤖', '')} quyết định BỎ QUA`;
-      }
-
-      // Hiện thẻ mua ở chế độ chỉ xem 2.0 giây
-      if (cb?.onShowReadOnlyCard) {
-        await cb.onShowReadOnlyCard(
-          tile,
-          isBuy ? (willAct ? 'BUY' : 'SKIP') : (willAct ? 'UPGRADE' : 'SKIP'),
-          botDecisionText,
-          t(2000)
-        );
-      } else {
-        await new Promise((r) => setTimeout(r, t(2000)));
-      }
-
-      // Chạy hành động mua / xây thật sự
-      if (isBuy) {
-        if (willAct) {
-          this.engine.buyProperty(bot.id, tile.id);
-          stepActionSummary = `mua ${tile.price?.toLocaleString('vi-VN')}đ`;
-        } else {
-          this.engine.completeAction();
-          stepActionSummary = 'bỏ qua';
-        }
-      } else {
-        if (willAct) {
-          this.engine.upgradeProperty(bot.id, tile.id);
-          stepActionSummary = `nâng cấp ${getNextUpgradeCost(tile).toLocaleString('vi-VN')}đ`;
-        } else {
-          this.engine.completeAction();
-          stepActionSummary = 'bỏ qua';
-        }
-      }
-      this.notify();
-    } else {
-      cb?.onShowToast?.(`${bot.name.replace(' 🤖', '')} dừng chân tại ${tile.name} 🚩`, 'info');
-      await new Promise((r) => setTimeout(r, t(2000)));
-
-      // -------------------------------------------------------------
-      // BƯỚC 5: Trả tiền thuê/thuế: hiệu ứng tiền bay 1.2 giây,
-      // số tiền trên thanh lượt chạy đúng lúc tiền tới
-      // -------------------------------------------------------------
-      if (tile.ownerId != null && tile.ownerId !== bot.id) {
-        const owner = this.engine.state.players.find((p) => p.id === tile.ownerId);
-        const rentAmount = this.engine.calculateRent(tile, sum);
-        if (cb?.onMoneyFly) {
-          await cb.onMoneyFly(bot.id, owner?.id || null, rentAmount, t(1200));
-        } else {
-          await new Promise((r) => setTimeout(r, t(1200)));
-        }
-        stepActionSummary = `trả ${rentAmount.toLocaleString('vi-VN')}đ tiền thuê cho ${
-          owner ? owner.name.replace(' 🤖', '') : 'chủ đất'
-        }`;
-      } else if (tile.type === 'TAX') {
-        const taxAmount = tile.id === 4 ? 100000 : 100000;
-        if (cb?.onMoneyFly) {
-          await cb.onMoneyFly(bot.id, null, taxAmount, t(1200));
-        } else {
-          await new Promise((r) => setTimeout(r, t(1200)));
-        }
-        stepActionSummary = `nộp phạt ${taxAmount.toLocaleString('vi-VN')}đ thuế`;
-      } else if (tile.type === 'CHANCE' || tile.type === 'FATE') {
-        if (this.engine.state.currentCard) {
-          stepActionSummary = `rút thẻ '${this.engine.state.currentCard.title}'`;
-          this.engine.applyCardEffect(this.engine.state.currentCard);
-          this.notify();
-        }
-      }
-    }
-
-    // -------------------------------------------------------------
-    // Ghi nhật ký ván đấu một dòng theo thứ tự thời gian:
-    // Ví dụ: "Cô Hoa đổ 3 + 4 = 7 → dừng ở Huế → mua 220.000đ"
-    // -------------------------------------------------------------
-    const stepLog = `${bot.name.replace(' 🤖', '')} đổ ${d1} + ${d2} = ${sum}${
-      isDouble ? ' (Đôi)' : ''
-    } → dừng ở ${tile.shortName || tile.name} → ${stepActionSummary}`;
-    this.engine.addLog(stepLog);
-    this.notify();
-
-    // -------------------------------------------------------------
-    // BƯỚC 6: Nghỉ 1.0 giây rồi mới chuyển lượt;
-    // ô người chơi trên thanh lượt chuyển sáng sang người kế tiếp
-    // -------------------------------------------------------------
-    await new Promise((r) => setTimeout(r, t(1000)));
-
-    if (this.isDestroyed) return;
-
-    // -------------------------------------------------------------
-    // Kiểm tra bất biến tự động sau mỗi lượt: đếm số sprite nhân vật
-    // -------------------------------------------------------------
-    if (typeof window !== 'undefined' && (window as any).__charManager?.verifyIntegrity) {
-      const activeCount = this.engine.state.players.filter((p) => !p.bankrupt).length;
-      (window as any).__charManager.verifyIntegrity(activeCount);
-    }
-
-    if (this.engine.getActivePlayer().id === bot.id) {
-      this.engine.endTurn();
-    }
-    this.notify();
-  }
-
-  // =========================================================================
-  // THAO TÁC CỦA NGƯỜI CHƠI THẬT
-  // =========================================================================
   public rollDice(): { dice: [number, number]; isDouble: boolean } {
+    const phase = this.engine.state.gamePhase;
+    if (
+      phase === 'AWAIT_DECISION' ||
+      phase === 'CARD_DRAWN' ||
+      phase === 'AWAIT_TAKEOVER' ||
+      phase === 'DEBT_RELIEF'
+    ) {
+      return { dice: this.engine.state.dice, isDouble: this.engine.state.isDouble };
+    }
     const res = this.engine.rollDice();
     this.notify();
     return { dice: res.dice, isDouble: res.isDouble };
   }
 
   public rollWithSkill(skill: 'SHORT' | 'LONG' | 'DOUBLE'): { dice: [number, number]; isDouble: boolean } {
+    const phase = this.engine.state.gamePhase;
+    if (
+      phase === 'AWAIT_DECISION' ||
+      phase === 'CARD_DRAWN' ||
+      phase === 'AWAIT_TAKEOVER' ||
+      phase === 'DEBT_RELIEF'
+    ) {
+      return { dice: this.engine.state.dice, isDouble: this.engine.state.isDouble };
+    }
     let dice: [number, number] = [1, 1];
     if (skill === 'SHORT') {
       const choices: Array<[number, number]> = [
-        [1, 1],
-        [1, 2],
-        [2, 1],
-        [1, 3],
-        [3, 1],
-        [2, 2],
+        [1, 1], [1, 2], [2, 1], [1, 3], [3, 1], [2, 2]
       ];
       dice = choices[Math.floor(Math.random() * choices.length)];
     } else if (skill === 'LONG') {
       const choices: Array<[number, number]> = [
-        [5, 5],
-        [4, 6],
-        [6, 4],
-        [5, 6],
-        [6, 5],
-        [6, 6],
+        [5, 5], [4, 6], [6, 4], [5, 6], [6, 5], [6, 6]
       ];
       dice = choices[Math.floor(Math.random() * choices.length)];
     } else if (skill === 'DOUBLE') {
       dice = [6, 6];
     }
-    const res = this.engine.rollDice(dice);
+    const skillNameMap = {
+      SHORT: 'Nhảy 2~4',
+      LONG: 'Nhảy 10~12',
+      DOUBLE: 'Đôi ×6',
+    };
+    const active = this.engine.getActivePlayer();
+    this.engine.addLog(`🎯 ${active.name} dùng kỹ năng ${skillNameMap[skill]}.`);
+    const isSkillRoll = skill === 'SHORT' || skill === 'LONG';
+    const res = this.engine.rollDice(dice, { isSkillRoll });
     this.notify();
     return { dice: res.dice, isDouble: res.isDouble };
   }
@@ -639,24 +365,139 @@ export class GameV2Bridge {
   public surrender(playerId: string = 'player-1'): void {
     this.engine.processBankruptcy(playerId, null);
     this.notify();
-    if (this.humanTurnResolver) {
-      this.humanTurnResolver();
-      this.humanTurnResolver = null;
-    }
+    this.checkAutoBotTurn();
   }
 
-  public buyProperty(): boolean {
+  public buyProperty(withHouse: boolean = true): boolean {
     const active = this.engine.getActivePlayer();
-    const res = this.engine.buyProperty(active.id);
+    const res = this.engine.buyProperty(active.id, undefined, withHouse);
     this.notify();
-    this.endHumanTurnIfReady();
+    this.checkAutoBotTurn();
     return res;
   }
 
   public skipBuy(): void {
+    const active = this.engine.getActivePlayer();
+    const tile = this.engine.getTile(active.position);
+
+    if (this.auctionOnSkip && tile && tile.ownerId == null && tile.price && tile.price > 0) {
+      this.engine.addLog(`${active.name} bỏ qua ${tile.name}. Mở đấu giá nhanh 10 giây!`);
+      this.startAuction(tile.id);
+      return;
+    }
+
+    this.engine.skipBuy();
+    this.notify();
+    this.checkAutoBotTurn();
+  }
+
+  public startAuction(tileId: number): void {
+    if (this.currentAuction) return;
+    const tile = this.engine.getTile(tileId);
+    if (!tile) return;
+
+    if (this.botTimer) {
+      clearTimeout(this.botTimer);
+      this.botTimer = null;
+    }
+
+    const startingBid = Math.round((tile.price || 100_000) * 0.5);
+    this.currentAuction = {
+      tileId,
+      tileName: tile.name,
+      tilePrice: tile.price || 100_000,
+      currentBid: startingBid,
+      highestBidderId: null,
+      highestBidderName: null,
+      timeLeft: GAME_CONFIG.AUCTION_DURATION_SECONDS || 10,
+    };
+    this.notify();
+
+    if (this.auctionTimer) clearInterval(this.auctionTimer);
+    this.auctionTimer = setInterval(() => {
+      if (!this.currentAuction || this.isPausedByModal) return;
+
+      // Bot bidding logic
+      const bots = this.engine.state.players.filter((p) => p.isBot && !p.bankrupt);
+      const maxBid = Math.floor(
+        this.currentAuction.tilePrice * (GAME_CONFIG.AUCTION_BOT_MAX_BID_RATIO || 0.9)
+      );
+
+      const eligibleBots = bots.filter((b) => b.id !== this.currentAuction!.highestBidderId);
+      if (eligibleBots.length > 0 && Math.random() < 0.65) {
+        const bot = eligibleBots[Math.floor(Math.random() * eligibleBots.length)];
+        const nextBid = this.currentAuction.highestBidderId
+          ? this.currentAuction.currentBid + 10_000
+          : this.currentAuction.currentBid;
+        if (
+          nextBid <= maxBid &&
+          bot.money - nextBid >= (GAME_CONFIG.BOT_CASH_RESERVE || 150_000)
+        ) {
+          this.currentAuction.currentBid = nextBid;
+          this.currentAuction.highestBidderId = bot.id;
+          this.currentAuction.highestBidderName = bot.name;
+          this.engine.addLog(`🔨 ${bot.name} đặt giá ${nextBid.toLocaleString('vi-VN')}đ.`);
+          this.notify();
+        }
+      }
+
+      this.currentAuction.timeLeft -= 1;
+      this.notify();
+
+      if (this.currentAuction.timeLeft <= 0) {
+        this.finishAuction();
+      }
+    }, 1000);
+  }
+
+  public placeAuctionBid(bidderId: string, amount: number): boolean {
+    if (!this.currentAuction) return false;
+    const player = this.engine.state.players.find((p) => p.id === bidderId);
+    if (!player || player.money < amount || amount <= this.currentAuction.currentBid) return false;
+
+    this.currentAuction.currentBid = amount;
+    this.currentAuction.highestBidderId = player.id;
+    this.currentAuction.highestBidderName = player.name;
+    this.engine.addLog(`🔨 ${player.name} đặt giá ${amount.toLocaleString('vi-VN')}đ!`);
+    this.notify();
+    return true;
+  }
+
+  public passAuction(): void {
+    // Không làm gì, để người khác đấu giá hoặc đếm ngược kết thúc
+  }
+
+  public finishAuction(): void {
+    if (this.auctionTimer) {
+      clearInterval(this.auctionTimer);
+      this.auctionTimer = null;
+    }
+    if (!this.currentAuction) return;
+
+    const { tileId, tileName, currentBid, highestBidderId } = this.currentAuction;
+    this.currentAuction = null;
+
+    if (highestBidderId) {
+      const winner = this.engine.state.players.find((p) => p.id === highestBidderId);
+      const tile = this.engine.getTile(tileId);
+      if (winner && tile) {
+        winner.money = Math.max(0, winner.money - currentBid);
+        tile.ownerId = winner.id;
+        tile.houseCount = 0;
+        if (!winner.properties.includes(tile.id)) {
+          winner.properties.push(tile.id);
+        }
+        this.engine.addLog(
+          `🏆 ${winner.name} thắng đấu giá ${tileName} với giá ${currentBid.toLocaleString('vi-VN')}đ!`
+        );
+      }
+    } else {
+      this.engine.addLog(`Không ai tham gia đấu giá, ${tileName} vẫn là đất trống.`);
+    }
+
     this.engine.completeAction();
     this.notify();
-    this.endHumanTurnIfReady();
+    this.checkAutoBotTurn();
   }
 
   public upgradeProperty(tileId?: number): boolean {
@@ -664,53 +505,235 @@ export class GameV2Bridge {
     const target = tileId !== undefined ? tileId : active.position;
     const res = this.engine.upgradeProperty(active.id, target);
     this.notify();
-    this.endHumanTurnIfReady();
+    this.checkAutoBotTurn();
     return res;
   }
 
   public skipUpgrade(): void {
-    this.engine.completeAction();
+    this.engine.skipUpgrade();
     this.notify();
-    this.endHumanTurnIfReady();
+    this.checkAutoBotTurn();
+  }
+
+  public takeoverProperty(tileId?: number): boolean {
+    const active = this.engine.getActivePlayer();
+    const target = tileId !== undefined ? tileId : active.position;
+    const res = this.engine.takeoverProperty(active.id, target);
+    this.notify();
+    this.checkAutoBotTurn();
+    return res;
+  }
+
+  public skipTakeover(): void {
+    this.engine.skipTakeover();
+    this.notify();
+    this.checkAutoBotTurn();
+  }
+
+  public sellHouse(tileId: number, playerId?: string): boolean {
+    const tile = this.engine.getTile(tileId);
+    const targetPlayerId = playerId || this.engine.state.pendingDebt?.debtorId || tile?.ownerId || this.engine.getActivePlayer().id;
+    const res = this.engine.sellHouse(targetPlayerId, tileId);
+    this.notify();
+    return res;
+  }
+
+  public mortgageProperty(tileId: number, playerId?: string): boolean {
+    const tile = this.engine.getTile(tileId);
+    const targetPlayerId = playerId || this.engine.state.pendingDebt?.debtorId || tile?.ownerId || this.engine.getActivePlayer().id;
+    const res = this.engine.mortgageProperty(targetPlayerId, tileId);
+    this.notify();
+    return res;
+  }
+
+  public unmortgageProperty(tileId: number, playerId?: string): boolean {
+    const tile = this.engine.getTile(tileId);
+    const targetPlayerId = playerId || this.engine.state.pendingDebt?.debtorId || tile?.ownerId || this.engine.getActivePlayer().id;
+    const res = this.engine.unmortgageProperty(targetPlayerId, tileId);
+    this.notify();
+    return res;
+  }
+
+  public declareBankruptcy(): void {
+    const active = this.engine.getActivePlayer();
+    const debtorId = this.engine.state.pendingDebt?.debtorId || active.id;
+    this.engine.declareBankruptcy(debtorId);
+    this.notify();
+    this.checkAutoBotTurn();
+  }
+
+  public getPlayerRankings(): PlayerRankingItem[] {
+    return this.engine.getPlayerRankings();
   }
 
   public applyCard(): void {
     if (this.engine.state.currentCard) {
       this.engine.applyCardEffect(this.engine.state.currentCard);
       this.notify();
-      this.endHumanTurnIfReady();
+      this.checkAutoBotTurn();
     }
   }
 
   public endTurn(): void {
     this.engine.endTurn();
     this.notify();
-    if (typeof window !== 'undefined' && (window as any).__charManager?.verifyIntegrity) {
-      const activeCount = this.engine.state.players.filter((p) => !p.bankrupt).length;
-      (window as any).__charManager.verifyIntegrity(activeCount);
-    }
-    if (this.humanTurnResolver) {
-      this.humanTurnResolver();
-      this.humanTurnResolver = null;
-    }
   }
 
-  private endHumanTurnIfReady(): void {
-    if (this.engine.state.gamePhase === 'ACTION_COMPLETED' || this.engine.state.gamePhase === 'TURN_END') {
-      // Nếu không đổ đôi để được đi tiếp, kết thúc lượt người chơi
-      if (!this.engine.state.isDouble) {
-        this.endTurn();
+  public checkAutoBotTurn(): void {
+    if (this.isDestroyed || this.isPausedByModal || this.currentAuction || this.engine.state.gamePhase === 'GAME_OVER') return;
+
+    // 4. Khi người chơi thật phá sản hoặc chỉ còn 1 người, dừng bot ngay lập tức
+    const human = this.engine.state.players.find((p) => !p.isBot);
+    const alivePlayers = this.engine.state.players.filter((p) => !p.bankrupt);
+    if ((human && human.bankrupt) || alivePlayers.length <= 1) {
+      if (this.botTimer) clearTimeout(this.botTimer);
+      this.engine.checkAndApplyVictory();
+      this.notify();
+      return;
+    }
+
+    const active = this.engine.getActivePlayer();
+    const isBotTurn = active.isBot || this.isAutoMatch;
+
+    if (!isBotTurn) return;
+
+    if (this.botTimer) clearTimeout(this.botTimer);
+
+    const randomMs = Math.floor(Math.random() * 700) + 800; // 800..1500ms
+    const baseDelay = Math.max(100, Math.round(randomMs / this.speed));
+
+    this.botTimer = setTimeout(() => {
+      this.executeBotStep();
+    }, baseDelay);
+  }
+
+  private executeBotStep(): void {
+    if (this.isDestroyed || this.isPausedByModal || this.currentAuction || this.engine.state.gamePhase === 'GAME_OVER') return;
+
+    // 4. Khi người chơi thật phá sản hoặc chỉ còn 1 người, dừng bot ngay lập tức
+    const human = this.engine.state.players.find((p) => !p.isBot);
+    const alivePlayers = this.engine.state.players.filter((p) => !p.bankrupt);
+    if ((human && human.bankrupt) || alivePlayers.length <= 1) {
+      if (this.botTimer) clearTimeout(this.botTimer);
+      this.engine.checkAndApplyVictory();
+      this.notify();
+      return;
+    }
+
+    const active = this.engine.getActivePlayer();
+    if (active.bankrupt) {
+      this.engine.endTurn();
+      this.notify();
+      return;
+    }
+
+    const phase = this.engine.state.gamePhase;
+
+    // 1. Cứu trợ nợ
+    if (phase === 'DEBT_RELIEF') {
+      executeBotDebtRelief(this.engine, active);
+      this.notify();
+      const delay = Math.max(150, Math.round(600 / this.speed));
+      this.botTimer = setTimeout(() => this.executeBotStep(), delay);
+      return;
+    }
+
+    // 2. Nếu đang trong tù
+    if (active.inJail && phase === 'AWAIT_ROLL') {
+      const decision = evaluateBotJailDecision(active);
+      if (decision === 'USE_CARD') {
+        this.engine.useJailFreeCard(active.id);
+      } else if (decision === 'PAY_BAIL') {
+        this.engine.payJailBail(active.id);
       }
+    }
+
+    // 3. Chờ đổ xúc xắc
+    if (phase === 'AWAIT_ROLL') {
+      this.engine.rollDice();
+      this.notify();
+      const hopDelay = Math.max(200, Math.round(900 / this.speed));
+      this.botTimer = setTimeout(() => this.executeBotStep(), hopDelay);
+      return;
+    }
+
+    // 4. Rút thẻ bài
+    if (phase === 'CARD_DRAWN' && this.engine.state.currentCard) {
+      this.engine.applyCardEffect(this.engine.state.currentCard);
+      this.notify();
+      const delay = Math.max(150, Math.round(600 / this.speed));
+      this.botTimer = setTimeout(() => this.executeBotStep(), delay);
+      return;
+    }
+
+    // 5. Quyết định mua hoặc nâng cấp
+    if (phase === 'AWAIT_DECISION') {
+      const tile = this.engine.getTile(active.position);
+      if (tile && tile.ownerId == null) {
+        if (evaluateBotBuy(active, tile, this.engine.state.tiles, this.engine.state.roundCount)) {
+          const withHouse = this.engine.state.roundCount >= 2;
+          this.engine.buyProperty(active.id, tile.id, withHouse);
+          const cost = (tile.price || 100_000) + (withHouse ? (tile.housePrice || 50_000) : 0);
+          this.botActionsBuffer.push(`${active.name} mua ${tile.name} (-${Math.round(cost / 1000)}K)`);
+        } else {
+          if (this.auctionOnSkip && tile.price && tile.price > 0) {
+            this.engine.addLog(`${active.name} bỏ qua ${tile.name}. Mở đấu giá nhanh 10 giây!`);
+            this.startAuction(tile.id);
+            return;
+          } else {
+            this.engine.completeAction();
+          }
+        }
+      } else if (tile && tile.ownerId === active.id) {
+        const upgradeTileId = evaluateBotUpgrade(active, this.engine.state.tiles);
+        if (upgradeTileId !== null) {
+          this.engine.upgradeProperty(active.id, upgradeTileId);
+          const houseCost = tile.housePrice || 50_000;
+          this.botActionsBuffer.push(`${active.name} nâng cấp ${tile.name} (-${Math.round(houseCost / 1000)}K)`);
+        } else {
+          this.engine.completeAction();
+        }
+      } else {
+        this.engine.completeAction();
+      }
+      this.notify();
+      const delay = Math.max(150, Math.round(500 / this.speed));
+      this.botTimer = setTimeout(() => this.executeBotStep(), delay);
+      return;
+    }
+
+    // 6. Quyết định mua lại đất đối thủ (1.5x)
+    if (phase === 'AWAIT_TAKEOVER') {
+      const tile = this.engine.getTile(active.position);
+      if (tile && evaluateBotTakeover(active, tile, this.engine.state.tiles)) {
+        this.engine.takeoverProperty(active.id, tile.id);
+      } else {
+        this.engine.skipTakeover();
+      }
+      this.notify();
+      const delay = Math.max(150, Math.round(500 / this.speed));
+      this.botTimer = setTimeout(() => this.executeBotStep(), delay);
+      return;
+    }
+
+    // 7. Kết thúc lượt
+    if (phase === 'TURN_END') {
+      this.engine.endTurn();
+      this.notify();
+      return;
     }
   }
 
   public destroy(): void {
     this.isDestroyed = true;
-    if (this.humanTurnResolver) {
-      this.humanTurnResolver();
-      this.humanTurnResolver = null;
+    if (this.botTimer) {
+      clearTimeout(this.botTimer);
+      this.botTimer = null;
+    }
+    if (this.auctionTimer) {
+      clearInterval(this.auctionTimer);
+      this.auctionTimer = null;
     }
     this.listeners.clear();
-    this.callbacks = null;
   }
 }

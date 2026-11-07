@@ -6,14 +6,13 @@ import { Tile } from '../game/types';
 import { BOARD_40_TILES } from '../game/boardData';
 import { GameEventBus } from '../game/events';
 import { BOARD_PLATE_WIDTH, BOARD_PLATE_HEIGHT, setGlobalCalibratedTiles, getTileGeometry } from './isoMath';
-import { createBoardRenderer, BoardRendererInstance, CornerConfig, TileLabelStyle } from './boardRenderer';
+import { createBoardRenderer, BoardRendererInstance, CornerConfig } from './boardRenderer';
 import { CameraController } from './cameraController';
 import { createAmbientEffects, AmbientEffects, GraphicsQuality } from './ambientEffects';
 import { createBoardAnimationManager, BoardAnimationManager } from './boardAnimations';
 import { audioManager } from '../lib/audio/audioManager';
 import { createCharacterManager, CharacterManager, PlayerTokenData } from './characterRenderer';
 import { createBuildingRenderer, BuildingRenderer, BuildingsLayout, BuildingLayoutItem } from './buildingRenderer';
-import { waitForGameFonts } from './fontLoader';
 import {
   CalibratedTile,
   Point2D,
@@ -24,14 +23,14 @@ import {
   OuterInnerRingCorners,
   MarkerData
 } from './tileCalibration';
-import { ZoomIn, ZoomOut, Crosshair, Activity, Sparkles } from 'lucide-react';
+import { ZoomIn, ZoomOut, Crosshair, Activity, Sparkles, Maximize2 } from 'lucide-react';
 import { isHarmonizationEnabled, setHarmonizationEnabled } from './colorHarmonizer';
 
 export const DEFAULT_4_PLAYERS: PlayerTokenData[] = [
-  { id: 'player-1', name: 'Bé Tí', characterKey: 'be-ti', colorHex: 0xe5484d, position: 0, isCurrentTurn: true },
-  { id: 'player-2', name: 'Cô Hoa', characterKey: 'co-hoa', colorHex: 0x19b8a6, position: 0, isCurrentTurn: false },
-  { id: 'player-3', name: 'Ông Bảy', characterKey: 'ong-bay', colorHex: 0xf5b83d, position: 0, isCurrentTurn: false },
-  { id: 'player-4', name: 'Chị Mây', characterKey: 'chi-may', colorHex: 0x8b6cf0, position: 0, isCurrentTurn: false },
+  { id: 'player_1', name: 'Bé Tí', characterKey: 'be-ti', colorHex: 0xe5484d, position: 0, isCurrentTurn: true },
+  { id: 'player_2', name: 'Cô Hoa', characterKey: 'co-hoa', colorHex: 0x19b8a6, position: 0, isCurrentTurn: false },
+  { id: 'player_3', name: 'Ông Bảy', characterKey: 'ong-bay', colorHex: 0xf5b83d, position: 0, isCurrentTurn: false },
+  { id: 'player_4', name: 'Chị Mây', characterKey: 'chi-may', colorHex: 0x8b6cf0, position: 0, isCurrentTurn: false },
 ];
 
 export interface Board25DCanvasProps {
@@ -61,12 +60,7 @@ export interface Board25DCanvasProps {
   eventBus?: GameEventBus;
   gameSpeed?: number;
   graphicsQuality?: GraphicsQuality;
-  showTrain?: boolean;
-  hideTileLabels?: boolean;
-  tileLabelStyle?: TileLabelStyle;
-  onCameraReady?: (camera: CameraController) => void;
-  onCharManagerReady?: (charManager: CharacterManager) => void;
-  onAnimManagerReady?: (animManager: BoardAnimationManager) => void;
+  cameraMode?: 'OVERVIEW' | 'FOLLOW';
 }
 
 export function Board25DCanvas({
@@ -94,12 +88,7 @@ export function Board25DCanvas({
   eventBus,
   gameSpeed = 1,
   graphicsQuality = 'HIGH',
-  showTrain = false,
-  hideTileLabels = false,
-  tileLabelStyle = 'affine',
-  onCameraReady,
-  onCharManagerReady,
-  onAnimManagerReady,
+  cameraMode = 'OVERVIEW',
 }: Board25DCanvasProps) {
   const ambientEffectsRef = useRef<AmbientEffects | null>(null);
   const animManagerRef = useRef<BoardAnimationManager | null>(null);
@@ -109,10 +98,6 @@ export function Board25DCanvas({
   gameSpeedRef.current = gameSpeed;
   const graphicsQualityRef = useRef<GraphicsQuality>(graphicsQuality);
   graphicsQualityRef.current = graphicsQuality;
-  const showTrainRef = useRef<boolean>(showTrain);
-  showTrainRef.current = showTrain;
-  const tileLabelStyleRef = useRef<TileLabelStyle>(tileLabelStyle);
-  tileLabelStyleRef.current = tileLabelStyle;
   const containerRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
   const cameraRef = useRef<CameraController | null>(null);
@@ -234,6 +219,13 @@ export function Board25DCanvas({
     }
   }, [gameSpeed]);
 
+  // Đồng bộ chế độ camera (Toàn cảnh / Theo quân cờ)
+  useEffect(() => {
+    if (cameraRef.current && cameraMode) {
+      cameraRef.current.cameraMode = cameraMode;
+    }
+  }, [cameraMode]);
+
   // Đồng bộ công trình xây dựng
   useEffect(() => {
     if (buildingRendererRef.current) {
@@ -247,19 +239,6 @@ export function Board25DCanvas({
       boardRendererRef.current.updateTiles(tiles, playerColorMap, standingTileIds, cornerConfigs);
     }
   }, [tiles, playerColorMap, standingTileIds, cornerConfigs]);
-
-  // Cập nhật kiểu hiển thị nhãn tên ô (Dán phẳng / Chỉ xoay)
-  useEffect(() => {
-    tileLabelStyleRef.current = tileLabelStyle;
-    boardRendererRef.current?.setTileLabelStyle(tileLabelStyle);
-  }, [tileLabelStyle]);
-
-  // Ẩn/hiện toàn bộ biển tên (ví dụ: ẩn khi đang mở thẻ mua/xây đất)
-  useEffect(() => {
-    if (boardRendererRef.current) {
-      boardRendererRef.current.labelsLayer.visible = !hideTileLabels;
-    }
-  }, [hideTileLabels]);
 
   useEffect(() => {
     setSelectedCornerIndex(-1);
@@ -347,13 +326,13 @@ export function Board25DCanvas({
     return () => window.removeEventListener('keydown', handleArrowKeys);
   }, []);
 
-  // Bật/tắt bộ đếm FPS bằng phím F3 & Bật/tắt chấm neo công trình ô góc F4
+  // Bật/tắt bộ đếm FPS bằng phím F3 & Bật/tắt chấm neo công trình ô góc F4 (chỉ bật ở development)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'F3') {
         e.preventDefault();
         setShowFps((prev) => !prev);
-      } else if (e.key === 'F4') {
+      } else if (e.key === 'F4' && process.env.NODE_ENV === 'development') {
         e.preventDefault();
         setShowCornerAnchorDebug((prev) => !prev);
       }
@@ -372,6 +351,14 @@ export function Board25DCanvas({
   const handleCenter = useCallback(() => {
     if (cameraRef.current) {
       cameraRef.current.center();
+      setCurrentZoom(cameraRef.current.state.zoom);
+    }
+  }, []);
+
+  // Xem toàn bộ 40 ô bàn cờ
+  const handleViewFullBoard = useCallback(() => {
+    if (cameraRef.current) {
+      cameraRef.current.viewFullBoard();
       setCurrentZoom(cameraRef.current.state.zoom);
     }
   }, []);
@@ -643,29 +630,17 @@ export function Board25DCanvas({
 
     markers.forEach((m) => {
       if (m.type === 'train_track' && m.points.length >= 2) {
-        const pts = m.points.map(imageToStage);
+        const p1 = imageToStage(m.points[0]);
+        const p2 = imageToStage(m.points[1]);
+
         const trackG = new Graphics();
+        // Ray đôi màu thép sáng
+        trackG.moveTo(p1.x, p1.y).lineTo(p2.x, p2.y).stroke({ width: 4.5, color: 0x94a3b8, alpha: 0.9 });
+        trackG.moveTo(p1.x, p1.y).lineTo(p2.x, p2.y).stroke({ width: 1.5, color: 0x38bdf8, alpha: 0.95 });
 
-        // Ray đôi màu thép sáng (đường gấp khúc nhiều điểm)
-        trackG.moveTo(pts[0].x, pts[0].y);
-        for (let i = 1; i < pts.length; i++) {
-          trackG.lineTo(pts[i].x, pts[i].y);
-        }
-        trackG.stroke({ width: 4.5, color: 0x94a3b8, alpha: 0.9 });
-
-        trackG.moveTo(pts[0].x, pts[0].y);
-        for (let i = 1; i < pts.length; i++) {
-          trackG.lineTo(pts[i].x, pts[i].y);
-        }
-        trackG.stroke({ width: 1.5, color: 0x38bdf8, alpha: 0.95 });
-
-        // Các mốc điểm trên ray (xanh lá: điểm đầu, đỏ: điểm cuối, xanh dương: điểm giữa)
-        pts.forEach((p, idx) => {
-          trackG.circle(p.x, p.y, 6).fill({
-            color: idx === 0 ? 0x22c55e : idx === pts.length - 1 ? 0xef4444 : 0x38bdf8,
-          });
-          trackG.circle(p.x, p.y, 8).stroke({ width: 1.5, color: 0xffffff, alpha: 0.8 });
-        });
+        // Chấm 2 đầu mút
+        trackG.circle(p1.x, p1.y, 6).fill({ color: 0x38bdf8 });
+        trackG.circle(p2.x, p2.y, 6).fill({ color: 0x38bdf8 });
 
         markLayer.addChild(trackG);
       } else if (m.type === 'lanterns') {
@@ -686,12 +661,6 @@ export function Board25DCanvas({
       ambientEffectsRef.current.setQuality(graphicsQuality);
     }
   }, [graphicsQuality]);
-
-  useEffect(() => {
-    if (ambientEffectsRef.current) {
-      ambientEffectsRef.current.setShowTrain(showTrain);
-    }
-  }, [showTrain]);
 
   useEffect(() => {
     if (ambientEffectsRef.current && markers) {
@@ -785,9 +754,12 @@ export function Board25DCanvas({
         resizeTo: containerRef.current || window,
         antialias: true,
         autoDensity: true,
-        resolution: Math.min(window.devicePixelRatio || 1, 2.0),
+        resolution: Math.min(window.devicePixelRatio || 1, 1.5),
         roundPixels: false,
       });
+
+      // Giới hạn tần số tick tối đa 60 FPS để tối ưu laptop phổ thông và tiết kiệm pin
+      app.ticker.maxFPS = 60;
 
       if (!isMounted || !containerRef.current) {
         app.destroy(true, { children: true });
@@ -846,7 +818,6 @@ export function Board25DCanvas({
       const ambient = createAmbientEffects({
         quality: graphicsQualityRef.current,
         markers: markersRef.current,
-        showTrain: showTrainRef.current,
         onPlayBell: () => audioManager.playSfx('train.bell', 0.5),
       });
       world.addChild(ambient.container);
@@ -855,13 +826,8 @@ export function Board25DCanvas({
       const animManager = createBoardAnimationManager();
       world.addChild(animManager.container);
       animManagerRef.current = animManager;
-      onAnimManagerReady?.(animManager);
-      if (typeof window !== 'undefined') (window as any).__animManager = animManager;
 
       // 3. Dựng 40 ô đất Việt Nam
-      onLoadProgress?.(78, 'Đang nạp phông chữ tiếng Việt (Be Vietnam Pro, Baloo 2)...');
-      await waitForGameFonts();
-
       onLoadProgress?.(80, 'Đang dựng 40 phiến đá di sản văn hóa Việt Nam...');
       const handleTileClickInternal = (tileId: number) => {
         onTileClickRef.current?.(tileId);
@@ -875,7 +841,6 @@ export function Board25DCanvas({
         standingTileIds,
         cornerConfigs,
         selectedTileId: selectedTileIdRef.current,
-        tileLabelStyle: tileLabelStyleRef.current,
         onTileClick: handleTileClickInternal,
       });
       world.addChild(boardRenderer.container);
@@ -893,16 +858,13 @@ export function Board25DCanvas({
       buildingRenderer.updateTiles(tiles, playerColorMap, buildingsLayoutRef.current);
 
       const charManager = createCharacterManager();
-      charManager.container.zIndex = 20; // Nhân vật luôn hiển thị trên công trình của chính ô mình đang đứng
+      charManager.container.zIndex = 50; // Nhân vật luôn hiển thị trên toàn bộ công trình, không bị lún vào nhà
       entityLayer.addChild(charManager.container);
       charManagerRef.current = charManager;
       charManager.syncPlayers(effectivePlayers);
-      onCharManagerReady?.(charManager);
-      if (typeof window !== 'undefined') (window as any).__charManager = charManager;
 
-      // 4b. Lớp nhãn tên ô và giá tiền (nằm trên lớp mặt ô & công trình zIndex 5, dưới nhân vật zIndex 20)
-      boardRenderer.labelsLayer.zIndex = 10;
-      entityLayer.addChild(boardRenderer.labelsLayer);
+      // 4b. Lớp nhãn tên ô và giá tiền (được nâng lên trên cùng, có nền mờ nhẹ, không bị công trình che)
+      world.addChild(boardRenderer.labelsLayer);
 
       // 4c. Lớp hiệu ứng chữ bay (Floating Text VFX)
       const vfxLayer = new Container();
@@ -942,36 +904,18 @@ export function Board25DCanvas({
       // 8. Camera điều khiển
       if (!isMounted || !app.renderer) return;
       onLoadProgress?.(95, 'Đang căn chỉnh camera phối cảnh 2.5D...');
-      let zoomDebounceTimer: ReturnType<typeof setTimeout> | null = null;
       const camera = new CameraController(app, world, (cam) => {
         setCurrentZoom(cam.state.zoom);
-        if (zoomDebounceTimer) clearTimeout(zoomDebounceTimer);
-        zoomDebounceTimer = setTimeout(() => {
-          boardRendererRef.current?.onZoomChanged(cam.state.zoom, cam.baseCoverScale);
-        }, 200);
       });
       camera.imageSourceWidth = useMobileAsset ? 2048 : 2668;
       camera.calculateCoverScale();
       cameraRef.current = camera;
-      onCameraReady?.(camera);
-      if (typeof window !== 'undefined') (window as any).__testCamera = camera;
       camera.center();
 
       const handleResize = () => {
-        if (appRef.current && appRef.current.renderer) {
-          appRef.current.renderer.resize(window.innerWidth, window.innerHeight);
-        }
         camera.onResize();
       };
       window.addEventListener('resize', handleResize);
-
-      let resizeObserver: ResizeObserver | null = null;
-      if (typeof ResizeObserver !== 'undefined' && containerRef.current) {
-        resizeObserver = new ResizeObserver(() => {
-          handleResize();
-        });
-        resizeObserver.observe(containerRef.current);
-      }
 
       // 9. Xử lý tương tác kéo thả nốt hiệu chỉnh toạ độ trên toàn stage
       app.stage.on('globalpointermove', (e: FederatedPointerEvent) => {
@@ -1109,6 +1053,7 @@ export function Board25DCanvas({
       let frameCount = 0;
       let lastFpsTime = performance.now();
       let lastFrameTime = performance.now();
+      let idleFrameSkip = false;
 
       const tickerCallback = (ticker: { deltaMS: number }) => {
         const now = performance.now();
@@ -1124,22 +1069,49 @@ export function Board25DCanvas({
         }
         lastFrameTime = now;
 
+        // Nhận diện trạng thái có hoạt cảnh chuyển động / tương tác
+        const isAnimating =
+          charManager.isAnyHopping() ||
+          (cameraRef.current && (cameraRef.current.isAutoFollowing || cameraRef.current.isDragging)) ||
+          floatingTextsRef.current.length > 0 ||
+          dragTargetRef.current !== null ||
+          dragRingHandleRef.current !== null;
+
+        // Khi hoàn toàn đứng yên: giảm vẽ lại (render on demand) để giữ mát laptop và tiết kiệm pin
+        if (!isAnimating) {
+          idleFrameSkip = !idleFrameSkip;
+          if (idleFrameSkip) {
+            return;
+          }
+        }
+
         ambient.update(deltaSeconds);
         animManager.update(deltaSeconds);
         buildingRenderer.update(deltaSeconds);
         charManager.update(deltaSeconds);
         boardRenderer.update(deltaSeconds);
+        boardRenderer.updateZoom(cameraRef.current ? cameraRef.current.state.zoom : 1.0);
 
-        // Cập nhật hiệu ứng chữ bay VFX
+        // Tự động bám theo nhân vật khi đang nhảy di chuyển, xong thì tự trả về mức zoom & góc nhìn đã chọn
+        if (charManager.isAnyHopping()) {
+          const hopPos = charManager.getActiveHopPosition();
+          if (hopPos && cameraRef.current) {
+            cameraRef.current.followTarget(hopPos, 0.10);
+          }
+        } else if (cameraRef.current && cameraRef.current.isAutoFollowing) {
+          cameraRef.current.returnToUserView(0.08);
+        }
+
+        // Cập nhật hiệu ứng chữ bay VFX (thời gian hiển thị dưới 1 giây)
         const fTexts = floatingTextsRef.current;
         for (let i = fTexts.length - 1; i >= 0; i--) {
           const item = fTexts[i];
           item.elapsed += deltaSeconds;
           item.container.y -= 45 * deltaSeconds;
-          if (item.elapsed > 0.6) {
-            item.container.alpha = Math.max(0, 1 - (item.elapsed - 0.6) / 0.6);
+          if (item.elapsed > 0.45) {
+            item.container.alpha = Math.max(0, 1 - (item.elapsed - 0.45) / 0.45);
           }
-          if (item.elapsed >= 1.2) {
+          if (item.elapsed >= 0.90) {
             if (vfxLayerRef.current) {
               vfxLayerRef.current.removeChild(item.container);
             }
@@ -1199,7 +1171,6 @@ export function Board25DCanvas({
         floatingTextsRef.current.forEach((f) => f.container.destroy({ children: true }));
         floatingTextsRef.current = [];
         window.removeEventListener('resize', handleResize);
-        resizeObserver?.disconnect();
         containerEl?.removeEventListener('wheel', handleWheelScale);
         app.ticker.remove(tickerCallback);
         ambient.destroy();
@@ -1255,7 +1226,9 @@ export function Board25DCanvas({
         },
       });
       label.anchor.set(0.5, 1.0);
-      label.position.set(geo.center.x, geo.center.y - 18);
+      // Nằm trên đầu nhân vật (-110px) và xếp tầng tự động nếu có nhiều chữ nổi liên tiếp
+      const existingCount = floatingTextsRef.current.length;
+      label.position.set(geo.center.x, geo.center.y - 110 - existingCount * 22);
       vfx.addChild(label);
       floatingTextsRef.current.push({ container: label, elapsed: 0 });
     };
@@ -1264,17 +1237,6 @@ export function Board25DCanvas({
       eventBus.on('player-moved', (payload) => {
         if (payload.passedGo) {
           spawnFloatingText('+200.000đ Xuất Phát', '#4ade80', 0);
-        }
-        // Camera mượt mà bám theo và phóng to nhẹ 1.2x khi nhân vật di chuyển
-        const targetGeo = getTileGeometry(payload.to);
-        if (targetGeo && cameraRef.current) {
-          cameraRef.current.focusOnPoint(targetGeo.center.x, targetGeo.center.y, 1.2, 500);
-        }
-      }),
-      eventBus.on('turn-ended', () => {
-        // Xong hành động thì camera mượt mà trở về toàn cảnh
-        if (cameraRef.current) {
-          cameraRef.current.returnToOverview(500);
         }
       }),
       eventBus.on('tile-landed', (payload) => {
@@ -1301,50 +1263,16 @@ export function Board25DCanvas({
         }
       }),
       eventBus.on('property-upgraded', (payload) => {
-        const isLandmark = payload.tier >= 4;
-        const tierName = isLandmark ? 'Kỳ Quan Landmark' : `Nhà cấp ${payload.tier}`;
-        spawnFloatingText(`-${payload.cost.toLocaleString('vi-VN')}đ ${tierName}`, isLandmark ? '#f59e0b' : '#38bdf8', payload.tile.id);
+        const tierName = payload.tier === 5 ? 'Landmark' : `Nhà cấp ${payload.tier}`;
+        spawnFloatingText(`-${payload.cost.toLocaleString('vi-VN')}đ ${tierName}`, '#38bdf8', payload.tile.id);
         const tileGeo = getTileGeometry(payload.tile.id);
         if (tileGeo) {
-          animManagerRef.current?.spawnUpgradePropertyVfx(
-            tileGeo.center,
-            gameSpeedRef.current >= 2 ? 0.5 : 1.0,
-            () => {
-              buildingRendererRef.current?.updateTiles(tilesRef.current, playerColorMap, buildingsLayoutRef.current);
-            },
-            isLandmark,
-            () => {
-              cameraRef.current?.shake(380, 4);
-            }
-          );
+          animManagerRef.current?.spawnUpgradePropertyVfx(tileGeo.center, gameSpeedRef.current >= 2 ? 0.5 : 1.0, () => {
+            buildingRendererRef.current?.updateTiles(tilesRef.current, playerColorMap, buildingsLayoutRef.current);
+            boardRendererRef.current?.updateTiles(tilesRef.current, playerColorMap, standingTileIds, cornerConfigs);
+          });
         }
-      }),
-      (eventBus as any).on('property-takeover', (payload: any) => {
-        spawnFloatingText(`Đổi chủ sở hữu!`, '#ec4899', payload.tile.id);
-        const tileGeo = getTileGeometry(payload.tile.id);
-        const buyer = effectivePlayers.find((x) => x.id === payload.buyerId);
-        const seller = effectivePlayers.find((x) => x.id === payload.sellerId);
-        const buyerPos = buyer ? getTileGeometry(buyer.position)?.center || { x: 0, y: 0 } : { x: 0, y: 0 };
-        const sellerPos = seller ? getTileGeometry(seller.position)?.center || { x: 0, y: 0 } : { x: 0, y: 0 };
-        const oldColor = seller ? seller.colorHex : 0x94a3b8;
-        const newColor = buyer ? buyer.colorHex : 0xf59e0b;
-        if (tileGeo) {
-          animManagerRef.current?.spawnPropertyTakeoverVfx(
-            tileGeo.center,
-            buyerPos,
-            sellerPos,
-            oldColor,
-            newColor,
-            gameSpeedRef.current >= 2 ? 0.5 : 1.0,
-            () => {
-              boardRendererRef.current?.updateTiles(tilesRef.current, playerColorMap, standingTileIds, cornerConfigs);
-            }
-          );
-        }
-      }),
-      (eventBus as any).on('color-group-completed', (payload: any) => {
-        spawnFloatingText(`Trọn bộ màu ${payload.colorGroup}! 🌟`, '#fde047', 0);
-        boardRendererRef.current?.flashColorGroup(payload.colorGroup);
+        boardRendererRef.current?.updateTiles(tilesRef.current, playerColorMap, standingTileIds, cornerConfigs);
       }),
       eventBus.on('rent-paid', (payload) => {
         spawnFloatingText(`-${payload.amount.toLocaleString('vi-VN')}đ Tiền thuê`, '#f87171', payload.tile.id);
@@ -1374,8 +1302,9 @@ export function Board25DCanvas({
       }),
       eventBus.on('card-applied', (payload) => {
         if (payload.card.amount) {
-          const sign = payload.card.amount > 0 ? '+' : '';
-          const color = payload.card.amount > 0 ? '#4ade80' : '#ef4444';
+          const isLoss = payload.card.type === 'CASH_LOSS' || payload.card.type === 'PAY_EACH_PLAYER';
+          const sign = isLoss ? '−' : '+';
+          const color = isLoss ? '#ef4444' : '#22c55e';
           const p = effectivePlayers.find((x) => x.id === payload.playerId);
           spawnFloatingText(`${sign}${payload.card.amount.toLocaleString('vi-VN')}đ`, color, p?.position ?? 0);
         }
@@ -1397,7 +1326,7 @@ export function Board25DCanvas({
         const imgSourceW = plateResolution === 'small' ? 2048 : 2668;
         const imgSourceH = plateResolution === 'small' ? 1151 : 1500;
         const dpr = typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1;
-        const pixelRatio = (imgSourceW / 1672) / (currentZoom * Math.min(dpr, 2.0));
+        const pixelRatio = (imgSourceW / 1672) / (currentZoom * Math.min(dpr, 1.5));
 
         return (
           <div className="absolute top-4 left-4 z-30 flex items-center gap-2.5 rounded-xl border border-amber-500/40 bg-slate-950/90 px-3.5 py-2 text-xs font-mono shadow-2xl backdrop-blur-sm">
@@ -1453,18 +1382,20 @@ export function Board25DCanvas({
         );
       })()}
 
-      {/* Nút bật/tắt F4 Chấm neo góc */}
-      <button
-        onClick={() => setShowCornerAnchorDebug((prev) => !prev)}
-        className={`absolute top-4 right-14 z-30 flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-[11px] font-mono transition ${
-          showCornerAnchorDebug
-            ? 'border-pink-500 bg-pink-950/80 text-pink-300 shadow-lg shadow-pink-500/20'
-            : 'border-slate-800 bg-slate-900/80 text-slate-400 hover:border-pink-500/40 hover:text-pink-300'
-        }`}
-        title="Bật/Tắt kiểm tra chấm neo 4 ô góc (Phím F4)"
-      >
-        <span>F4 Neo góc</span>
-      </button>
+      {/* Nút bật/tắt F4 Chấm neo góc - CHỈ HIỂN THỊ KHI DEVELOPMENT */}
+      {process.env.NODE_ENV === 'development' && (
+        <button
+          onClick={() => setShowCornerAnchorDebug((prev) => !prev)}
+          className={`absolute top-4 right-14 z-30 flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-[11px] font-mono transition ${
+            showCornerAnchorDebug
+              ? 'border-pink-500 bg-pink-950/80 text-pink-300 shadow-lg shadow-pink-500/20'
+              : 'border-slate-800 bg-slate-900/80 text-slate-400 hover:border-pink-500/40 hover:text-pink-300'
+          }`}
+          title="Bật/Tắt kiểm tra chấm neo 4 ô góc (Phím F4)"
+        >
+          <span>F4 Neo góc</span>
+        </button>
+      )}
 
       {/* Nút bật/tắt F3 chỉ hiện khi bật F2 hoặc khi đang xem FPS */}
       {(calibrationMode || showFps) && (
@@ -1477,7 +1408,7 @@ export function Board25DCanvas({
       </button>
       )}
 
-      {/* Nút điều khiển Camera Zoom & "CĂN GIỮA" */}
+      {/* Nút điều khiển Camera Zoom & "CĂN GIỮA" / "TOÀN BÀN CỜ" */}
       {isReady && (
         <div className="absolute bottom-6 right-6 z-20 flex flex-col gap-2 rounded-2xl border border-amber-500/30 bg-slate-900/90 p-2 shadow-2xl">
           {/* Nút CĂN GIỮA */}
@@ -1489,6 +1420,17 @@ export function Board25DCanvas({
           >
             <Crosshair className="h-4 w-4" />
             <span className="hidden sm:inline">Căn giữa</span>
+          </button>
+
+          {/* Nút TOÀN BÀN CỜ */}
+          <button
+            type="button"
+            title="Xem toàn bộ 40 ô bàn cờ"
+            onClick={handleViewFullBoard}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 text-amber-300 font-bold text-xs hover:bg-amber-500 hover:text-slate-950 active:scale-95 transition-all"
+          >
+            <Maximize2 className="h-4 w-4" />
+            <span className="hidden sm:inline">Toàn bàn cờ</span>
           </button>
 
           {/* Nút Phóng to */}

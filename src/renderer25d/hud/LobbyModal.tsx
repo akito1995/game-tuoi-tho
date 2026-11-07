@@ -2,10 +2,9 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { CharacterId, PlayerSlotConfig, BotDifficulty } from '../../game/types';
-import { Play, Users, Bot, Sparkles, Check, User, Cpu } from 'lucide-react';
-
-export type SlotRole = 'HUMAN' | 'BOT_EASY' | 'BOT_MEDIUM' | 'BOT_HARD';
+import { CharacterId } from '../../game/types';
+import { GAME_CONFIG } from '../../game/gameConfig';
+import { Play, Users, Bot, Sparkles, Check, Coins, Gavel } from 'lucide-react';
 
 interface LobbyModalProps {
   isOpen: boolean;
@@ -13,9 +12,11 @@ interface LobbyModalProps {
     selectedChar: CharacterId,
     count: 2 | 3 | 4,
     isAutoBot: boolean,
-    slotConfigs?: PlayerSlotConfig[]
+    initialMoney?: number,
+    auctionOnSkip?: boolean
   ) => void;
   onClose?: () => void;
+  initialAuctionOnSkip?: boolean;
 }
 
 interface CharInfo {
@@ -71,70 +72,18 @@ export const LobbyModal: React.FC<LobbyModalProps> = ({
   isOpen,
   onStartGame,
   onClose,
+  initialAuctionOnSkip = false,
 }) => {
   const [selectedChar, setSelectedChar] = useState<CharacterId>('be-ti');
   const [playerCount, setPlayerCount] = useState<2 | 3 | 4>(4);
+  const [startingMoney, setStartingMoney] = useState<number>(GAME_CONFIG.STARTING_MONEY);
   const [isAutoBot, setIsAutoBot] = useState(false);
-  const [characterRoles, setCharacterRoles] = useState<Record<CharacterId, SlotRole>>({
-    'be-ti': 'HUMAN',
-    'co-hoa': 'BOT_MEDIUM',
-    'ong-bay': 'BOT_MEDIUM',
-    'chi-may': 'BOT_HARD',
-  });
-
-  const handleSelectRole = (charId: CharacterId, role: SlotRole) => {
-    setCharacterRoles((prev) => {
-      const next = { ...prev, [charId]: role };
-      if (role === 'HUMAN') {
-        setSelectedChar(charId);
-        // Chuyển nhân vật human cũ sang BOT_MEDIUM nếu khác charId
-        (Object.keys(next) as CharacterId[]).forEach((id) => {
-          if (id !== charId && next[id] === 'HUMAN') {
-            next[id] = 'BOT_MEDIUM';
-          }
-        });
-      }
-      return next;
-    });
-  };
-
-  const handleSelectChar = (charId: CharacterId) => {
-    setSelectedChar(charId);
-    handleSelectRole(charId, 'HUMAN');
-  };
-
-  const handleStart = () => {
-    const humanCharId = (Object.keys(characterRoles) as CharacterId[]).find(
-      (k) => characterRoles[k] === 'HUMAN'
-    ) || selectedChar;
-
-    const chosen = CHARACTERS.find((c) => c.id === humanCharId) || CHARACTERS[0];
-    const others = CHARACTERS.filter((c) => c.id !== chosen.id);
-    const orderedChars = [chosen, ...others];
-
-    const slotConfigs: PlayerSlotConfig[] = orderedChars.slice(0, playerCount).map((char, idx) => {
-      const role = characterRoles[char.id];
-      const isBot = isAutoBot ? true : role !== 'HUMAN';
-      let botDifficulty: BotDifficulty = 'MEDIUM';
-      if (role === 'BOT_EASY') botDifficulty = 'EASY';
-      if (role === 'BOT_HARD') botDifficulty = 'HARD';
-
-      return {
-        id: `player-${idx + 1}`,
-        name: isBot ? `${char.name} 🤖` : char.name,
-        character: char.id,
-        isBot,
-        botDifficulty,
-      };
-    });
-
-    onStartGame(humanCharId, playerCount, isAutoBot, slotConfigs);
-  };
+  const [auctionOnSkip, setAuctionOnSkip] = useState(initialAuctionOnSkip);
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 p-3 sm:p-6 overflow-y-auto select-none pointer-events-auto">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/95 backdrop-blur-md p-3 sm:p-6 overflow-y-auto select-none pointer-events-auto">
       <div className="relative w-full max-w-4xl rounded-3xl bg-slate-950 border-2 border-amber-500/60 p-4 sm:p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200 my-auto">
         {/* ================= HEADER: LOGO & DẢI BĂNG ================= */}
         <div className="flex flex-col items-center justify-center text-center mb-4">
@@ -172,13 +121,11 @@ export const LobbyModal: React.FC<LobbyModalProps> = ({
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
             {CHARACTERS.map((char) => {
               const isSelected = selectedChar === char.id;
-              const currentRole = characterRoles[char.id];
-              const isHuman = currentRole === 'HUMAN';
-
               return (
-                <div
+                <button
                   key={char.id}
-                  className={`relative flex flex-col items-center rounded-2xl p-2.5 sm:p-3 border-2 transition-all text-left ${
+                  onClick={() => setSelectedChar(char.id)}
+                  className={`relative flex flex-col items-center rounded-2xl p-2.5 sm:p-3 border-2 transition-all cursor-pointer text-left ${
                     isSelected
                       ? 'border-amber-400 bg-gradient-to-b from-amber-500/20 to-slate-900 shadow-[0_0_18px_rgba(245,158,11,0.4)] scale-102 ring-2 ring-amber-400/30'
                       : 'border-slate-800 bg-slate-900/60 hover:border-slate-700 hover:bg-slate-900'
@@ -186,42 +133,37 @@ export const LobbyModal: React.FC<LobbyModalProps> = ({
                 >
                   {/* Dấu tích chọn */}
                   {isSelected && (
-                    <div className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-slate-950 shadow z-10">
+                    <div className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-slate-950 shadow">
                       <Check className="h-3.5 w-3.5 stroke-[3]" />
                     </div>
                   )}
 
-                  {/* Ảnh Idle Character & Tên - Click để chọn */}
-                  <div
-                    onClick={() => handleSelectChar(char.id)}
-                    className="w-full flex flex-col items-center cursor-pointer"
-                  >
-                    <div className="relative h-28 sm:h-36 w-full flex items-center justify-center">
-                      <Image
-                        src={char.poseSrc}
-                        alt={char.name}
-                        fill
-                        className="object-contain drop-shadow-md"
-                        onError={(e) => {
-                          (e.target as any).src = char.avatarSrc;
-                        }}
-                      />
-                    </div>
+                  {/* Ảnh Idle Character pose-1.png */}
+                  <div className="relative h-28 sm:h-36 w-full flex items-center justify-center">
+                    <Image
+                      src={char.poseSrc}
+                      alt={char.name}
+                      fill
+                      className="object-contain drop-shadow-md"
+                      onError={(e) => {
+                        (e.target as any).src = char.avatarSrc;
+                      }}
+                    />
+                  </div>
 
-                    {/* Tên nhân vật */}
-                    <div className="mt-2 w-full text-center">
-                      <div className="flex items-center justify-center gap-1.5">
-                        <span
-                          className="h-2.5 w-2.5 rounded-full"
-                          style={{ backgroundColor: char.colorHex }}
-                        />
-                        <span className="font-baloo text-base font-bold text-white">
-                          {char.name}
-                        </span>
-                      </div>
-                      <div className="text-[10px] font-bold text-amber-400/90 uppercase tracking-tight">
-                        {char.title}
-                      </div>
+                  {/* Tên nhân vật */}
+                  <div className="mt-2 w-full text-center">
+                    <div className="flex items-center justify-center gap-1.5">
+                      <span
+                        className="h-2.5 w-2.5 rounded-full"
+                        style={{ backgroundColor: char.colorHex }}
+                      />
+                      <span className="font-baloo text-base font-bold text-white">
+                        {char.name}
+                      </span>
+                    </div>
+                    <div className="text-[10px] font-bold text-amber-400/90 uppercase tracking-tight">
+                      {char.title}
                     </div>
                   </div>
 
@@ -229,77 +171,98 @@ export const LobbyModal: React.FC<LobbyModalProps> = ({
                   <div className="mt-1.5 w-full rounded-lg bg-slate-950/70 p-1.5 text-[10px] text-slate-300 leading-tight min-h-[38px] flex items-center justify-center text-center">
                     {char.trait}
                   </div>
-
-                  {/* Lựa chọn vai trò: Người chơi / Máy (Dễ / Thường / Khó) */}
-                  <div className="mt-2 w-full pt-1.5 border-t border-slate-800/80">
-                    <div className="flex items-center justify-between text-[10px] font-bold text-slate-300 mb-1 px-0.5">
-                      <span>Vai trò:</span>
-                      <span className={`px-1.5 py-0.2 rounded font-mono text-[9px] ${
-                        isHuman
-                          ? 'bg-amber-400 text-slate-950 font-bold'
-                          : 'bg-slate-800 text-sky-300'
-                      }`}>
-                        {isHuman ? 'Người chơi' : 'Máy'}
-                      </span>
-                    </div>
-                    <select
-                      value={currentRole}
-                      onChange={(e) => handleSelectRole(char.id, e.target.value as SlotRole)}
-                      className="w-full rounded-lg bg-slate-950 border border-slate-700 text-[11px] font-bold text-slate-200 px-2 py-1 focus:border-amber-400 focus:outline-none cursor-pointer"
-                    >
-                      <option value="HUMAN">👤 Người chơi (Bạn)</option>
-                      <option value="BOT_EASY">🤖 Máy (Dễ)</option>
-                      <option value="BOT_MEDIUM">🤖 Máy (Thường)</option>
-                      <option value="BOT_HARD">🤖 Máy (Khó)</option>
-                    </select>
-                  </div>
-                </div>
+                </button>
               );
             })}
           </div>
         </div>
 
-        {/* ================= PHẦN 2: CHỌN SỐ NGƯỜI CHƠI & CHẾ ĐỘ ================= */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
-          {/* Chọn số người chơi: 2P / 3P / 4P */}
+        {/* ================= PHẦN 2: CHỌN SỐ NGƯỜI CHƠI, VỐN BAN ĐẦU & CHẾ ĐỘ ================= */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 mb-5">
+          {/* 1. Chọn số người chơi: 2P / 3P / 4P */}
           <div className="rounded-2xl bg-slate-900/80 border border-slate-800 p-3">
             <div className="flex items-center gap-1.5 mb-2 text-xs font-bold uppercase text-slate-300">
               <Users className="h-4 w-4 text-amber-400" />
-              <span>2. Số Lượng Người Chơi</span>
+              <span>2. Số Lượng</span>
             </div>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-1">
               {([2, 3, 4] as const).map((cnt) => (
                 <button
                   key={cnt}
                   onClick={() => setPlayerCount(cnt)}
-                  className={`min-h-[44px] rounded-xl font-baloo text-sm font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                  className={`min-h-[44px] rounded-xl font-baloo text-xs sm:text-sm font-bold transition flex items-center justify-center cursor-pointer ${
                     playerCount === cnt
                       ? 'bg-amber-500 text-slate-950 border-2 border-amber-300 shadow-md shadow-amber-500/30'
                       : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
                   }`}
                 >
-                  <span>{cnt} Người</span>
+                  <span>{cnt}P</span>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Chế độ Bot Tự Đấu */}
+          {/* 2. Chọn vốn ban đầu: 600K / 800K / 1.000K */}
+          <div className="rounded-2xl bg-slate-900/80 border border-slate-800 p-3">
+            <div className="flex items-center gap-1.5 mb-2 text-xs font-bold uppercase text-slate-300">
+              <Coins className="h-4 w-4 text-amber-400" />
+              <span>3. Vốn Ban Đầu</span>
+            </div>
+            <div className="grid grid-cols-3 gap-1">
+              {GAME_CONFIG.STARTING_MONEY_OPTIONS.map((val) => (
+                <button
+                  key={val}
+                  onClick={() => setStartingMoney(val)}
+                  className={`min-h-[44px] rounded-xl font-baloo text-xs font-bold transition flex flex-col items-center justify-center cursor-pointer ${
+                    startingMoney === val
+                      ? 'bg-amber-500 text-slate-950 border-2 border-amber-300 shadow-md shadow-amber-500/30 font-black'
+                      : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
+                  }`}
+                >
+                  <span>{val / 1000}K₫</span>
+                  {val === GAME_CONFIG.STARTING_MONEY && (
+                    <span className="text-[8px] font-sans -mt-0.5 opacity-90">(Chuẩn)</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 3. Chế độ Bot Tự Đấu */}
           <div className="rounded-2xl bg-slate-900/80 border border-slate-800 p-3 flex flex-col justify-between">
             <div className="flex items-center gap-1.5 text-xs font-bold uppercase text-slate-300">
               <Bot className="h-4 w-4 text-sky-400" />
-              <span>3. Chế Độ Trận Đấu</span>
+              <span>4. Chế Độ Đấu</span>
             </div>
             <button
               onClick={() => setIsAutoBot(!isAutoBot)}
-              className={`min-h-[44px] mt-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 border cursor-pointer ${
+              className={`min-h-[44px] mt-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border cursor-pointer ${
                 isAutoBot
                   ? 'bg-sky-600 text-white border-sky-400 shadow-md shadow-sky-600/30'
                   : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
               }`}
             >
               <Bot className="h-4 w-4" />
-              <span>{isAutoBot ? 'Bot Tự Đấu (Chế độ xem)' : 'Tôi Trực Tiếp Thi Đấu (Chuẩn)'}</span>
+              <span>{isAutoBot ? 'Bot Tự Đấu' : 'Người Thật'}</span>
+            </button>
+          </div>
+
+          {/* 4. Đấu giá khi bỏ qua */}
+          <div className="rounded-2xl bg-slate-900/80 border border-slate-800 p-3 flex flex-col justify-between">
+            <div className="flex items-center gap-1.5 text-xs font-bold uppercase text-slate-300">
+              <Gavel className="h-4 w-4 text-amber-400" />
+              <span>5. Đấu Giá Bỏ Qua</span>
+            </div>
+            <button
+              onClick={() => setAuctionOnSkip(!auctionOnSkip)}
+              className={`min-h-[44px] mt-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border cursor-pointer ${
+                auctionOnSkip
+                  ? 'bg-amber-600 text-white border-amber-400 shadow-md shadow-amber-600/30'
+                  : 'bg-slate-800 hover:bg-slate-700 text-slate-400 border-slate-700'
+              }`}
+            >
+              <Gavel className="h-4 w-4" />
+              <span>{auctionOnSkip ? 'BẬT (10s)' : 'TẮT'}</span>
             </button>
           </div>
         </div>
@@ -316,7 +279,7 @@ export const LobbyModal: React.FC<LobbyModalProps> = ({
           )}
 
           <button
-            onClick={handleStart}
+            onClick={() => onStartGame(selectedChar, playerCount, isAutoBot, startingMoney, auctionOnSkip)}
             className="flex-1 min-h-[48px] rounded-2xl bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 hover:brightness-110 active:scale-98 transition text-slate-950 font-baloo text-base sm:text-lg font-black tracking-wider uppercase flex items-center justify-center gap-2 border-2 border-amber-200 shadow-xl shadow-amber-500/40 cursor-pointer"
           >
             <Play className="h-5 w-5 fill-slate-950" />

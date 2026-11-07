@@ -242,6 +242,7 @@ export function calculateTurnOutcome(
       activePlayer.inJail = false;
       activePlayer.jailTurns = 0;
       newDoubleStreak = 0;
+      isDouble = false;
     } else {
       const remainingTurns = activePlayer.jailTurns - 1;
       if (remainingTurns <= 0) {

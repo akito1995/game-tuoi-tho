@@ -350,12 +350,32 @@ export async function executeBotTurn(
 
     if (state.gamePhase === 'CARD_DRAWN') {
       // Pause so human player has time to read the card drawn by the bot
-      await delay(3000);
+      await delay(1000);
       if (dismissCard) {
         actionSummary.push(`${state.players[state.activePlayerIndex].name}: DISMISSED_CARD`);
         dismissCard();
       }
       state = getState();
+
+      // Nếu thẻ bài dịch chuyển bot tới ô đất chưa có chủ -> chạy logic quyết định mua
+      const activeP = state.players[state.activePlayerIndex];
+      const landedTile = state.tiles[activeP.position];
+      if (
+        (state.gamePhase === 'ACTION_REQUIRED' || state.gamePhase === 'AWAIT_DECISION') &&
+        landedTile &&
+        landedTile.ownerId == null &&
+        (landedTile.type === 'PROPERTY' || landedTile.type === 'TRANSPORT' || landedTile.type === 'UTILITY') &&
+        buyProperty
+      ) {
+        const shouldBuy = evaluateBuyDecision(activeP, landedTile, state.tiles);
+        if (shouldBuy) {
+          const success = buyProperty(landedTile.id);
+          if (success) {
+            actionSummary.push(`${activeP.name}: BOUGHT_AFTER_TELEPORT ${landedTile.name}`);
+          }
+        }
+        state = getState();
+      }
     }
 
     // 4. Upgrade evaluation: Bot ONLY upgrades if it landed on its OWN property, max 1 level per turn
@@ -383,9 +403,16 @@ export async function executeBotTurn(
 
     // 5. End Turn
     state = getState();
-    if (state.gamePhase !== 'GAME_OVER' && endTurn) {
-      actionSummary.push(`${state.players[state.activePlayerIndex]?.name}: END_TURN`);
-      endTurn();
+    if (state.gamePhase !== 'GAME_OVER') {
+      const activeP = state.players[state.activePlayerIndex];
+      // Nếu bot đổ đôi và không ở trong tù và chưa quá 3 lần: tiếp tục lượt gieo xúc xắc tiếp!
+      if (state.isDouble && !activeP?.inJail && (state.doubleStreak || 0) < 3) {
+        actionSummary.push(`${activeP?.name}: DOUBLE_BONUS_CONTINUE`);
+        if (setGamePhase) setGamePhase('WAITING');
+      } else if (endTurn) {
+        actionSummary.push(`${activeP?.name}: END_TURN`);
+        endTurn();
+      }
     }
 
     state = getState();

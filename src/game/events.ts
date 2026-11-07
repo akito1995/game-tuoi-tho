@@ -1,4 +1,4 @@
-import { ChanceCard, Player, Tile } from './types';
+import { ChanceCard, Player, Tile, VictoryType } from './types';
 
 export type GameEventMap = {
   'dice-rolled': {
@@ -29,6 +29,33 @@ export type GameEventMap = {
     tier: number;
     cost: number;
   };
+  'property-takeover': {
+    buyerId: string;
+    sellerId: string;
+    tile: Tile;
+    price: number;
+  };
+  'property-mortgaged': {
+    playerId: string;
+    tile: Tile;
+    amountReceived: number;
+  };
+  'property-unmortgaged': {
+    playerId: string;
+    tile: Tile;
+    cost: number;
+  };
+  'property-skipped': {
+    playerId: string;
+    tile?: Tile;
+    action: 'BUY' | 'UPGRADE' | 'TAKEOVER';
+  };
+  'house-sold': {
+    playerId: string;
+    tile: Tile;
+    refund: number;
+    remainingHouses: number;
+  };
   'rent-paid': {
     debtorId: string;
     creditorId: string;
@@ -39,6 +66,10 @@ export type GameEventMap = {
     playerId: string;
     amount: number;
     tile: Tile;
+  };
+  'piggy-bank-collected': {
+    playerId: string;
+    amount: number;
   };
   'jail-entered': {
     playerId: string;
@@ -70,6 +101,8 @@ export type GameEventMap = {
   'game-over': {
     winner: Player;
     rounds: number;
+    victoryType: VictoryType;
+    reason: string;
   };
   'double-roll-bonus': {
     playerId: string;
@@ -105,7 +138,7 @@ export class GameEventBus {
         try {
           cb(payload);
         } catch (err) {
-          console.error(`Error in event listener for "${event}":`, err);
+          console.error(`Error in event listener for ${event}:`, err);
         }
       });
     }

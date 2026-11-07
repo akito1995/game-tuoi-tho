@@ -1,31 +1,35 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Flag, Settings, AlertTriangle, X } from 'lucide-react';
+import { Flag, Settings, BookOpen, AlertTriangle, X } from 'lucide-react';
 
 interface TopRightActionsProps {
   onSurrender: () => void;
   onOpenSettings: () => void;
+  onOpenRules?: () => void;
 }
 
 export const TopRightActions: React.FC<TopRightActionsProps> = ({
   onSurrender,
   onOpenSettings,
+  onOpenRules,
 }) => {
   const [showConfirmSurrender, setShowConfirmSurrender] = useState(false);
 
   return (
     <>
       <div className="fixed top-3 right-3 z-30 pointer-events-auto select-none flex items-center gap-2">
-        {/* Nút Cờ (Đầu hàng): Nút tròn đỏ cờ trắng, tối thiểu 44px */}
-        <button
-          onClick={() => setShowConfirmSurrender(true)}
-          className="h-11 w-11 min-h-[44px] min-w-[44px] rounded-full bg-gradient-to-b from-rose-500 to-red-700 hover:from-rose-400 hover:to-red-600 border-2 border-red-300 shadow-xl shadow-red-900/40 flex items-center justify-center text-white active:scale-95 transition-all cursor-pointer"
-          title="Đầu hàng (Rời trận)"
-          aria-label="Đầu hàng"
-        >
-          <Flag className="h-5 w-5 fill-white stroke-red-800" />
-        </button>
+        {/* Nút Luật Chơi: Nút tròn vàng viền hổ phách, tối thiểu 44px */}
+        {onOpenRules && (
+          <button
+            onClick={onOpenRules}
+            className="h-11 w-11 min-h-[44px] min-w-[44px] rounded-full bg-slate-900/95 hover:bg-slate-800 border-2 border-amber-500/60 hover:border-amber-400 shadow-xl flex items-center justify-center text-amber-300 hover:text-amber-200 active:scale-95 transition-all cursor-pointer"
+            title="Xem Luật chơi"
+            aria-label="Luật chơi"
+          >
+            <BookOpen className="h-5 w-5" />
+          </button>
+        )}
 
         {/* Nút Cài đặt: Nút tròn xám bánh răng, tối thiểu 44px */}
         <button
@@ -35,6 +39,16 @@ export const TopRightActions: React.FC<TopRightActionsProps> = ({
           aria-label="Cài đặt"
         >
           <Settings className="h-5 w-5" />
+        </button>
+
+        {/* Nút Cờ (Đầu hàng): Nút tròn đỏ cờ trắng, tối thiểu 44px */}
+        <button
+          onClick={() => setShowConfirmSurrender(true)}
+          className="h-11 w-11 min-h-[44px] min-w-[44px] rounded-full bg-gradient-to-b from-rose-500 to-red-700 hover:from-rose-400 hover:to-red-600 border-2 border-red-300 shadow-xl shadow-red-900/40 flex items-center justify-center text-white active:scale-95 transition-all cursor-pointer"
+          title="Đầu hàng (Rời trận)"
+          aria-label="Đầu hàng"
+        >
+          <Flag className="h-5 w-5 fill-white stroke-red-800" />
         </button>
       </div>
 

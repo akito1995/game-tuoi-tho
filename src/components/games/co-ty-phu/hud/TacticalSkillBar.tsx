@@ -20,7 +20,15 @@ export function TacticalSkillBar() {
   const useDoubleStep = useGameStore((s) => s.useDoubleStep);
 
   const activePlayer = players[activePlayerIndex];
-  const isHumanTurn = activePlayer && !activePlayer.isBot && (gamePhase === 'WAITING' || gamePhase === 'AWAIT_ROLL');
+  const phaseStr = gamePhase as string;
+  const isInteractiveBlock =
+    phaseStr === 'AWAIT_DECISION' ||
+    phaseStr === 'CARD_DRAWN' ||
+    phaseStr === 'AWAIT_TAKEOVER' ||
+    phaseStr === 'DEBT_RELIEF' ||
+    phaseStr === 'ACTION_REQUIRED' ||
+    phaseStr === 'ACTION';
+  const isHumanTurn = activePlayer && !activePlayer.isBot && !isInteractiveBlock && (phaseStr === 'WAITING' || phaseStr === 'AWAIT_ROLL');
 
   const [activeDeckCard, setActiveDeckCard] = useState<string | null>(null);
 
@@ -67,7 +75,12 @@ export function TacticalSkillBar() {
         {/* Golden Shield Card */}
         <button
           onClick={() => useRentShield()}
-          className={`flex flex-col items-center justify-center w-12 h-14 sm:w-14 sm:h-16 rounded-xl border-2 border-amber-400 bg-gradient-to-b from-amber-500 via-amber-600 to-yellow-900 text-slate-950 shadow-lg transition-all hover:scale-105 active:scale-95 cursor-pointer ${
+          disabled={!isHumanTurn}
+          className={`flex flex-col items-center justify-center w-12 h-14 sm:w-14 sm:h-16 rounded-xl border-2 border-amber-400 bg-gradient-to-b from-amber-500 via-amber-600 to-yellow-900 text-slate-950 shadow-lg transition-all ${
+            !isHumanTurn
+              ? 'opacity-40 grayscale pointer-events-none cursor-not-allowed shadow-none'
+              : 'hover:scale-105 active:scale-95 cursor-pointer'
+          } ${
             hasShieldActive ? 'ring-4 ring-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.8)]' : ''
           }`}
           title="Khiên bảo vệ miễn trả tiền thuê"
@@ -80,7 +93,11 @@ export function TacticalSkillBar() {
         <button
           onClick={() => useEvenOddCard('EVEN')}
           disabled={!isHumanTurn}
-          className={`relative flex flex-col items-center justify-between w-13 h-15 sm:w-15 sm:h-17 rounded-xl border-2 border-blue-400/90 bg-gradient-to-b from-blue-600 via-indigo-900 to-slate-950 p-1.5 shadow-2xl transition-all hover:-translate-y-1.5 hover:scale-105 active:scale-95 cursor-pointer ${
+          className={`relative flex flex-col items-center justify-between w-13 h-15 sm:w-15 sm:h-17 rounded-xl border-2 border-blue-400/90 bg-gradient-to-b from-blue-600 via-indigo-900 to-slate-950 p-1.5 shadow-2xl transition-all ${
+            !isHumanTurn
+              ? 'opacity-40 grayscale pointer-events-none cursor-not-allowed shadow-none'
+              : 'hover:-translate-y-1.5 hover:scale-105 active:scale-95 cursor-pointer'
+          } ${
             activeModifier === 'EVEN' ? 'ring-4 ring-yellow-300 scale-105 shadow-[0_0_20px_rgba(59,130,246,0.8)]' : ''
           }`}
           title="Thẻ Nhảy Cự Ly Ngắn (2~4 Bước)"
@@ -100,7 +117,11 @@ export function TacticalSkillBar() {
         <button
           onClick={() => useDoubleStep()}
           disabled={!isHumanTurn}
-          className="relative flex flex-col items-center justify-between w-13 h-15 sm:w-15 sm:h-17 rounded-xl border-2 border-purple-400/90 bg-gradient-to-b from-purple-700 via-indigo-950 to-slate-950 p-1.5 shadow-2xl transition-all hover:-translate-y-1.5 hover:scale-105 active:scale-95 cursor-pointer"
+          className={`relative flex flex-col items-center justify-between w-13 h-15 sm:w-15 sm:h-17 rounded-xl border-2 border-purple-400/90 bg-gradient-to-b from-purple-700 via-indigo-950 to-slate-950 p-1.5 shadow-2xl transition-all ${
+            !isHumanTurn
+              ? 'opacity-40 grayscale pointer-events-none cursor-not-allowed shadow-none'
+              : 'hover:-translate-y-1.5 hover:scale-105 active:scale-95 cursor-pointer'
+          }`}
           title="Thẻ Nhảy Cự Ly Xa (10~12 Bước)"
         >
           <div className="flex items-center gap-0.5 text-purple-300">
@@ -118,7 +139,11 @@ export function TacticalSkillBar() {
         <button
           onClick={() => useEvenOddCard('ODD')}
           disabled={!isHumanTurn}
-          className="relative flex flex-col items-center justify-between w-13 h-15 sm:w-15 sm:h-17 rounded-xl border-2 border-amber-400 bg-gradient-to-b from-blue-600 via-indigo-900 to-slate-950 p-1.5 shadow-2xl ring-2 ring-yellow-400/80 shadow-[0_0_20px_rgba(250,204,21,0.5)] transition-all hover:-translate-y-1.5 hover:scale-105 active:scale-95 cursor-pointer"
+          className={`relative flex flex-col items-center justify-between w-13 h-15 sm:w-15 sm:h-17 rounded-xl border-2 border-amber-400 bg-gradient-to-b from-blue-600 via-indigo-900 to-slate-950 p-1.5 shadow-2xl ring-2 ring-yellow-400/80 shadow-[0_0_20px_rgba(250,204,21,0.5)] transition-all ${
+            !isHumanTurn
+              ? 'opacity-40 grayscale pointer-events-none cursor-not-allowed shadow-none'
+              : 'hover:-translate-y-1.5 hover:scale-105 active:scale-95 cursor-pointer'
+          }`}
           title="Thẻ Đổ Đôi (DOUBLE 6)"
         >
           <div className="flex items-center gap-0.5 text-amber-300">

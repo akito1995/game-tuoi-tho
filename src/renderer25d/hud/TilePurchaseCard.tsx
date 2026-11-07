@@ -2,8 +2,8 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { Tile, COLOR_GROUP_HEX, COLOR_GROUP_VIETNAMESE } from '../../game/types';
-import { Building, Coins, ShieldCheck, X, Train, Zap } from 'lucide-react';
+import { Tile, COLOR_GROUP_HEX, COLOR_GROUP_VIETNAMESE, BUILDING_COSTS, RENT_RATES } from '../../game/types';
+import { Building, Coins, ShieldCheck, X, Train, Zap, Flame } from 'lucide-react';
 
 interface TilePurchaseCardProps {
   tile: Tile;
@@ -11,6 +11,9 @@ interface TilePurchaseCardProps {
   onBuy: () => void;
   onSkip: () => void;
   isUpgrade?: boolean;
+  isTakeover?: boolean;
+  sellerName?: string;
+  roundCount?: number;
 }
 
 export const TilePurchaseCard: React.FC<TilePurchaseCardProps> = ({
@@ -19,23 +22,46 @@ export const TilePurchaseCard: React.FC<TilePurchaseCardProps> = ({
   onBuy,
   onSkip,
   isUpgrade = false,
+  isTakeover = false,
+  sellerName,
+  roundCount = 1,
 }) => {
   const colorHex = tile.colorGroup ? COLOR_GROUP_HEX[tile.colorGroup] || '#A0673F' : '#A0673F';
   const colorName = tile.colorGroup ? COLOR_GROUP_VIETNAMESE[tile.colorGroup] || 'Di sản văn hoá' : 'Đất công';
-  const price = isUpgrade ? tile.housePrice || 50000 : tile.price || 100000;
-  const canAfford = playerMoney >= price;
 
+  const costs = tile.colorGroup ? BUILDING_COSTS[tile.colorGroup] : { houseCost: 50000, landmarkCost: 100000 };
+  const houseCost = costs?.houseCost || 50000;
+  const landmarkCost = costs?.landmarkCost || 100000;
+
+  // Giá tính toán
+  let displayPrice = tile.price || 100000;
+  let actionTitle = 'MUA NGAY';
+  let bannerTitle = colorName;
+
+  if (isTakeover) {
+    const totalInv = tile.investmentCost || (tile.price || 100000);
+    displayPrice = Math.round(1.5 * totalInv);
+    actionTitle = 'MUA LẠI (1.5×)';
+    bannerTitle = `CƯỚP ĐẤT TỪ ${sellerName || 'ĐỐI THỦ'}`;
+  } else if (isUpgrade) {
+    displayPrice = (tile.houseCount || 0) >= 4 ? landmarkCost : houseCost;
+    actionTitle = (tile.houseCount || 0) >= 4 ? 'KHÁNH THÀNH LANDMARK' : 'NÂNG CẤP NHÀ';
+    bannerTitle = 'NÂNG CẤP CÔNG TRÌNH';
+  } else {
+    // Mua ô mới: Vòng 1 chỉ mua đất; Từ vòng 2 mua kèm 1 nhà nếu đủ tiền
+    if (roundCount >= 2 && tile.type === 'PROPERTY') {
+      displayPrice = (tile.price || 100000) + houseCost;
+      actionTitle = 'MUA ĐẤT + 1 NHÀ';
+    } else {
+      displayPrice = tile.price || 100000;
+      actionTitle = 'MUA ĐẤT TRỐNG';
+    }
+  }
+
+  const canAfford = playerMoney >= displayPrice;
   const isUtility = tile.type === 'UTILITY';
   const isTransport = tile.type === 'TRANSPORT';
-
-  const rentList = tile.rentMultiplier || [
-    tile.baseRent || 10000,
-    (tile.baseRent || 10000) * 5,
-    (tile.baseRent || 10000) * 15,
-    (tile.baseRent || 10000) * 45,
-    (tile.baseRent || 10000) * 80,
-    (tile.baseRent || 10000) * 120,
-  ];
+  const P = tile.price || 100000;
 
   return (
     <div className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 w-[94vw] max-w-lg select-none pointer-events-auto animate-in fade-in slide-in-from-bottom-4 duration-200">
@@ -43,7 +69,7 @@ export const TilePurchaseCard: React.FC<TilePurchaseCardProps> = ({
         {/* Banner màu nhóm di sản trên cùng */}
         <div
           className="flex items-center justify-between px-4 py-2 border-b-2 border-amber-400/40"
-          style={{ backgroundColor: colorHex }}
+          style={{ backgroundColor: isTakeover ? '#DC2626' : colorHex }}
         >
           <div className="flex items-center gap-2">
             <span className="rounded bg-slate-950/40 px-2 py-0.5 text-xs font-mono font-bold text-white">
@@ -53,8 +79,9 @@ export const TilePurchaseCard: React.FC<TilePurchaseCardProps> = ({
               {tile.name}
             </h3>
           </div>
-          <span className="text-[11px] font-bold text-white/90 bg-slate-950/40 px-2.5 py-0.5 rounded-full">
-            {isUpgrade ? 'NÂNG CẤP CÔNG TRÌNH' : colorName}
+          <span className="text-[11px] font-bold text-white/90 bg-slate-950/40 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+            {isTakeover && <Flame className="h-3 w-3 text-amber-300 animate-pulse" />}
+            <span>{bannerTitle}</span>
           </span>
         </div>
 
@@ -87,10 +114,10 @@ export const TilePurchaseCard: React.FC<TilePurchaseCardProps> = ({
             {/* Giá mua */}
             <div className="flex items-center justify-between rounded-xl bg-slate-900 px-3 py-1.5 border border-amber-500/40">
               <span className="text-xs font-bold text-slate-300">
-                {isUpgrade ? 'Phí nâng cấp:' : 'Giá mua đất:'}
+                {isTakeover ? 'Giá mua lại (1.5×):' : isUpgrade ? 'Phí nâng cấp:' : 'Chi phí:'}
               </span>
               <span className="font-baloo text-base font-extrabold text-amber-400">
-                {Math.round((price || 0) / 1000).toLocaleString('vi-VN')}K
+                {Math.round(displayPrice / 1000).toLocaleString('vi-VN')}K
                 <span className="text-xs font-sans text-amber-300 ml-0.5">₫</span>
               </span>
             </div>
@@ -99,64 +126,61 @@ export const TilePurchaseCard: React.FC<TilePurchaseCardProps> = ({
             <div className="mt-2 space-y-1 rounded-xl bg-slate-900/60 p-2 border border-slate-800 text-[11px]">
               {isUtility ? (
                 <>
-                  <div className="flex items-center justify-between text-slate-400">
-                    <span>• Sở hữu 1 Nhà máy:</span>
-                    <span className="font-mono font-bold text-slate-200">
-                      {Math.round((rentList[0] || 20000) / 1000).toLocaleString('vi-VN')}K₫
+                  <div className="flex items-center justify-between text-slate-300">
+                    <span className="flex items-center gap-1 font-medium">
+                      <Zap className="h-3 w-3 text-amber-400" /> Sở hữu 1 trạm:
                     </span>
+                    <span className="font-mono font-bold text-emerald-400">Tổng xúc xắc × 10.000₫</span>
                   </div>
-                  <div className="flex items-center justify-between border-t border-slate-800 pt-1 font-bold text-amber-300">
-                    <span>⚡ Sở hữu trọn bộ 2 Nhà máy:</span>
-                    <span className="font-mono text-amber-400 font-extrabold">
-                      {Math.round((rentList[1] || 50000) / 1000).toLocaleString('vi-VN')}K₫
+                  <div className="flex items-center justify-between font-bold text-amber-300 border-t border-slate-800 pt-1">
+                    <span className="flex items-center gap-1">
+                      <Zap className="h-3 w-3 text-amber-400" /> Trọn bộ 2 trạm:
                     </span>
+                    <span className="font-mono font-extrabold text-amber-400">Tổng xúc xắc × 25.000₫</span>
+                  </div>
+                  <div className="text-[10px] text-stone-300 pt-1 border-t border-slate-800 leading-tight">
+                    💡 <em>Ví dụ:</em> Đổ 7 điểm → Tiền thuê 70K₫ (hoặc 175K₫ nếu đủ cả 2 trạm Thủy điện & Nhiệt điện).
                   </div>
                 </>
               ) : isTransport ? (
                 <>
                   <div className="flex items-center justify-between text-slate-400">
-                    <span>• 1 Bến / Ga:</span>
-                    <span className="font-mono text-slate-200">
-                      {Math.round((rentList[0] || 25000) / 1000).toLocaleString('vi-VN')}K₫
-                    </span>
+                    <span>• 1 ga / 2 ga:</span>
+                    <span className="font-mono text-emerald-400">25K ~ 50K₫</span>
                   </div>
                   <div className="flex items-center justify-between text-slate-400">
-                    <span>• 2 Bến ~ 3 Bến:</span>
-                    <span className="font-mono text-emerald-400">
-                      {Math.round((rentList[1] || 50000) / 1000).toLocaleString('vi-VN')}K ~ {Math.round((rentList[2] || 100000) / 1000).toLocaleString('vi-VN')}K₫
-                    </span>
+                    <span>• 3 ga / 4 ga:</span>
+                    <span className="font-mono text-emerald-300">100K ~ 200K₫</span>
                   </div>
-                  <div className="flex items-center justify-between border-t border-slate-800 pt-1 font-bold text-amber-300">
-                    <span>🚂 Trọn bộ 4 Bến Giao Thông:</span>
-                    <span className="font-mono text-amber-400 font-extrabold">
-                      {Math.round((rentList[3] || 200000) / 1000).toLocaleString('vi-VN')}K₫
-                    </span>
+                  <div className="text-[10px] text-amber-400/90 pt-1 border-t border-slate-800">
+                    ✈️ Dừng ở ga của mình: trả 50K bay tới ga khác
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="flex items-center justify-between text-slate-400">
-                    <span>• Đất trống:</span>
+                  <div className="flex items-center justify-between text-slate-300">
+                    <span>• Đất trống (10% P):</span>
                     <span className="font-mono font-bold text-slate-200">
-                      {Math.round((rentList[0] || 10000) / 1000).toLocaleString('vi-VN')}K₫
+                      {Math.round((P * RENT_RATES.EMPTY) / 1000).toLocaleString('vi-VN')}K₫
+                      <span className="text-[9px] text-amber-400 ml-1">(đủ màu {Math.round((P * RENT_RATES.EMPTY_MONOPOLY) / 1000)}K)</span>
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-slate-400">
-                    <span>• 1 Nhà ~ 2 Nhà:</span>
+                    <span>• 1 Nhà ~ 2 Nhà (50% ~ 130%):</span>
                     <span className="font-mono text-emerald-400">
-                      {Math.round((rentList[1] || 50000) / 1000).toLocaleString('vi-VN')}K ~ {Math.round((rentList[2] || 150000) / 1000).toLocaleString('vi-VN')}K₫
+                      {Math.round((P * RENT_RATES.HOUSE_1) / 1000).toLocaleString('vi-VN')}K ~ {Math.round((P * RENT_RATES.HOUSE_2) / 1000).toLocaleString('vi-VN')}K₫
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-slate-400">
-                    <span>• 3 Nhà ~ 4 Nhà:</span>
+                    <span>• 3 Nhà ~ 4 Nhà (250% ~ 350%):</span>
                     <span className="font-mono text-emerald-300">
-                      {Math.round((rentList[3] || 450000) / 1000).toLocaleString('vi-VN')}K ~ {Math.round((rentList[4] || 800000) / 1000).toLocaleString('vi-VN')}K₫
+                      {Math.round((P * RENT_RATES.HOUSE_3) / 1000).toLocaleString('vi-VN')}K ~ {Math.round((P * RENT_RATES.HOUSE_4) / 1000).toLocaleString('vi-VN')}K₫
                     </span>
                   </div>
                   <div className="flex items-center justify-between border-t border-slate-800 pt-1 font-bold text-amber-300">
-                    <span>👑 Landmark tối đa:</span>
+                    <span>👑 Landmark (500% P):</span>
                     <span className="font-mono text-amber-400 font-extrabold">
-                      {Math.round((rentList[5] || 1200000) / 1000).toLocaleString('vi-VN')}K₫
+                      {Math.round((P * RENT_RATES.LANDMARK) / 1000).toLocaleString('vi-VN')}K₫
                     </span>
                   </div>
                 </>
@@ -165,7 +189,7 @@ export const TilePurchaseCard: React.FC<TilePurchaseCardProps> = ({
           </div>
         </div>
 
-        {/* Hàng 2 Nút hành động: Mua Ngay & Bỏ Qua (Tối thiểu 44px) */}
+        {/* Hàng 2 Nút hành động (Tối thiểu 44px) */}
         <div className="flex items-center gap-2 p-3 bg-slate-900/80 border-t border-slate-800">
           <button
             onClick={onSkip}
@@ -180,12 +204,14 @@ export const TilePurchaseCard: React.FC<TilePurchaseCardProps> = ({
             disabled={!canAfford}
             className={`flex-1 min-h-[44px] rounded-xl font-baloo text-sm font-black transition active:scale-95 cursor-pointer flex items-center justify-center gap-2 shadow-lg ${
               canAfford
-                ? 'bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 hover:brightness-110 text-slate-950 border-2 border-amber-300 shadow-amber-500/30'
+                ? isTakeover
+                  ? 'bg-gradient-to-r from-red-500 via-rose-600 to-amber-500 hover:brightness-110 text-white border-2 border-red-300 shadow-red-500/30'
+                  : 'bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 hover:brightness-110 text-slate-950 border-2 border-amber-300 shadow-amber-500/30'
                 : 'bg-slate-800 border border-slate-700 text-slate-500 cursor-not-allowed opacity-60'
             }`}
           >
             <Coins className="h-4 w-4" />
-            <span>{isUpgrade ? 'NÂNG CẤP NGAY' : 'MUA NGAY'}</span>
+            <span>{actionTitle}</span>
             {!canAfford && <span className="text-[10px] font-sans font-normal">(Không đủ tiền)</span>}
           </button>
         </div>

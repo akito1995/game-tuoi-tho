@@ -3,18 +3,30 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import { Player, ChanceCard } from '../../game/types';
-import { Shield, Sparkles, CreditCard } from 'lucide-react';
+import { WealthTitleTier, getWealthTitle } from '../../game/gameConfig';
+import { Shield, Sparkles, CreditCard, Building2 } from 'lucide-react';
 
 interface TopLeftPlayerCardProps {
   player: Player;
   heldCards?: ChanceCard[];
+  propertyCount?: number;
+  houseCount?: number;
+  netWorth?: number;
+  wealthTitle?: WealthTitleTier;
+  onOpenProperties?: () => void;
 }
 
 export const TopLeftPlayerCard: React.FC<TopLeftPlayerCardProps> = ({
   player,
   heldCards = [],
+  propertyCount = 0,
+  houseCount = 0,
+  netWorth,
+  wealthTitle,
+  onOpenProperties,
 }) => {
   // Rolling number counter cho số tiền
+  const currentTitle = wealthTitle || getWealthTitle(netWorth ?? player.money);
   const [displayMoney, setDisplayMoney] = useState(player.money);
   const prevMoneyRef = useRef(player.money);
   const animRef = useRef<number | null>(null);
@@ -90,7 +102,7 @@ export const TopLeftPlayerCard: React.FC<TopLeftPlayerCardProps> = ({
 
   return (
     <div className="fixed top-3 left-3 z-30 pointer-events-auto select-none">
-      <div className="flex flex-col gap-1.5 rounded-2xl bg-slate-950/95 border-2 border-amber-500/40 p-2.5 shadow-2xl min-w-[210px] max-w-[260px]">
+      <div className="flex flex-col gap-1.5 rounded-2xl bg-slate-950/95 border-2 border-amber-500/40 p-2.5 shadow-2xl min-w-[210px] max-w-[270px]">
         {/* Hàng trên: Avatar tròn + Thông tin & Tiền */}
         <div className="flex items-center gap-2.5">
           {/* Avatar có vòng nhận diện & huy hiệu VIP/Level */}
@@ -115,14 +127,30 @@ export const TopLeftPlayerCard: React.FC<TopLeftPlayerCardProps> = ({
             </div>
           </div>
 
-          {/* Tên & Số tiền chạy Baloo 2 */}
+          {/* Tên & Danh hiệu & Số tiền */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1">
-              <span className="text-xs font-bold text-white truncate max-w-[120px]">
+            <div className="flex items-center gap-1 flex-wrap">
+              <span className="text-xs font-bold text-white truncate max-w-[85px]">
                 {player.name}
               </span>
               <span className="text-[10px] px-1 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
                 TÔI
+              </span>
+              {player.inJail && (
+                <span className="text-[9px] px-1.5 py-0.2 rounded bg-rose-500/25 text-rose-300 font-bold border border-rose-500/40 whitespace-nowrap">
+                  🔒 {player.jailTurns} lượt
+                </span>
+              )}
+              <span
+                className="text-[9px] px-1 py-0.2 rounded font-bold border truncate"
+                style={{
+                  color: currentTitle.color,
+                  borderColor: `${currentTitle.color}55`,
+                  backgroundColor: `${currentTitle.color}15`,
+                }}
+                title={`Danh hiệu tài sản: ${currentTitle.title}`}
+              >
+                {currentTitle.badge} {currentTitle.title}
               </span>
             </div>
 
@@ -147,8 +175,25 @@ export const TopLeftPlayerCard: React.FC<TopLeftPlayerCardProps> = ({
           </div>
         </div>
 
-        {/* Hàng dưới: 4 Ô thẻ đang giữ */}
-        <div className="pt-1 border-t border-slate-800/80">
+        {/* Nút xem danh sách Bất động sản với bộ đếm đất + nhà */}
+        {onOpenProperties && (
+          <button
+            onClick={onOpenProperties}
+            className="flex items-center justify-between gap-2 px-2.5 py-1 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/40 text-slate-300 hover:text-amber-300 transition text-[11px] font-bold cursor-pointer"
+            title="Xem danh sách bất động sản đang sở hữu"
+          >
+            <div className="flex items-center gap-1.5 shrink-0">
+              <Building2 className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+              <span>BĐS</span>
+            </div>
+            <span className="font-mono text-amber-400 font-bold shrink-0">
+              {propertyCount || 0} đất · {houseCount || 0} nhà
+            </span>
+          </button>
+        )}
+
+        {/* Hàng dưới: 4 Ô thẻ đang giữ (ẩn trên mobile hẹp để không che bảng điểm) */}
+        <div className="pt-1 border-t border-slate-800/80 hidden sm:block">
           <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 mb-1 px-0.5">
             <span>THẺ NẮM GIỮ</span>
             <span className="text-amber-400 font-mono">

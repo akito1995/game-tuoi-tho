@@ -7,7 +7,15 @@ export class CameraController {
   public baseCoverScale: number = 1.0;
   public isLocked: boolean = false;
   public imageSourceWidth: number = 2668; // Kích thước ảnh nền đang dùng
-  private isDragging = false;
+
+  // Lưu góc nhìn & mức phóng to mà người dùng đã chọn
+  public userZoom: number = 1.0;
+  public userX: number = 0;
+  public userY: number = 0;
+  public isAutoFollowing: boolean = false;
+  public cameraMode: 'OVERVIEW' | 'FOLLOW' = 'OVERVIEW'; // 'OVERVIEW': Toàn cảnh (mặc định); 'FOLLOW': Bám sát quân cờ
+
+  public isDragging = false;
   private dragStartX = 0;
   private dragStartY = 0;
   private cameraStartX = 0;
@@ -21,13 +29,6 @@ export class CameraController {
   private initialPinchZoom = 1.0;
   private isPinching = false;
 
-  // Screen shake animation
-  private shakeOffset = { x: 0, y: 0 };
-  private shakeEndTime = 0;
-  private shakeDuration = 0;
-  private shakeIntensity = 0;
-  private shakeAnimFrameId: number | null = null;
-
   constructor(app: Application, stage: Container, onRenderRequest: (controller: CameraController) => void) {
     this.app = app;
     this.stage = stage;
@@ -38,6 +39,10 @@ export class CameraController {
     this.state.zoom = this.baseCoverScale;
     this.state.x = 0;
     this.state.y = 0;
+
+    this.userZoom = this.state.zoom;
+    this.userX = this.state.x;
+    this.userY = this.state.y;
 
     this.setupListeners();
     this.updateTransform();
@@ -50,15 +55,18 @@ export class CameraController {
       const screenH = this.app.screen.height;
       if (!screenW || !screenH) return 1.0;
 
-      // Chế độ Cover: Luôn phủ kín toàn bộ cửa sổ ở mọi thời điểm, không bao giờ lộ khoảng đen
-      const coverScale = Math.max(screenW / BOARD_PLATE_WIDTH, screenH / BOARD_PLATE_HEIGHT);
-      this.baseCoverScale = Number(coverScale.toFixed(4));
+      // Chế độ Cover: Luôn lấp đầy màn hình
+      const scale = Math.max(screenW / BOARD_PLATE_WIDTH, screenH / BOARD_PLATE_HEIGHT);
+      this.baseCoverScale = Number(scale.toFixed(4));
 
-      // Mức phóng to nhỏ nhất = vừa phủ kín (tuyệt đối không cho phép nhỏ hơn coverScale)
-      this.state.minZoom = this.baseCoverScale;
+      // Zoom tối thiểu bằng đúng baseCoverScale để ảnh nền luôn phủ kín màn hình, không bao giờ lộ viền đen
+      this.state.minZoom = Number(this.baseCoverScale.toFixed(4));
 
-      // Phóng to tối đa khi người dùng zoom tay
-      this.state.maxZoom = Number((this.baseCoverScale * 1.8).toFixed(4));
+      // Giới hạn maxZoom: sao cho 1 điểm ảnh ảnh gốc không bị kéo quá 1.5 điểm ảnh màn hình
+      const dpr = typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1;
+      const imgW = this.imageSourceWidth || 2668;
+      const maxZoomPixelLimit = (1.5 * imgW) / (BOARD_PLATE_WIDTH * Math.min(dpr, 1.5));
+      this.state.maxZoom = Number(Math.max(this.baseCoverScale * 1.35, maxZoomPixelLimit).toFixed(4));
 
       return this.baseCoverScale;
     } catch {
@@ -70,31 +78,22 @@ export class CameraController {
     const oldCover = this.baseCoverScale;
     const newCover = this.calculateCoverScale();
     const relativeFactor = oldCover > 0 ? this.state.zoom / oldCover : 1.0;
-    // Luôn duy trì mức zoom >= newCover để ảnh nền phủ kín
     this.state.zoom = Math.max(this.state.minZoom, Math.min(this.state.maxZoom, newCover * relativeFactor));
     this.clampPan();
     this.updateTransform();
   }
 
   /**
-   * Giữ camera không bao giờ để lộ mép ảnh ra ngoài màn hình ở mọi thời điểm
+   * Giữ camera không bao giờ để lộ mép ảnh ra ngoài màn hình
    */
   private clampPan(): void {
     try {
       if (!this.app || !this.app.renderer || !this.app.screen) return;
-      const screenW = this.app.screen.width;
-      const screenH = this.app.screen.height;
-
-      // Luôn đảm bảo zoom không nhỏ hơn mức phủ kín
-      if (this.state.zoom < this.baseCoverScale) {
-        this.state.zoom = this.baseCoverScale;
-      }
-
       const renderedW = BOARD_PLATE_WIDTH * this.state.zoom;
       const renderedH = BOARD_PLATE_HEIGHT * this.state.zoom;
 
-      const maxPanX = Math.max(0, (renderedW - screenW) * 0.5);
-      const maxPanY = Math.max(0, (renderedH - screenH) * 0.5);
+      const maxPanX = Math.max(0, (renderedW - this.app.screen.width) * 0.5);
+      const maxPanY = Math.max(0, (renderedH - this.app.screen.height) * 0.5);
 
       this.state.x = Math.max(-maxPanX, Math.min(maxPanX, this.state.x));
       this.state.y = Math.max(-maxPanY, Math.min(maxPanY, this.state.y));
@@ -133,7 +132,11 @@ export class CameraController {
     });
 
     const stopDrag = () => {
-      this.isDragging = false;
+      if (this.isDragging) {
+        this.isDragging = false;
+        this.userX = this.state.x;
+        this.userY = this.state.y;
+      }
     };
 
     this.app.stage.on('pointerup', stopDrag);
@@ -186,6 +189,9 @@ export class CameraController {
     const stopPinch = (e: TouchEvent) => {
       if (e.touches.length < 2) {
         this.isPinching = false;
+        this.userZoom = this.state.zoom;
+        this.userX = this.state.x;
+        this.userY = this.state.y;
       }
     };
 
@@ -193,192 +199,188 @@ export class CameraController {
     canvas.addEventListener('touchcancel', stopPinch, { passive: true });
   }
 
-  public setZoom(newZoom: number): void {
+  public setZoom(newZoom: number, isUserAction: boolean = true): void {
     this.state.zoom = Math.max(
       this.state.minZoom,
       Math.min(this.state.maxZoom, newZoom)
     );
+    if (isUserAction) {
+      this.userZoom = this.state.zoom;
+    }
     this.clampPan();
     this.updateTransform();
   }
 
-  private animFrameId: number | null = null;
-
   /**
-   * Tính toán khung nhìn toàn cảnh mặc định:
-   * Chừa đủ chỗ dưới thanh lượt TopScoreboard cho ô 20, Phú Yên, Hội An,
-   * đồng thời không để thanh nhật ký & ví ở góc trái dưới chồng lên các ô gần đó.
-   */
-  public getDefaultOverview(): { x: number; y: number; zoom: number } {
-    this.calculateCoverScale();
-    const screenW = this.app?.screen?.width || 1920;
-    const screenH = this.app?.screen?.height || 1080;
-
-    // Phóng to nhẹ 1.08x để có biên an toàn dịch chuyển theo chiều dọc mà không lộ khoảng đen
-    const overviewZoom = Math.min(this.state.maxZoom, Number((this.baseCoverScale * 1.08).toFixed(4)));
-    const renderedH = BOARD_PLATE_HEIGHT * overviewZoom;
-    const maxPanY = Math.max(0, (renderedH - screenH) * 0.5);
-
-    // Dịch camera xuống nhẹ (state.y dương) để hạ ô 20 xuống dưới thanh lượt
-    const targetY = Math.min(maxPanY, Math.max(0, Math.round(screenH * 0.045 + 16)));
-    return { x: 0, y: targetY, zoom: overviewZoom };
-  }
-
-  /**
-   * Đưa camera về khung nhìn toàn cảnh mặc định: phủ kín toàn bộ cửa sổ, không lộ khoảng đen
+   * Đưa camera về khung nhìn mặc định: vừa khít toàn bộ bàn cờ + chiều cao công trình ô góc,
+   * chừa lề trên 90px (thanh tiêu đề), lề dưới 150px (thẻ ô/chân trang) và lề phải 340px (bảng điều khiển).
    */
   public center(): void {
     try {
-      const def = this.getDefaultOverview();
-      this.state.zoom = def.zoom;
-      this.state.x = def.x;
-      this.state.y = def.y;
+      if (!this.app || !this.app.renderer || !this.app.screen) {
+        this.state.x = 0;
+        this.state.y = 0;
+        this.state.zoom = this.baseCoverScale;
+        this.userZoom = this.state.zoom;
+        this.userX = this.state.x;
+        this.userY = this.state.y;
+        this.updateTransform();
+        return;
+      }
+
+      const screenW = this.app.screen.width;
+      const screenH = this.app.screen.height;
+
+      // Kích thước vùng bàn cờ cần hiển thị trọn vẹn (bao gồm chiều cao công trình đỉnh Bắc)
+      const boardW = 1450;
+      const boardH = 930;
+      const boardCenterX = -15;
+      const boardCenterY = -28;
+
+      // Lề giao diện HUD
+      const topMargin = 90;
+      const bottomMargin = 150;
+      const rightMargin = 340;
+      const leftMargin = 40;
+
+      const availW = Math.max(300, screenW - (leftMargin + rightMargin));
+      const availH = Math.max(300, screenH - (topMargin + bottomMargin));
+
+      // Tính mức zoom vừa khít vùng khả dụng
+      const fitZoom = Math.min(availW / boardW, availH / boardH);
+      const clampedZoom = Math.max(this.state.minZoom, Math.min(this.state.maxZoom, fitZoom));
+
+      // Độ lệch tâm của vùng khả dụng so với tâm màn hình
+      const targetScreenCenterX = leftMargin + availW / 2;
+      const targetScreenCenterY = topMargin + availH / 2;
+      const shiftX = targetScreenCenterX - screenW / 2;
+      const shiftY = targetScreenCenterY - screenH / 2;
+
+      this.state.zoom = Number(clampedZoom.toFixed(4));
+      this.state.x = Math.round(shiftX - boardCenterX * this.state.zoom);
+      this.state.y = Math.round(shiftY - boardCenterY * this.state.zoom);
+
+      this.userZoom = this.state.zoom;
+      this.userX = this.state.x;
+      this.userY = this.state.y;
+
       this.clampPan();
       this.updateTransform();
     } catch {
       this.state.x = 0;
       this.state.y = 0;
       this.state.zoom = this.baseCoverScale;
+      this.userZoom = this.state.zoom;
+      this.userX = this.state.x;
+      this.userY = this.state.y;
       this.updateTransform();
     }
+  }
+
+  /**
+   * Chế độ Xem toàn bàn cờ:
+   * Thu phóng vừa khít 100% toàn bộ 40 ô đất và cảnh quan bàn cờ vào giữa màn hình.
+   */
+  public viewFullBoard(): void {
+    try {
+      if (!this.app || !this.app.renderer || !this.app.screen) {
+        this.center();
+        return;
+      }
+      const screenW = this.app.screen.width;
+      const screenH = this.app.screen.height;
+
+      // Kích thước trọn vẹn 40 ô đất trên bàn cờ
+      const fullBoardW = 1520;
+      const fullBoardH = 960;
+      const boardCenterX = -15;
+      const boardCenterY = -28;
+
+      // Chừa lề nhẹ 16px mỗi mép để không chạm viền
+      const availW = Math.max(280, screenW - 32);
+      const availH = Math.max(280, screenH - 32);
+
+      const fitZoom = Math.min(availW / fullBoardW, availH / fullBoardH);
+      const targetZoom = Number(Math.max(0.65, Math.min(this.state.maxZoom, fitZoom)).toFixed(4));
+      this.state.minZoom = Math.min(this.state.minZoom, targetZoom);
+      this.state.zoom = targetZoom;
+
+      // Đưa tâm bàn cờ ra giữa màn hình
+      this.state.x = Math.round(-boardCenterX * this.state.zoom);
+      this.state.y = Math.round(-boardCenterY * this.state.zoom);
+
+      this.userZoom = this.state.zoom;
+      this.userX = this.state.x;
+      this.userY = this.state.y;
+
+      this.clampPan();
+      this.updateTransform();
+    } catch {
+      this.center();
+    }
+  }
+
+  /**
+   * Bám theo nhân vật trong lúc đang nhảy (Hopping):
+   * - Chế độ "OVERVIEW" (Toàn cảnh): Chỉ lia nhẹ 25% và zoom nhẹ ~15%, giữ toàn cảnh bàn cờ, không gây chóng mặt.
+   * - Chế độ "FOLLOW" (Theo quân cờ): Đưa camera tới thẳng vị trí quân cờ.
+   */
+  public followTarget(targetPos: { x: number; y: number }, smooth: number = 0.10): void {
+    this.isAutoFollowing = true;
+
+    if (this.cameraMode === 'OVERVIEW') {
+      // Zoom nhẹ tối đa 15% so với mức người dùng chọn
+      const targetZoom = Math.min(this.userZoom * 1.15, this.state.maxZoom);
+      this.state.zoom += (targetZoom - this.state.zoom) * smooth;
+
+      // Lia nhẹ khoảng 25% về phía nhân vật để giữ toàn cảnh
+      const fullTargetX = -targetPos.x * this.state.zoom;
+      const fullTargetY = -targetPos.y * this.state.zoom - 15;
+      const softTargetX = this.userX + (fullTargetX - this.userX) * 0.28;
+      const softTargetY = this.userY + (fullTargetY - this.userY) * 0.28;
+
+      this.state.x += (softTargetX - this.state.x) * smooth;
+      this.state.y += (softTargetY - this.state.y) * smooth;
+    } else {
+      // Bám sát quân cờ
+      const targetCamX = -targetPos.x * this.state.zoom;
+      const targetCamY = -targetPos.y * this.state.zoom - 20;
+
+      this.state.x += (targetCamX - this.state.x) * smooth;
+      this.state.y += (targetCamY - this.state.y) * smooth;
+    }
+
+    this.clampPan();
+    this.updateTransform();
+  }
+
+  /**
+   * Khi nhân vật dừng di chuyển: mượt mà trả camera về đúng mức zoom và vị trí người dùng đã chọn
+   */
+  public returnToUserView(smooth: number = 0.08): void {
+    if (!this.isAutoFollowing) return;
+
+    this.state.zoom += (this.userZoom - this.state.zoom) * smooth;
+    this.state.x += (this.userX - this.state.x) * smooth;
+    this.state.y += (this.userY - this.state.y) * smooth;
+
+    const dist = Math.hypot(this.userX - this.state.x, this.userY - this.state.y);
+    const zoomDiff = Math.abs(this.userZoom - this.state.zoom);
+
+    if (dist < 1.0 && zoomDiff < 0.005) {
+      this.state.zoom = this.userZoom;
+      this.state.x = this.userX;
+      this.state.y = this.userY;
+      this.isAutoFollowing = false;
+    }
+
+    this.clampPan();
+    this.updateTransform();
   }
 
   public reset(): void {
     this.center();
   }
-
-  /**
-   * Hiệu ứng chuyển động camera mượt mà (Ease-in-out cubic)
-   * Luôn giới hạn trong mép ảnh nền ở từng khung hình
-   */
-  public animateTo(
-    targetX: number,
-    targetY: number,
-    targetZoom: number,
-    durationMs = 400,
-    onComplete?: () => void
-  ): void {
-    if (this.animFrameId) {
-      cancelAnimationFrame(this.animFrameId);
-      this.animFrameId = null;
-    }
-
-    const screenW = this.app?.screen?.width || 1920;
-    const screenH = this.app?.screen?.height || 1080;
-
-    // Khống chế targetZoom tuyệt đối không nhỏ hơn coverScale
-    const safeTargetZoom = Math.max(this.baseCoverScale, Math.min(this.state.maxZoom, targetZoom));
-    const renderedW = BOARD_PLATE_WIDTH * safeTargetZoom;
-    const renderedH = BOARD_PLATE_HEIGHT * safeTargetZoom;
-    const maxPanX = Math.max(0, (renderedW - screenW) * 0.5);
-    const maxPanY = Math.max(0, (renderedH - screenH) * 0.5);
-
-    // Khống chế targetX, targetY tuyệt đối không vượt ra ngoài mép ảnh nền
-    const safeTargetX = Math.max(-maxPanX, Math.min(maxPanX, targetX));
-    const safeTargetY = Math.max(-maxPanY, Math.min(maxPanY, targetY));
-
-    const startX = this.state.x;
-    const startY = this.state.y;
-    const startZoom = this.state.zoom;
-    const startTime = performance.now();
-
-    const tick = (now: number) => {
-      const elapsed = now - startTime;
-      const progress = Math.min(1, elapsed / durationMs);
-      // Ease in-out cubic
-      const ease =
-        progress < 0.5
-          ? 4 * progress * progress * progress
-          : 1 - Math.pow(-2 * progress + 2, 3) / 2;
-
-      this.state.x = startX + (safeTargetX - startX) * ease;
-      this.state.y = startY + (safeTargetY - startY) * ease;
-      this.state.zoom = startZoom + (safeTargetZoom - startZoom) * ease;
-
-      // BẮT BUỘC: Giới hạn trên từng khung hình, nếu chạm mép ảnh nền thì dừng ở mép
-      this.clampPan();
-      this.updateTransform();
-
-      if (progress < 1) {
-        this.animFrameId = requestAnimationFrame(tick);
-      } else {
-        this.animFrameId = null;
-        onComplete?.();
-      }
-    };
-
-    this.animFrameId = requestAnimationFrame(tick);
-  }
-
-  /**
-   * Bám theo nhân vật: đưa nhân vật về vùng giữa màn hình (trong giới hạn mép ảnh),
-   * chuyển động mượt 0.4 giây, phóng to tối đa 1.2x; xong hành động thì về toàn cảnh.
-   */
-  public focusOnPoint(boardX: number, boardY: number, zoomMultiplier = 1.2, durationMs = 400): void {
-    this.calculateCoverScale();
-    const targetZoom = Math.min(this.state.maxZoom, this.baseCoverScale * Math.min(zoomMultiplier, 1.2));
-    const targetX = -boardX * targetZoom;
-    const targetY = -boardY * targetZoom;
-    this.animateTo(targetX, targetY, targetZoom, durationMs);
-  }
-
-  /**
-   * Khi mở Thẻ mua/xây: Camera dịch để ô nằm ở nửa còn lại (không bị thẻ che),
-   * luôn giới hạn trong mép ảnh nền.
-   */
-  public offsetForModal(boardX: number, boardY: number, durationMs = 400, isTileOnLeft = true): void {
-    this.calculateCoverScale();
-    const screenW = this.app?.screen?.width || 1920;
-    const targetZoom = Math.min(this.state.maxZoom, this.baseCoverScale * 1.15);
-
-    // Nếu ô nằm nửa trái (isTileOnLeft), thẻ nằm bên phải -> camera dịch sang phải để ô hiện rõ ở nửa trái màn hình
-    const shiftX = isTileOnLeft ? screenW * 0.22 : -screenW * 0.22;
-    const targetX = -boardX * targetZoom + shiftX;
-    const targetY = -boardY * targetZoom;
-
-    this.animateTo(targetX, targetY, targetZoom, durationMs);
-  }
-
-  /**
-   * Trở về toàn cảnh khi kết thúc hành động: phủ kín vừa vặn, không lộ khoảng đen
-   */
-  public returnToOverview(durationMs = 400): void {
-    const def = this.getDefaultOverview();
-    this.animateTo(def.x, def.y, def.zoom, durationMs);
-  }
-
-  /**
-   * Rung lắc màn hình nhẹ khi nâng cấp Landmark hoặc sự kiện nổ lớn
-   */
-  public shake(durationMs = 400, intensity = 4): void {
-    if (this.shakeAnimFrameId !== null) {
-      cancelAnimationFrame(this.shakeAnimFrameId);
-      this.shakeAnimFrameId = null;
-    }
-    this.shakeDuration = durationMs;
-    this.shakeIntensity = intensity;
-    this.shakeEndTime = performance.now() + durationMs;
-    this.stepShake();
-  }
-
-  private stepShake = (): void => {
-    const now = performance.now();
-    if (now >= this.shakeEndTime) {
-      this.shakeOffset.x = 0;
-      this.shakeOffset.y = 0;
-      this.shakeAnimFrameId = null;
-      this.updateTransform();
-      return;
-    }
-
-    const remaining = (this.shakeEndTime - now) / Math.max(1, this.shakeDuration); // 1.0 -> 0.0
-    const curInt = this.shakeIntensity * remaining;
-    this.shakeOffset.x = (Math.random() * 2 - 1) * curInt;
-    this.shakeOffset.y = (Math.random() * 2 - 1) * curInt;
-    this.updateTransform();
-
-    this.shakeAnimFrameId = requestAnimationFrame(this.stepShake);
-  };
 
   public updateTransform(): void {
     try {
@@ -386,7 +388,7 @@ export class CameraController {
       const cx = this.app.screen.width / 2;
       const cy = this.app.screen.height / 2;
 
-      this.stage.position.set(cx + this.state.x + this.shakeOffset.x, cy + this.state.y + this.shakeOffset.y);
+      this.stage.position.set(cx + this.state.x, cy + this.state.y);
       this.stage.scale.set(this.state.zoom);
 
       if (this.onRenderRequest) {

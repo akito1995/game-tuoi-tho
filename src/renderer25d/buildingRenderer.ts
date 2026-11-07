@@ -183,9 +183,31 @@ export function createBuildingRenderer(): BuildingRenderer {
     );
     const scaleMultiplier = Math.max(0.2, (cfg.scalePercent || 100) / 100);
 
-    // 1. Đo "chiều rộng chân" = độ rộng phần không trong suốt ở 15% hàng dưới cùng;
-    // co giãn sao cho chiều rộng chân = 78% chiều rộng ô tại vị trí đó
-    const targetFootW = tileWidth * 0.78 * scaleMultiplier;
+    // 1. Phân biệt rõ cấp nhà bằng mắt: tỷ lệ độ rộng chân & chiều cao tăng dần theo cấp
+    let footRatio = 0.78;
+    let maxHeightRatio = 1.6;
+
+    if (tierType === 'house-1') {
+      footRatio = 0.55; // Nhà cấp 1 nhỏ gọn, 1 tầng
+      maxHeightRatio = 0.90;
+    } else if (tierType === 'house-2') {
+      footRatio = 0.68; // Nhà cấp 2 vừa phải
+      maxHeightRatio = 1.25;
+    } else if (tierType === 'house-3') {
+      footRatio = 0.78; // Nhà cấp 3 cao ráo
+      maxHeightRatio = 1.55;
+    } else if (tierType === 'house-4') {
+      footRatio = 0.88; // Nhà cấp 4 to lớn
+      maxHeightRatio = 1.90;
+    } else if (tierType === 'landmark') {
+      footRatio = 0.92; // Biểu tượng địa danh tráng lệ
+      maxHeightRatio = 2.30;
+    } else if (tierType === 'util') {
+      footRatio = 0.78;
+      maxHeightRatio = 1.80;
+    }
+
+    const targetFootW = tileWidth * footRatio * scaleMultiplier;
     let scale = targetFootW / (metric.footW || metric.contentW || 1);
 
     // Không được tràn qua lan can hồ hoặc mép tường ngoài (rộng tối đa 95% chiều rộng ô):
@@ -193,16 +215,6 @@ export function createBuildingRenderer(): BuildingRenderer {
     if (renderedContentW > tileWidth * 0.95 * scaleMultiplier) {
       scale = (tileWidth * 0.95 * scaleMultiplier) / (metric.contentW || 1);
     }
-
-    // 2. Giới hạn chiều cao theo cấp:
-    // nhà cấp 1 <= 1.0, cấp 2 <= 1.3, cấp 3 <= 1.6, cấp 4 <= 1.9, landmark <= 2.3, giao thông/tiện ích <= 1.8
-    let maxHeightRatio = 1.6;
-    if (tierType === 'house-1') maxHeightRatio = 1.0;
-    else if (tierType === 'house-2') maxHeightRatio = 1.3;
-    else if (tierType === 'house-3') maxHeightRatio = 1.6;
-    else if (tierType === 'house-4') maxHeightRatio = 1.9;
-    else if (tierType === 'landmark') maxHeightRatio = 2.3;
-    else if (tierType === 'util') maxHeightRatio = 1.8;
 
     const maxAllowedH = tileWidth * maxHeightRatio * scaleMultiplier;
     const currentRenderedH = metric.contentH * scale;

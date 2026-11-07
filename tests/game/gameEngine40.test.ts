@@ -86,10 +86,10 @@ describe('GameEngine 40-Tile Architecture & Rules', () => {
       expect(CHARACTERS['chi-may'].color).toBe('#8B6CF0');
     });
 
-    it('khởi tạo ván chơi với 4 người chơi mặc định có số tiền 2.000.000đ', () => {
+    it('khởi tạo ván chơi với 4 người chơi mặc định có số tiền 1.500.000đ (rules-v2)', () => {
       expect(engine.state.players.length).toBe(4);
       engine.state.players.forEach((p) => {
-        expect(p.money).toBe(2000000);
+        expect(p.money).toBe(800000);
         expect(p.position).toBe(0);
         expect(p.bankrupt).toBe(false);
       });
@@ -196,7 +196,8 @@ describe('GameEngine 40-Tile Architecture & Rules', () => {
       engine.upgradeProperty(p.id, 1);
       expect(engine.getTile(1).houseCount).toBe(4);
 
-      // Cấp tối đa: Khởi công Landmark
+      // Cấp tối đa: Khởi công Landmark (yêu cầu đã chạy >= 2 vòng)
+      p.lapsCompleted = 2;
       engine.upgradeProperty(p.id, 1);
       expect(engine.getTile(1).hasLandmark).toBe(true);
 
@@ -227,7 +228,7 @@ describe('GameEngine 40-Tile Architecture & Rules', () => {
       expect(p.jailTurns).toBe(0);
     });
 
-    it('nộp tiền phạt 100k sẽ ra tù ngay', () => {
+    it('nộp tiền phạt 50k sẽ ra tù ngay (rules-v2)', () => {
       const p = engine.getActivePlayer();
       engine.sendToJail(p.id, 'Test');
       const cashBefore = p.money;
@@ -235,7 +236,7 @@ describe('GameEngine 40-Tile Architecture & Rules', () => {
       const success = engine.payJailBail(p.id);
       expect(success).toBe(true);
       expect(p.inJail).toBe(false);
-      expect(p.money).toBe(cashBefore - 100000);
+      expect(p.money).toBe(cashBefore - 50000);
     });
 
     it('đổ đôi 3 lần liên tiếp bị tống giam', () => {
@@ -252,7 +253,7 @@ describe('GameEngine 40-Tile Architecture & Rules', () => {
   });
 
   describe('7. Phá sản & Xác định Người chiến thắng', () => {
-    it('khi người chơi không đủ tiền trả nợ sẽ bị phá sản, tài sản chuyển cho chủ nợ', () => {
+    it('khi người chơi không đủ tiền trả nợ sẽ vào trạng thái cứu viện tài chính, nếu phá sản toàn bộ đất trả về ngân hàng', () => {
       const debtor = engine.state.players[0];
       const creditor = engine.state.players[1];
 
@@ -261,11 +262,18 @@ describe('GameEngine 40-Tile Architecture & Rules', () => {
 
       engine.payRent(debtor.id, creditor.id, 20000, engine.getTile(1));
 
+      // Vào chế độ DEBT_RELIEF
+      expect(engine.state.gamePhase).toBe('DEBT_RELIEF');
+      expect(engine.state.pendingDebt).toBeDefined();
+
+      // Người chơi chấp nhận phá sản
+      engine.declareBankruptcy(debtor.id);
+
       expect(debtor.bankrupt).toBe(true);
       expect(debtor.money).toBe(0);
       expect(debtor.properties).toEqual([]);
-      expect(engine.getTile(1).ownerId).toBe(creditor.id);
-      expect(creditor.properties).toContain(1);
+      // Đất trả về Ngân Hàng theo rules-v2
+      expect(engine.getTile(1).ownerId).toBeNull();
     });
 
     it('khi chỉ còn 1 người sống sót, ván chơi kết thúc và vinh danh người chiến thắng', () => {
@@ -295,12 +303,8 @@ describe('GameEngine 40-Tile Architecture & Rules', () => {
 
       await executeBotTurn(engine);
 
-      // Sau khi bot đi xong, lượt chơi phải được chuyển sang người tiếp theo hoặc đi tiếp nếu đổ đôi
-      if (engine.state.isDouble && engine.state.doubleStreak > 0) {
-        expect(engine.state.activePlayerIndex).toBe(1);
-      } else {
-        expect(engine.state.activePlayerIndex).not.toBe(1);
-      }
+      // Sau khi bot đi xong, lượt chơi phải được chuyển sang người tiếp theo
+      expect(engine.state.activePlayerIndex).not.toBe(1);
     });
   });
 

@@ -1,5 +1,5 @@
-import { Container, Graphics, Sprite, Assets, BlurFilter } from 'pixi.js';
-import { BOARD_PLATE_WIDTH, BOARD_PLATE_HEIGHT, getTileGeometry } from './isoMath';
+import { Container, Graphics, Sprite, Assets } from 'pixi.js';
+import { BOARD_PLATE_WIDTH, BOARD_PLATE_HEIGHT } from './isoMath';
 import { imageToStage } from './tileCalibration';
 
 export type GraphicsQuality = 'LOW' | 'MEDIUM' | 'HIGH';
@@ -8,7 +8,6 @@ export interface AmbientOptions {
   quality?: GraphicsQuality;
   markers?: Array<{ id: string; type: string; points: Array<{ x: number; y: number }> }>;
   onPlayBell?: () => void;
-  showTrain?: boolean;
 }
 
 export interface AmbientEffects {
@@ -17,7 +16,18 @@ export interface AmbientEffects {
   destroy: () => void;
   setQuality: (quality: GraphicsQuality) => void;
   setMarkers: (markers: Array<{ id: string; type: string; points: Array<{ x: number; y: number }> }>) => void;
-  setShowTrain: (show: boolean) => void;
+}
+
+interface Petal {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  phase: number;
+  scale: number;
+  rotation: number;
+  rotSpeed: number;
+  color: number;
 }
 
 /**
@@ -36,26 +46,7 @@ export function createAmbientEffects(options: AmbientOptions = {}): AmbientEffec
 
   let currentQuality: GraphicsQuality = options.quality || 'HIGH';
   let markersList = options.markers || [];
-  let isTrainEnabled = options.showTrain ?? false;
   const onPlayBell = options.onPlayBell;
-
-  // Tính chiều ngang ô đá gần nhất để điều chỉnh tỷ lệ phối cảnh tàu điện chân thực
-  const getNearestTileWidth = (stagePos: { x: number; y: number }): number => {
-    let minDistSq = Infinity;
-    let nearestW = 75;
-    for (let i = 0; i < 40; i++) {
-      const geo = getTileGeometry(i);
-      const dx = geo.center.x - stagePos.x;
-      const dy = geo.center.y - stagePos.y;
-      const dSq = dx * dx + dy * dy;
-      if (dSq < minDistSq) {
-        minDistSq = dSq;
-        const w = Math.hypot(geo.outerEnd.x - geo.outerStart.x, geo.outerEnd.y - geo.outerStart.y);
-        nearestW = w;
-      }
-    }
-    return nearestW;
-  };
 
   // -------------------------------------------------------------
   // IDLE & VISIBILITY TRACKING
@@ -144,47 +135,22 @@ export function createAmbientEffects(options: AmbientOptions = {}): AmbientEffec
   });
 
   // -------------------------------------------------------------
-  // 3. HAI THUYỀN TRÔI DẬP DỀNH TRÊN HỒ + BÓNG PHẢN CHIẾU NƯỚC
-  // Lớp vẽ TRÊN sóng nước và vệt nắng (không bị hiệu ứng nước phủ lên)
+  // 3. HAI THUYỀN TRÔI DẬP DỀNH TRÊN HỒ
   // -------------------------------------------------------------
   const boatsGroup = new Container();
   boatsGroup.label = 'ambient-boats';
   lakeContainer.addChild(boatsGroup);
 
   let boat1Sprite: Sprite | null = null;
-  let boat1Reflection: Sprite | null = null;
-  const boat1Wake = new Graphics();
-  boat1Wake.label = 'ambient-boat1-wake';
-  boatsGroup.addChild(boat1Wake);
-
   let boat2Sprite: Sprite | null = null;
-  let boat2Reflection: Sprite | null = null;
-  const boat2Wake = new Graphics();
-  boat2Wake.label = 'ambient-boat2-wake';
-  boatsGroup.addChild(boat2Wake);
-
-  let boat1TextureWidth = 438;
-  let boat2TextureWidth = 374;
 
   // Thuyền 1 (thuyền nan chèo tay)
   Assets.load('/art/ambient/ambient-thuyen-1.png').then((tex) => {
     if (tex) {
-      boat1TextureWidth = tex.width || 438;
-
-      // Bóng phản chiếu mờ: lật dọc, độ đục 20%, nhòe 3px ngay dưới thuyền
-      boat1Reflection = new Sprite(tex);
-      boat1Reflection.anchor.set(0.5, 0.1);
-      boat1Reflection.alpha = 0.20;
-      boat1Reflection.tint = 0x164e63; // Màu xanh nước hồ sẫm
-      try {
-        boat1Reflection.filters = [new BlurFilter({ strength: 3, quality: 3 })];
-      } catch {}
-      boatsGroup.addChildAt(boat1Reflection, 0);
-
-      // Thuyền thật: vẽ TRÊN sóng nước và phản chiếu
       boat1Sprite = new Sprite(tex);
       boat1Sprite.anchor.set(0.5, 0.5);
-      boat1Sprite.position.set(-5, 105);
+      boat1Sprite.scale.set(0.24);
+      boat1Sprite.position.set(-110, 60);
       boatsGroup.addChild(boat1Sprite);
     }
   }).catch(() => {});
@@ -192,95 +158,44 @@ export function createAmbientEffects(options: AmbientOptions = {}): AmbientEffec
   // Thuyền 2 (thuyền thiên nga)
   Assets.load('/art/ambient/ambient-thuyen-2.png').then((tex) => {
     if (tex) {
-      boat2TextureWidth = tex.width || 374;
-
-      // Bóng phản chiếu mờ: lật dọc, độ đục 20%, nhòe 3px ngay dưới thuyền
-      boat2Reflection = new Sprite(tex);
-      boat2Reflection.anchor.set(0.5, 0.1);
-      boat2Reflection.alpha = 0.20;
-      boat2Reflection.tint = 0x164e63;
-      try {
-        boat2Reflection.filters = [new BlurFilter({ strength: 3, quality: 3 })];
-      } catch {}
-      boatsGroup.addChildAt(boat2Reflection, 1);
-
-      // Thuyền thật
       boat2Sprite = new Sprite(tex);
       boat2Sprite.anchor.set(0.5, 0.5);
-      boat2Sprite.position.set(265, 5);
+      boat2Sprite.scale.set(0.22);
+      boat2Sprite.position.set(90, -20);
       boatsGroup.addChild(boat2Sprite);
     }
   }).catch(() => {});
 
   // -------------------------------------------------------------
-  // 4. TÀU ĐIỆN CHẠY TRÊN ĐƯỜNG RAY MỖI 25S (ĐA ĐIỂM + PHỐI CẢNH)
+  // 4. TÀU ĐIỆN CHẠY TRÊN ĐƯỜNG RAY MỖI 25S
   // -------------------------------------------------------------
   const trainContainer = new Container();
   trainContainer.label = 'ambient-train';
-  trainContainer.visible = isTrainEnabled && currentQuality !== 'LOW';
   container.addChild(trainContainer);
 
   let trainSprite: Sprite | null = null;
   Assets.load('/art/ambient/ambient-tau-dien.png').then((tex) => {
     if (tex) {
       trainSprite = new Sprite(tex);
-      // Đáy bánh xe ở ~98.2% chiều cao ảnh; neo (0.5, 0.98) giúp chân bánh tàu nằm sát đúng trên đường ray
-      trainSprite.anchor.set(0.5, 0.98);
+      trainSprite.anchor.set(0.5, 0.6);
       trainSprite.scale.set(0.18);
       trainSprite.visible = false;
       trainContainer.addChild(trainSprite);
     }
   }).catch(() => {});
 
-  // Toạ độ đường ray tàu điện (hỗ trợ nhiều điểm đường cong)
-  let trackStagePoints: Array<{ x: number; y: number }> = [
-    imageToStage({ x: -50, y: 415 }),
-    imageToStage({ x: 820, y: 220 }),
-    imageToStage({ x: 1720, y: 22 }),
-  ];
+  // Toạ độ đường ray tàu điện
+  let trackP1 = imageToStage({ x: -50, y: 415 });
+  let trackP2 = imageToStage({ x: 1720, y: 22 });
 
   const updateTrackPoints = () => {
     const tm = markersList.find((m) => m.type === 'train_track');
     if (tm && tm.points.length >= 2) {
-      trackStagePoints = tm.points.map((pt) => imageToStage(pt));
+      trackP1 = imageToStage(tm.points[0]);
+      trackP2 = imageToStage(tm.points[1]);
     }
   };
   updateTrackPoints();
-
-  // Hàm nội suy đường ray đa điểm theo chiều dài tích lũy
-  const evaluateTrackPath = (points: Array<{ x: number; y: number }>, t: number): { x: number; y: number; angle: number } => {
-    if (points.length < 2) return { x: points[0]?.x || 0, y: points[0]?.y || 0, angle: 0 };
-
-    const segLengths: number[] = [];
-    let totalLen = 0;
-    for (let i = 0; i < points.length - 1; i++) {
-      const d = Math.hypot(points[i + 1].x - points[i].x, points[i + 1].y - points[i].y);
-      segLengths.push(d);
-      totalLen += d;
-    }
-    if (totalLen <= 0) return { x: points[0].x, y: points[0].y, angle: 0 };
-
-    const clampedT = Math.max(0, Math.min(1, t));
-    const targetDist = clampedT * totalLen;
-    let acc = 0;
-
-    for (let i = 0; i < segLengths.length; i++) {
-      const segLen = segLengths[i];
-      if (acc + segLen >= targetDist || i === segLengths.length - 1) {
-        const segT = segLen > 0 ? (targetDist - acc) / segLen : 0;
-        const p1 = points[i];
-        const p2 = points[i + 1];
-        const x = p1.x + (p2.x - p1.x) * segT;
-        const y = p1.y + (p2.y - p1.y) * segT;
-        const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
-        return { x, y, angle };
-      }
-      acc += segLen;
-    }
-
-    const last = points[points.length - 1];
-    return { x: last.x, y: last.y, angle: 0 };
-  };
 
   // Chu kỳ chạy tàu điện: 25 giây
   const TRAIN_CYCLE_PERIOD = 25.0;
@@ -289,12 +204,36 @@ export function createAmbientEffects(options: AmbientOptions = {}): AmbientEffec
   let lastBellPlayedCycle = -1;
 
   // -------------------------------------------------------------
-  // 5. DÃY ĐÈN LỒNG PHỐ CỔ (SÁNG CỘNG, DỊU NHẸ, ĐƯỜNG KÍNH <= 12PX)
+  // 5. DÃY ĐÈN LỒNG PHỐ CỔ
   // -------------------------------------------------------------
   const lanternsGraphic = new Graphics();
   lanternsGraphic.label = 'ambient-lanterns';
-  lanternsGraphic.blendMode = 'add';
   container.addChild(lanternsGraphic);
+
+  // -------------------------------------------------------------
+  // 6. CÁNH HOA PHƯỢNG RƠI LÃNG MẠN
+  // -------------------------------------------------------------
+  const petalsGraphic = new Graphics();
+  petalsGraphic.label = 'ambient-petals';
+  container.addChild(petalsGraphic);
+
+  const petalColors = [0xef4444, 0xdc2626, 0xf87171, 0xb91c1c];
+  const petals: Petal[] = [];
+  const PETAL_COUNT = 16;
+
+  for (let i = 0; i < PETAL_COUNT; i++) {
+    petals.push({
+      x: (Math.random() - 0.5) * 1600,
+      y: (Math.random() - 0.5) * 900,
+      vx: 25 + Math.random() * 30, // Trôi chéo sang phải theo gió
+      vy: 35 + Math.random() * 45, // Rơi xuống
+      phase: Math.random() * Math.PI * 2,
+      scale: 0.7 + Math.random() * 0.6,
+      rotation: Math.random() * Math.PI * 2,
+      rotSpeed: (Math.random() - 0.5) * 2.5,
+      color: petalColors[i % petalColors.length],
+    });
+  }
 
   // -------------------------------------------------------------
   // 7. VỆT NẮNG LẤP LÁNH TRÊN MẶT HỒ
@@ -375,120 +314,48 @@ export function createAmbientEffects(options: AmbientOptions = {}): AmbientEffec
       sunGlintsGraphic.visible = false;
     }
 
-    // C. DẬP DỀNH SEN & THUYỀN TRÊN HỒ
+    // C. DẬP DỀNH SEN & THUYỀN
     lotusNodes.forEach((node) => {
       node.graphic.y = node.baseY + Math.sin(elapsed * 1.5 + node.phase) * 2.0;
       node.graphic.x = node.baseX + Math.cos(elapsed * 0.8 + node.phase) * 0.9;
     });
 
-    // 1. Thuyền nan 1: trôi trong lòng hồ phía Nam (tránh đảo và cầu Thê Húc)
-    if (boat1Sprite && boat1Reflection) {
-      const b1Phase = elapsed * 0.08;
-      const b1X = -5 + Math.cos(b1Phase) * 24;
-      const b1Y = 105 + Math.sin(b1Phase) * 14;
-
-      // Bập bềnh 1.5px chu kỳ 3.0 giây, nghiêng nhẹ ±2° (0.0349 rad)
-      const b1Bob = Math.sin((elapsed / 3.0) * Math.PI * 2) * 1.5;
-      const b1Tilt = Math.sin((elapsed / 3.0) * Math.PI * 2 + 0.4) * (2 * Math.PI / 180);
-      const b1BaseRot = -0.05 + Math.sin(b1Phase) * 0.06;
-
-      // Chiều dài thuyền ≈ 0.9 lần chiều rộng ô ở vị trí đó
-      const tileW1 = getNearestTileWidth({ x: b1X, y: b1Y });
-      const targetLen1 = tileW1 * 0.9;
-      const scale1 = targetLen1 / boat1TextureWidth;
-
-      boat1Sprite.x = b1X;
-      boat1Sprite.y = b1Y + b1Bob;
-      boat1Sprite.scale.set(scale1);
-      boat1Sprite.rotation = b1BaseRot + b1Tilt;
-
-      // Bóng phản chiếu mờ: lật dọc, độ đục 20%, nhòe 3px ngay dưới thuyền
-      boat1Reflection.x = b1X;
-      boat1Reflection.y = b1Y + 5 + b1Bob * 0.25;
-      boat1Reflection.scale.set(scale1, -scale1 * 0.65);
-      boat1Reflection.rotation = (b1BaseRot - b1Tilt) * 0.6;
-      boat1Reflection.alpha = 0.20;
-
-      // Vòng gợn nước do code vẽ: elip mảnh màu trắng độ đục 25%, loang ra rồi mờ dần
-      boat1Wake.clear();
-      const p1A = (elapsed / 3.0) % 1.0;
-      const p1B = (elapsed / 3.0 + 0.5) % 1.0;
-      [p1A, p1B].forEach((p) => {
-        const rx = targetLen1 * 0.52 * (0.8 + 0.55 * p);
-        const ry = targetLen1 * 0.28 * (0.8 + 0.55 * p);
-        const alpha = (1.0 - p) * 0.25;
-        boat1Wake
-          .ellipse(b1X, b1Y + 4, rx, ry)
-          .stroke({ width: 1.0, color: 0xffffff, alpha });
-      });
+    if (boat1Sprite) {
+      // Thuyền nan trôi nhẹ theo hình ellipse góc Tây Nam hồ
+      const b1Phase = elapsed * 0.12;
+      boat1Sprite.x = -130 + Math.cos(b1Phase) * 60;
+      boat1Sprite.y = 80 + Math.sin(b1Phase) * 35;
+      boat1Sprite.rotation = Math.sin(elapsed * 0.9) * 0.04 - 0.1;
     }
 
-    // 2. Thuyền thiên nga 2: trôi trong lòng hồ phía Đông (tránh đảo và cầu Thê Húc)
-    if (boat2Sprite && boat2Reflection) {
-      const b2Phase = elapsed * 0.07;
-      const b2X = 265 + Math.cos(b2Phase) * 28;
-      const b2Y = 5 + Math.sin(b2Phase) * 10;
-
-      // Bập bềnh 1.5px chu kỳ 3.0 giây, nghiêng nhẹ ±2° (lệch pha thuyền 1)
-      const b2Bob = Math.sin(((elapsed + 1.2) / 3.0) * Math.PI * 2) * 1.5;
-      const b2Tilt = Math.sin(((elapsed + 1.2) / 3.0) * Math.PI * 2 + 0.4) * (2 * Math.PI / 180);
-      const b2BaseRot = 0.04 + Math.sin(b2Phase) * 0.05;
-
-      // Chiều dài thuyền ≈ 0.9 lần chiều rộng ô ở vị trí đó
-      const tileW2 = getNearestTileWidth({ x: b2X, y: b2Y });
-      const targetLen2 = tileW2 * 0.9;
-      const scale2 = targetLen2 / boat2TextureWidth;
-
-      boat2Sprite.x = b2X;
-      boat2Sprite.y = b2Y + b2Bob;
-      boat2Sprite.scale.set(scale2);
-      boat2Sprite.rotation = b2BaseRot + b2Tilt;
-
-      // Bóng phản chiếu mờ: lật dọc, độ đục 20%, nhòe 3px ngay dưới thuyền
-      boat2Reflection.x = b2X;
-      boat2Reflection.y = b2Y + 5 + b2Bob * 0.25;
-      boat2Reflection.scale.set(scale2, -scale2 * 0.65);
-      boat2Reflection.rotation = (b2BaseRot - b2Tilt) * 0.6;
-      boat2Reflection.alpha = 0.20;
-
-      // Vòng gợn nước do code vẽ: elip mảnh màu trắng độ đục 25%, loang ra rồi mờ dần
-      boat2Wake.clear();
-      const p2A = ((elapsed + 1.2) / 3.0) % 1.0;
-      const p2B = ((elapsed + 1.2) / 3.0 + 0.5) % 1.0;
-      [p2A, p2B].forEach((p) => {
-        const rx = targetLen2 * 0.48 * (0.8 + 0.55 * p);
-        const ry = targetLen2 * 0.32 * (0.8 + 0.55 * p);
-        const alpha = (1.0 - p) * 0.25;
-        boat2Wake
-          .ellipse(b2X, b2Y + 4, rx, ry)
-          .stroke({ width: 1.0, color: 0xffffff, alpha });
-      });
+    if (boat2Sprite) {
+      // Thuyền thiên nga trôi nhẹ theo hình số 8 góc Đông Bắc hồ
+      const b2Phase = elapsed * 0.09;
+      boat2Sprite.x = 80 + Math.sin(b2Phase) * 75;
+      boat2Sprite.y = -30 + Math.sin(b2Phase * 2) * 25;
+      boat2Sprite.rotation = Math.cos(elapsed * 0.75) * 0.035;
     }
 
-    // D. TÀU ĐIỆN CHẠY MỖI 25 GIÂY (CHỈ KHI ĐƯỢC BẬT TRONG CÀI ĐẶT)
-    if (trainSprite && isTrainEnabled) {
+    // D. TÀU ĐIỆN CHẠY MỖI 25 GIÂY
+    if (trainSprite) {
       const cycleTime = elapsed % TRAIN_CYCLE_PERIOD;
       const currentCycleIndex = Math.floor(elapsed / TRAIN_CYCLE_PERIOD);
-      const MAX_TILT_RAD = (12 * Math.PI) / 180; // Giới hạn xoay tối đa ±12°
+
+      const dx = trackP2.x - trackP1.x;
+      const dy = trackP2.y - trackP1.y;
+      const trackAngle = Math.atan2(dy, dx);
 
       if (cycleTime < TRAIN_TRAVEL_TIME) {
-        // Giai đoạn 1: Chạy xuôi theo đường ray
+        // Giai đoạn 1: Chạy xuôi từ P1 -> P2
         trainSprite.visible = true;
         const progress = cycleTime / TRAIN_TRAVEL_TIME;
-        const smoothProgress = progress * progress * (3 - 2 * progress); // Easing mượt mà
+        // Easing mượt mà
+        const smoothProgress = progress * progress * (3 - 2 * progress);
 
-        const curPos = evaluateTrackPath(trackStagePoints, smoothProgress);
-        trainSprite.x = curPos.x;
-        trainSprite.y = curPos.y;
-
-        // Kích thước nhỏ dần theo khoảng cách (đo bằng độ rộng ô gần nhất)
-        const tileW = getNearestTileWidth(curPos);
-        const perspectiveScale = Math.max(0.08, Math.min(0.24, (tileW * 1.35) / 765));
-        trainSprite.scale.set(perspectiveScale, perspectiveScale);
-
-        // Xoay nhẹ tối đa ±12° để khớp độ dốc đoạn ray đang đi
-        const clampedAngle = Math.max(-MAX_TILT_RAD, Math.min(MAX_TILT_RAD, curPos.angle));
-        trainSprite.rotation = clampedAngle;
+        trainSprite.x = trackP1.x + dx * smoothProgress;
+        trainSprite.y = trackP1.y + dy * smoothProgress;
+        trainSprite.scale.set(0.18, 0.18);
+        trainSprite.rotation = trackAngle;
 
         // Phát chuông leng keng 1 lần khi bắt đầu chuyến đi
         if (lastBellPlayedCycle !== currentCycleIndex && progress > 0.05 && progress < 0.25) {
@@ -496,59 +363,70 @@ export function createAmbientEffects(options: AmbientOptions = {}): AmbientEffec
           onPlayBell?.();
         }
       } else if (cycleTime < TRAIN_TRAVEL_TIME + TRAIN_PAUSE_TIME) {
-        // Tạm nghỉ ở ga cuối
+        // Tạm nghỉ ở ga P2
         trainSprite.visible = false;
       } else if (cycleTime < TRAIN_TRAVEL_TIME * 2 + TRAIN_PAUSE_TIME) {
-        // Giai đoạn 2: Chạy ngược về (lật ngược đầu tàu)
+        // Giai đoạn 2: Chạy ngược từ P2 -> P1 (lật ngang khi chạy về)
         trainSprite.visible = true;
         const returnProgress =
           (cycleTime - (TRAIN_TRAVEL_TIME + TRAIN_PAUSE_TIME)) / TRAIN_TRAVEL_TIME;
         const smoothReturn = returnProgress * returnProgress * (3 - 2 * returnProgress);
 
-        const curPos = evaluateTrackPath(trackStagePoints, 1.0 - smoothReturn);
-        trainSprite.x = curPos.x;
-        trainSprite.y = curPos.y;
-
-        // Kích thước nhỏ dần theo khoảng cách khi chạy về
-        const tileW = getNearestTileWidth(curPos);
-        const perspectiveScale = Math.max(0.08, Math.min(0.24, (tileW * 1.35) / 765));
-        trainSprite.scale.set(-perspectiveScale, perspectiveScale); // Lật ngang trục X
-
-        // Xoay nhẹ tối đa ±12° để khớp độ dốc đoạn ray đang đi
-        const clampedAngle = Math.max(-MAX_TILT_RAD, Math.min(MAX_TILT_RAD, curPos.angle));
-        trainSprite.rotation = clampedAngle;
+        trainSprite.x = trackP2.x - dx * smoothReturn;
+        trainSprite.y = trackP2.y - dy * smoothReturn;
+        // Lật ngang trục X để đuôi xe thành đầu xe khi chạy về
+        trainSprite.scale.set(-0.18, 0.18);
+        trainSprite.rotation = trackAngle;
       } else {
         // Nghỉ ngơi chờ chu kỳ tiếp theo
         trainSprite.visible = false;
       }
-    } else if (trainSprite && !isTrainEnabled) {
-      trainSprite.visible = false;
     }
 
-    // E. DÃY ĐÈN LỒNG PHỐ CỔ (SÁNG CỘNG, ĐỘ ĐỤC 25-40%, NHẤP NHÁY CHẬM, ĐƯỜNG KÍNH <= 12PX)
+    // E. DÃY ĐÈN LỒNG PHỐ CỔ NHẤP NHÁY
     lanternsGraphic.clear();
     const lanternsMarker = markersList.find((m) => m.type === 'lanterns');
     const lanternPoints = lanternsMarker?.points || [];
 
-    // Chỉ hiển thị đốm sáng nếu có điểm đèn lồng thật sự được đánh dấu trong ảnh
-    if (lanternPoints.length > 0) {
-      lanternPoints.forEach((pt, lIdx) => {
-        const s = imageToStage(pt);
-        // Nhịp thở chậm dịu 25% - 40%
-        const breathe = 0.25 + 0.15 * Math.sin(elapsed * 1.5 + lIdx * 0.9);
+    lanternPoints.forEach((pt, lIdx) => {
+      const s = imageToStage(pt);
+      const flicker = 0.72 + 0.28 * Math.sin(elapsed * 3.2 + lIdx * 1.5);
+      // Quầng sáng ấm bên ngoài
+      lanternsGraphic
+        .circle(s.x, s.y, 16 * (0.9 + 0.1 * flicker))
+        .fill({ color: 0xf97316, alpha: 0.22 * flicker });
+      // Lõi đèn lồng đỏ cam rực rỡ
+      lanternsGraphic
+        .circle(s.x, s.y, 7)
+        .fill({ color: 0xe11d48, alpha: 0.95 })
+        .stroke({ width: 1.5, color: 0xfef08a, alpha: flicker });
+      // Đốm sáng vàng bên trong tim đèn
+      lanternsGraphic
+        .circle(s.x, s.y, 2.8)
+        .fill({ color: 0xfffbeb, alpha: 0.9 * flicker });
+    });
 
-        // Đốm sáng nhỏ dịu đường kính tối đa 12px (bán kính tối đa 6px), sáng cộng
-        lanternsGraphic
-          .circle(s.x, s.y, 6)
-          .fill({ color: 0xf59e0b, alpha: breathe * 0.35 });
-        lanternsGraphic
-          .circle(s.x, s.y, 3.5)
-          .fill({ color: 0xfbbf24, alpha: breathe * 0.65 });
-        lanternsGraphic
-          .circle(s.x, s.y, 1.5)
-          .fill({ color: 0xffedd5, alpha: breathe * 0.95 });
-      });
-    }
+    // F. CÁNH HOA PHƯỢNG RƠI LÃNG MẠN
+    petalsGraphic.clear();
+    petals.forEach((p) => {
+      p.x += p.vx * deltaSeconds + Math.sin(elapsed * 2.2 + p.phase) * 14 * deltaSeconds;
+      p.y += p.vy * deltaSeconds;
+      p.rotation += p.rotSpeed * deltaSeconds;
+
+      // Hết màn hình thì quay lại phía trên bên trái
+      if (p.y > 650 || p.x > 1100) {
+        p.y = -650 - Math.random() * 200;
+        p.x = -1100 + Math.random() * 1600;
+      }
+
+      // Vẽ hình cánh hoa thon mềm mại
+      const petalW = 7 * p.scale;
+      const petalH = 4 * p.scale;
+
+      petalsGraphic
+        .ellipse(p.x, p.y, petalW, petalH)
+        .fill({ color: p.color, alpha: 0.85 });
+    });
   };
 
   const setQuality = (quality: GraphicsQuality) => {
@@ -557,15 +435,6 @@ export function createAmbientEffects(options: AmbientOptions = {}): AmbientEffec
       container.visible = false;
     } else {
       container.visible = true;
-      trainContainer.visible = isTrainEnabled;
-    }
-  };
-
-  const setShowTrain = (show: boolean) => {
-    isTrainEnabled = show;
-    trainContainer.visible = isTrainEnabled && currentQuality !== 'LOW';
-    if (!isTrainEnabled && trainSprite) {
-      trainSprite.visible = false;
     }
   };
 
@@ -585,5 +454,5 @@ export function createAmbientEffects(options: AmbientOptions = {}): AmbientEffec
     container.destroy({ children: true });
   };
 
-  return { container, update, destroy, setQuality, setMarkers, setShowTrain };
+  return { container, update, destroy, setQuality, setMarkers };
 }

@@ -8,7 +8,7 @@ interface AssetReviewItem {
   id: string;
   name: string;
   filename: string;
-  category: 'tiles' | 'ui' | 'buildings' | 'cards' | 'corners' | 'ambient';
+  category: 'tiles' | 'ui' | 'buildings' | 'cards' | 'corners';
   originalPath: string;
   cleanPath: string;
   description: string;
@@ -253,38 +253,10 @@ const REVIEW_ITEMS: AssetReviewItem[] = [
     cleanPath: '/art/corners/corner-quan-tra-da-transparent.png',
     description: 'Quán Trà Đá - Đã tách nền sạch sâu (BFS + lỗ hổng vòm cây). Lưu ý: Tán cây ở mép trên ảnh gốc (y=0) bị cụt do tràn khung AI.',
   },
-  // 6. AMBIENT (Tàu điện & Thuyền hồ nước)
-  {
-    id: 'ambient-tau-dien',
-    name: 'Tàu Điện Trên Cao',
-    filename: 'ambient-tau-dien.png',
-    category: 'ambient',
-    originalPath: '/art/ambient/ambient-tau-dien.png',
-    cleanPath: '/art/_clean/ambient/ambient-tau-dien.png',
-    description: 'Tàu điện trên cao - Tách nền sạch sâu, xóa sạch mảng nền đường phố và quầng trắng, thân tàu sắc nét.',
-  },
-  {
-    id: 'ambient-thuyen-1',
-    name: 'Thuyền Gỗ 1 (Hồ Nước)',
-    filename: 'ambient-thuyen-1.png',
-    category: 'ambient',
-    originalPath: '/art/ambient/ambient-thuyen-1.png',
-    cleanPath: '/art/_clean/ambient/ambient-thuyen-1.png',
-    description: 'Thuyền hồ nước - Khử sạch quầng trắng (defringing), unmatting viền tự nhiên, trong suốt 100% ngoài thân thuyền.',
-  },
-  {
-    id: 'ambient-thuyen-2',
-    name: 'Thuyền Gỗ 2 (Hồ Nước)',
-    filename: 'ambient-thuyen-2.png',
-    category: 'ambient',
-    originalPath: '/art/ambient/ambient-thuyen-2.png',
-    cleanPath: '/art/_clean/ambient/ambient-thuyen-2.png',
-    description: 'Thuyền hồ nước - Khử sạch quầng trắng (defringing), unmatting viền tự nhiên, trong suốt 100% ngoài thân thuyền.',
-  },
 ];
 
 export default function CutoutReviewPage() {
-  const [selectedCategory, setSelectedCategory] = useState<'all' | 'tiles' | 'ui' | 'buildings' | 'cards' | 'corners' | 'ambient'>('tiles');
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'tiles' | 'ui' | 'buildings' | 'cards' | 'corners'>('tiles');
   const [bgMode, setBgMode] = useState<'checkerboard' | 'dark' | 'light'>('checkerboard');
   const [viewMode, setViewMode] = useState<'comparison' | 'clean_only' | 'original_only'>('comparison');
   const [zoomLevel, setZoomLevel] = useState<number>(1);
@@ -429,17 +401,6 @@ export default function CutoutReviewPage() {
         >
           <Sparkles className="h-4 w-4" />
           <span>Công Trình Góc (Corners)</span>
-        </button>
-        <button
-          onClick={() => setSelectedCategory('ambient')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition border ${
-            selectedCategory === 'ambient'
-              ? 'bg-amber-500/20 border-amber-500 text-amber-300'
-              : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:text-white'
-          }`}
-        >
-          <ImageIcon className="h-4 w-4" />
-          <span>Thuyền Hồ Nước (Ambient)</span>
         </button>
         <button
           onClick={() => setSelectedCategory('cards')}

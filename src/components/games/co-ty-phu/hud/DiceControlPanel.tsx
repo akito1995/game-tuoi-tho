@@ -231,6 +231,10 @@ export function DiceControlPanel({ className = '' }: DiceControlPanelProps) {
               ? `🤖 ${activePlayer.name} đang suy nghĩ...`
               : gamePhase === 'ROLLING' || gamePhase === 'MOVING'
               ? 'Đang di chuyển quân cờ...'
+              : gamePhase === 'AWAIT_DECISION'
+              ? 'Đang chờ bạn chọn mua / nâng cấp đất...'
+              : gamePhase === 'CARD_DRAWN'
+              ? 'Đang mở thẻ Cơ hội / Khí vận...'
               : 'Chờ đến lượt của bạn...'}
           </div>
         )}

@@ -69,20 +69,21 @@ export function FlyingMoneyVFX() {
     const endX = isPositive ? playerBarX : viewportWidth / 2;
     const endY = isPositive ? playerBarY : viewportHeight / 2;
 
-    const count = Math.min(8, Math.max(4, Math.floor(Math.abs(delta) / 50000)));
+    const count = Math.min(6, Math.max(3, Math.floor(Math.abs(delta) / 50000)));
     const particles: MoneyParticle[] = [];
+    const maxArc = Math.min(viewportHeight * 0.15, 55);
 
     for (let i = 0; i < count; i++) {
       particles.push({
         id: `${eventId}-p-${i}`,
         symbol: i % 2 === 0 ? '🪙' : '💵',
-        startX: startX + (Math.random() - 0.5) * 40,
-        startY: startY + (Math.random() - 0.5) * 40,
-        endX: endX + (Math.random() - 0.5) * 40,
-        endY: endY + (Math.random() - 0.5) * 40,
-        arcHeight: 70 + Math.random() * 60,
-        delay: i * 0.08,
-        duration: 0.75 + Math.random() * 0.2,
+        startX: startX + (Math.random() - 0.5) * 30,
+        startY: startY + (Math.random() - 0.5) * 30,
+        endX: endX + (Math.random() - 0.5) * 30,
+        endY: endY + (Math.random() - 0.5) * 30,
+        arcHeight: maxArc * (0.6 + Math.random() * 0.4),
+        delay: i * 0.05,
+        duration: 0.55 + Math.random() * 0.15, // Dưới 1 giây
       });
     }
 
@@ -99,10 +100,10 @@ export function FlyingMoneyVFX() {
 
     setActiveEvents((prev) => [...prev, newEvent]);
 
-    // Clean up event after animations finish
+    // Clean up event after animations finish (< 1.0s)
     setTimeout(() => {
       setActiveEvents((prev) => prev.filter((e) => e.id !== eventId));
-    }, 1800);
+    }, 950);
   };
 
   if (activeEvents.length === 0) return null;
