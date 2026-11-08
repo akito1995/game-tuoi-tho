@@ -1,3 +1,4 @@
+import { RENT_RULES } from './gameConfig';
 /**
  * CỜ TỶ PHÚ v2 - HÀNH TRÌNH XUYÊN VIỆT
  * Quy chuẩn tính Tiền thuê, Giá xây dựng & Bảng giá theo đúng docs/rules-v2.md
@@ -80,7 +81,7 @@ export function getTileEyebrowInfo(tile: Tile): {
       regionName = 'Miền Trung di sản';
       break;
     case 'YELLOW':
-      regionName = 'Núi rừng phía Bắc';
+      regionName = 'Tây Bắc – Đông Bắc';
       break;
     case 'GREEN':
       regionName = 'Đồng bằng Bắc Bộ';
@@ -202,48 +203,47 @@ export function checkMonopoly(tiles: Tile[], colorGroup?: ColorGroup, ownerId?: 
 export function calculateTileRent(tile: Tile, allTiles: Tile[] = [], diceSum?: number): number {
   if (tile.isMortgaged) return 0;
 
-  // 1. Ô GIAO THÔNG
+  // 1. Ô GIAO THÔNG (Đọc từ bảng RENT_RULES thống nhất)
   if (tile.type === 'TRANSPORT') {
-    if (!tile.ownerId) return 25000;
+    if (!tile.ownerId) return RENT_RULES.TRANSPORT_RATES[0];
     const ownedTransportCount = allTiles.filter(
       (t) => t.type === 'TRANSPORT' && t.ownerId === tile.ownerId
     ).length;
     const count = Math.max(1, Math.min(4, ownedTransportCount));
-    const rates = [25000, 50000, 100000, 200000];
-    return rates[count - 1];
+    return RENT_RULES.TRANSPORT_RATES[count - 1];
   }
 
-  // 2. Ô TIỆN ÍCH
+  // 2. Ô TIỆN ÍCH (Đọc từ bảng RENT_RULES thống nhất)
   if (tile.type === 'UTILITY') {
     const ownedUtilityCount = tile.ownerId
       ? allTiles.filter((t) => t.type === 'UTILITY' && t.ownerId === tile.ownerId).length
       : 1;
-    const multiplier = ownedUtilityCount >= 2 ? 25000 : 10000;
+    const multiplier = ownedUtilityCount >= 2 ? RENT_RULES.UTILITY_MULTIPLIER_BOTH : RENT_RULES.UTILITY_MULTIPLIER_SINGLE;
     const roll = diceSum && diceSum > 0 ? diceSum : 7;
     return roll * multiplier;
   }
 
-  // 3. Ô ĐẤT BẤT ĐỘNG SẢN
+  // 3. Ô ĐẤT BẤT ĐỘNG SẢN (Đọc từ bảng RENT_RULES thống nhất)
   const P = tile.price || 100000;
 
   if (tile.hasLandmark) {
-    return Math.round(P * 5.0);
+    return Math.round(P * RENT_RULES.LANDMARK_RATIO);
   }
 
   const houseCount = tile.houseCount || 0;
   if (houseCount === 0) {
-    let rent = Math.round(P * 0.1);
+    let ratio = RENT_RULES.EMPTY_LAND_RATIO;
     if (tile.colorGroup && checkMonopoly(allTiles, tile.colorGroup, tile.ownerId)) {
-      rent *= 2;
+      ratio = RENT_RULES.EMPTY_LAND_MONOPOLY_RATIO;
     }
-    return rent;
+    return Math.round(P * ratio);
   }
-  if (houseCount === 1) return Math.round(P * 0.5);
-  if (houseCount === 2) return Math.round(P * 1.3);
-  if (houseCount === 3) return Math.round(P * 2.5);
-  if (houseCount >= 4) return Math.round(P * 3.5);
+  if (houseCount === 1) return Math.round(P * RENT_RULES.HOUSE_1_RATIO);
+  if (houseCount === 2) return Math.round(P * RENT_RULES.HOUSE_2_RATIO);
+  if (houseCount === 3) return Math.round(P * RENT_RULES.HOUSE_3_RATIO);
+  if (houseCount >= 4) return Math.round(P * RENT_RULES.HOUSE_4_RATIO);
 
-  return Math.round(P * 0.1);
+  return Math.round(P * RENT_RULES.EMPTY_LAND_RATIO);
 }
 
 /**

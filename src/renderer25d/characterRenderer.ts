@@ -162,10 +162,10 @@ export function getTileSlotPosition(tileId: number, slotIndex: number = 0, total
   // Chia thành 4 vị trí đứng cố định dạng lưới 2×2 (Slot 0..3)
   // Lệch về mép NGOÀI của ô để KHÔNG CHE tên ô và giá tiền (được đặt ở mép trong phía hồ)
   const fixedSlots = [
-    { u: 0.28, v: 0.65 }, // Slot 0: Trái - ngoài
-    { u: 0.72, v: 0.65 }, // Slot 1: Phải - ngoài
-    { u: 0.28, v: 0.82 }, // Slot 2: Trái - sát mép ngoài
-    { u: 0.72, v: 0.82 }, // Slot 3: Phải - sát mép ngoài
+    { u: 0.32, v: 0.68 }, // Slot 0: Trái - ngoài
+    { u: 0.68, v: 0.68 }, // Slot 1: Phải - ngoài
+    { u: 0.32, v: 0.80 }, // Slot 2: Trái - sát mép ngoài
+    { u: 0.68, v: 0.80 }, // Slot 3: Phải - sát mép ngoài
   ];
 
   const pos = fixedSlots[Math.abs(slotIndex) % 4];
@@ -228,7 +228,7 @@ export function createCharacterManager(): CharacterManager {
       });
       charSprite = new Sprite(isHarmonizationEnabled() ? harmonizedTex : texture);
       charSprite.anchor.set(0.5, 0.94);
-      charSprite.scale.set(0.125);
+      charSprite.scale.set(0.085); // Giảm còn 68% để cân đối với nhà và ô đất (Mục 18)
       (charSprite as any).__rawTexture = texture;
       (charSprite as any).__harmonizedTexture = harmonizedTex;
       spriteContainer.addChild(charSprite);
@@ -254,7 +254,7 @@ export function createCharacterManager(): CharacterManager {
     });
     badgeText.anchor.set(0.5, 0.5);
     badgeContainer.addChild(badgeText);
-    badgeContainer.position.set(0, -90);
+    badgeContainer.position.set(0, -62);
     tokenContainer.addChild(badgeContainer);
 
     const initialPos = getTilePosition(player.position);
@@ -490,7 +490,7 @@ export function createCharacterManager(): CharacterManager {
         // Nhịp thở nhẹ nhàng khi đứng yên
         const breath = Math.sin(token.idleElapsed * 2.8) * 1.8;
         token.spriteContainer.y = breath;
-        token.badgeContainer.y = -90 + breath * 0.7;
+        token.badgeContainer.y = -62 + breath * 0.7;
       }
 
       // Sắp xếp Z-Index theo trục Y kết hợp slotIndex để không bao giờ đè nhau
@@ -500,17 +500,17 @@ export function createCharacterManager(): CharacterManager {
       token.shadowGraphic.clear();
       // Bóng hắt kéo dài về dưới-phải (hướng nắng chiều, màu #1A0D06, alpha 0.38)
       token.shadowGraphic
-        .ellipse(16, 9, 22, 7.5)
+        .ellipse(11, 6, 15, 5)
         .fill({ color: 0x1A0D06, alpha: 0.38 });
       // Bóng tiếp xúc sát chân (alpha 0.55, tối mờ)
       token.shadowGraphic
-        .ellipse(0, 0, 14, 5.5)
+        .ellipse(0, 0, 10, 4)
         .fill({ color: 0x0A0502, alpha: 0.55 });
 
       // 2. Vẽ vòng hào quang Neon Hologram dưới chân
       token.haloGraphic.clear();
       const pulse = 0.65 + 0.35 * Math.sin(token.idleElapsed * 3.5);
-      const ringRadius = 24;
+      const ringRadius = 16;
       const color = token.data.colorHex || 0x38bdf8;
 
       if (token.data.isCurrentTurn) {
@@ -521,17 +521,17 @@ export function createCharacterManager(): CharacterManager {
 
         token.haloGraphic
           .ellipse(0, 0, ringRadius, ringRadius * 0.5)
-          .stroke({ width: 2.2, color, alpha: 0.95 * pulse });
+          .stroke({ width: 1.6, color, alpha: 0.95 * pulse });
 
         token.haloGraphic
           .ellipse(0, 0, ringRadius * 0.6, ringRadius * 0.3)
-          .stroke({ width: 1.2, color: 0xfef08a, alpha: 0.8 * pulse });
+          .stroke({ width: 1.0, color: 0xfef08a, alpha: 0.8 * pulse });
 
         // Luồng sáng hologram nhẹ
         token.haloGraphic
           .moveTo(-ringRadius * 0.7, 0)
-          .lineTo(-ringRadius * 0.35, -55)
-          .lineTo(ringRadius * 0.35, -55)
+          .lineTo(-ringRadius * 0.35, -38)
+          .lineTo(ringRadius * 0.35, -38)
           .lineTo(ringRadius * 0.7, 0)
           .closePath()
           .fill({ color, alpha: 0.08 * pulse });

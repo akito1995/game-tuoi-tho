@@ -224,28 +224,27 @@ export function createBuildingRenderer(): BuildingRenderer {
 
     slot.baseScale = scale;
 
-    // 3. Bóng đổ chân thực trên mặt phẳng bàn cờ:
-    // a) Ambient occlusion: bóng mờ tròn nhẹ quanh chân đế trên phiến đá
-    const aoShadow = new Graphics();
-    const rxAo = (metric.footW * scale) * 0.58;
-    const ryAo = rxAo * 0.40;
-    aoShadow
-      .ellipse(0, 0, rxAo, ryAo)
-      .fill({ color: 0x140a04, alpha: 0.20 });
-    slot.shadowContainer.addChild(aoShadow);
+    // 3. Bóng đổ chân thực trên mặt phẳng bàn cờ (ô tiện ích bỏ bóng đen hình bầu dục - Mục 19)
+    if (tierType !== 'util') {
+      const aoShadow = new Graphics();
+      const rxAo = (metric.footW * scale) * 0.58;
+      const ryAo = rxAo * 0.40;
+      aoShadow
+        .ellipse(0, 0, rxAo, ryAo)
+        .fill({ color: 0x140a04, alpha: 0.20 });
+      slot.shadowContainer.addChild(aoShadow);
 
-    // b) Bóng tiếp xúc: sát chân công trình (không có khe hở, đậm dưới chân)
-    const contactShadow = new Graphics();
-    const rx = (metric.footW * scale) * 0.46;
-    const ry = rx * 0.38;
-    contactShadow
-      .ellipse(2, 1, rx, ry)
-      .fill({ color: 0x080402, alpha: 0.62 });
-    slot.shadowContainer.addChild(contactShadow);
+      const contactShadow = new Graphics();
+      const rx = (metric.footW * scale) * 0.46;
+      const ry = rx * 0.38;
+      contactShadow
+        .ellipse(2, 1, rx, ry)
+        .fill({ color: 0x080402, alpha: 0.62 });
+      slot.shadowContainer.addChild(contactShadow);
+    }
 
     // c) Bóng hắt từ chân: nghiêng theo nắng chiều (trên-trái -> dưới-phải), màu nâu đất thẫm
-    const isThuyDien = slot.tileId === 12 || slot.currentBuildingKey === 'util-thuy-dien';
-    const effectiveScale = isThuyDien ? scale * 0.72 : scale;
+    const effectiveScale = scale;
 
     const castShadow = new Sprite(texture);
     castShadow.tint = 0x1a0d06;
@@ -258,21 +257,14 @@ export function createBuildingRenderer(): BuildingRenderer {
     slot.shadowContainer.addChild(castShadow);
 
     // 4. Hiển thị công trình đặc và rõ 100%:
-    // Thủy điện được nắn góc isometric hài hòa với bàn cờ và thu nhỏ để nằm gọn trong ô
     const shouldClip = cfg.clipBase === true;
 
     if (!shouldClip) {
       const bodySprite = new Sprite(effectiveTexture);
       bodySprite.anchor.set(metric.anchorX, metric.anchorY);
       bodySprite.scale.set(effectiveScale, effectiveScale);
-      if (isThuyDien) {
-        // Căn chỉnh góc nghiêng isometric cho Thủy Điện Hòa Bình ô 12
-        bodySprite.skew.set(-0.10, 0.05);
-        bodySprite.rotation = -0.04;
-      } else {
-        bodySprite.rotation = 0;
-        bodySprite.skew.set(0, 0);
-      }
+      bodySprite.rotation = 0;
+      bodySprite.skew.set(0, 0);
       bodySprite.position.set(0, 0);
       bodySprite.alpha = 1.0;
       slot.buildingContainer.addChild(bodySprite);
@@ -378,9 +370,11 @@ export function createBuildingRenderer(): BuildingRenderer {
         y: (geo.outerStart.y + geo.outerEnd.y) / 2,
       };
 
-      // Vị trí: điểm giữa-đáy (chân) của công trình đặt đúng TÂM ô, chỉ được lệch tối đa 8% chiều sâu ô
-      const anchorBaseX = geo.center.x;
-      const anchorBaseY = geo.center.y;
+      // Vị trí: Chân công trình đặt ở NỬA SAU ô (phía hồ, t = 0.32),
+      // để nửa trước (phía ngoài, v >= 0.70) dành hoàn toàn cho quân cờ (Mục 16)
+      const buildingT = 0.32;
+      const anchorBaseX = inMid.x + (outMid.x - inMid.x) * buildingT;
+      const anchorBaseY = inMid.y + (outMid.y - inMid.y) * buildingT;
 
       const tileDepth = Math.hypot(outMid.x - inMid.x, outMid.y - inMid.y);
       const tileWidth = Math.hypot(
@@ -467,6 +461,9 @@ export function createBuildingRenderer(): BuildingRenderer {
           const tier = Math.min(4, Math.max(1, tile.houseCount));
           desiredKey = `house-${tier}.png`;
           tierType = `house-${tier}` as any;
+        } else {
+          // Ô đất có chủ nhưng chưa xây nhà: KHÔNG hiện mô hình nhà, chỉ hiện cờ chủ sở hữu (Mục 21)
+          desiredKey = null;
         }
       } else if ((tile.type === 'TRANSPORT' || tile.type === 'UTILITY') && tile.ownerId && tile.assetKey) {
         desiredKey = `${tile.assetKey}.png`;

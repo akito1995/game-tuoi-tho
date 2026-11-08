@@ -115,6 +115,7 @@ export default function PlayV2Page() {
   const [isDismissedLoading, setIsDismissedLoading] = useState<boolean>(false);
   const [turnTimeLeft, setTurnTimeLeft] = useState<number>(15);
   const [chatToast, setChatToast] = useState<string | null>(null);
+  const [delayedPurchaseReady, setDelayedPurchaseReady] = useState<boolean>(false);
   const [titlePromotionToast, setTitlePromotionToast] = useState<{
     playerName: string;
     charId: string;
@@ -163,22 +164,6 @@ export default function PlayV2Page() {
     }
   }, [isLoaded]);
 
-  // Tạm dừng bot khi người chơi mở bất kỳ hộp thoại nào
-  const isAnyModalOpen =
-    showPropertyListModal ||
-    showSettingsModal ||
-    showLobbyModal ||
-    showRulesModal ||
-    showLogModal;
-
-  useEffect(() => {
-    if (isAnyModalOpen) {
-      bridgeRef.current?.pauseBot();
-    } else {
-      bridgeRef.current?.resumeBot();
-    }
-  }, [isAnyModalOpen]);
-
   const bridgeRef = useRef<GameV2Bridge | null>(null);
   const [bridgeState, setBridgeState] = useState<GameV2State | null>(null);
   const [showDiceOverlay, setShowDiceOverlay] = useState(false);
@@ -188,6 +173,70 @@ export default function PlayV2Page() {
     isDouble: boolean;
     playerName: string;
   }>({ dice: [1, 1], isDouble: false, playerName: '' });
+
+  // Tạm dừng bot và chặn phím tắt khi người chơi mở bất kỳ hộp thoại nào
+  const isPurchaseModalOpen =
+    (bridgeState?.gamePhase === 'AWAIT_DECISION' || bridgeState?.gamePhase === 'AWAIT_TAKEOVER') &&
+    !bridgeState?.activePlayer.isBot &&
+    !isAutoBotMatch;
+
+  const isAnyModalOpen =
+    showPropertyListModal ||
+    showSettingsModal ||
+    showLobbyModal ||
+    showRulesModal ||
+    showLogModal ||
+    Boolean(bridgeState?.currentAuction) ||
+    bridgeState?.gamePhase === 'DEBT_RELIEF' ||
+    bridgeState?.gamePhase === 'CARD_DRAWN' ||
+    isPurchaseModalOpen;
+
+  useEffect(() => {
+    if (isAnyModalOpen) {
+      bridgeRef.current?.pauseBot();
+    } else {
+      bridgeRef.current?.resumeBot();
+    }
+  }, [isAnyModalOpen]);
+
+  // P1 - Preload toàn bộ ảnh công trình trong suốt vào cache trình duyệt (Mục 15)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const preloadKeys = [
+      'house-1.png', 'house-2.png', 'house-3.png', 'house-4.png',
+      'nha-may-dien.png', 'nha-may-nuoc.png',
+      'station-nha-rong.png', 'station-ga-da-lat.png', 'station-hai-van.png', 'station-noi-bai.png',
+      'landmark-ha-noi.png', 'landmark-tp-hcm.png', 'landmark-da-nang.png', 'landmark-hue.png',
+      'landmark-hoi-an.png', 'landmark-ca-mau.png', 'landmark-can-tho.png', 'landmark-bac-lieu.png',
+      'landmark-ninh-binh.png', 'landmark-sa-pa.png', 'landmark-ha-giang.png', 'landmark-ha-long.png'
+    ];
+    preloadKeys.forEach((key) => {
+      const img = new window.Image();
+      img.src = `/art/buildings/${key}`;
+    });
+  }, []);
+
+  // P1 - Lượt người chơi: Chờ 600ms sau khi quân dừng rồi mới mở modal, tự động highlight ô đang đứng (Mục 10)
+  useEffect(() => {
+    const isHumanDecision =
+      (bridgeState?.gamePhase === 'AWAIT_DECISION' || bridgeState?.gamePhase === 'AWAIT_TAKEOVER') &&
+      !bridgeState?.activePlayer?.isBot &&
+      !isAutoBotMatch;
+
+    if (isHumanDecision) {
+      if (bridgeState?.activePlayer) {
+        setSelectedTileId(bridgeState.activePlayer.position);
+      }
+      const t = setTimeout(() => {
+        setDelayedPurchaseReady(true);
+      }, 600);
+      return () => clearTimeout(t);
+    } else {
+      setDelayedPurchaseReady(false);
+    }
+  }, [bridgeState?.gamePhase, bridgeState?.activePlayer?.id, bridgeState?.activePlayer?.isBot, isAutoBotMatch]);
+
+
 
   // Khởi tạo GameV2Bridge và lắng nghe đồng bộ sự kiện
   useEffect(() => {
@@ -455,6 +504,51 @@ export default function PlayV2Page() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // 1. Phím Escape: Đóng modal đang mở trên cùng
+      if (e.key === 'Escape') {
+        if (showLogModal) {
+          setShowLogModal(false);
+          e.preventDefault();
+          return;
+        }
+        if (showRulesModal) {
+          setShowRulesModal(false);
+          e.preventDefault();
+          return;
+        }
+        if (showSettingsModal) {
+          setShowSettingsModal(false);
+          e.preventDefault();
+          return;
+        }
+        if (showPropertyListModal) {
+          setShowPropertyListModal(false);
+          e.preventDefault();
+          return;
+        }
+        if (showLobbyModal && bridgeState && bridgeState.roundCount > 0) {
+          setShowLobbyModal(false);
+          e.preventDefault();
+          return;
+        }
+        if (isPurchaseModalOpen) {
+          if (bridgeState?.gamePhase === 'AWAIT_DECISION') {
+            bridgeRef.current?.skipBuy();
+          } else if (bridgeState?.gamePhase === 'AWAIT_TAKEOVER') {
+            bridgeRef.current?.skipTakeover();
+          }
+          e.preventDefault();
+          return;
+        }
+        return;
+      }
+
+      // 2. Chặn mọi phím tắt của game (Space...) khi đang mở modal
+      if (isAnyModalOpen) {
+        return;
+      }
+
+      // 3. Phím Space để đổ xúc xắc
       if (e.code === 'Space' && !e.repeat && !calibrationMode) {
         if (!bridgeRef.current || !bridgeState) return;
         const active = bridgeState.activePlayer;
@@ -466,7 +560,7 @@ export default function PlayV2Page() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [bridgeState, isAutoBotMatch, calibrationMode, isRollingDice]);
+  }, [bridgeState, isAutoBotMatch, calibrationMode, isRollingDice, isAnyModalOpen, isPurchaseModalOpen, showLogModal, showRulesModal, showSettingsModal, showPropertyListModal, showLobbyModal]);
 
   // Calibration state (F2)
   const [calibratedTiles, setCalibratedTiles] = useState<CalibratedTile[]>([]);
@@ -1142,23 +1236,19 @@ export default function PlayV2Page() {
               onOpenRules={() => setShowRulesModal(true)}
             />
 
-            {/* Thẻ tóm tắt hành động bot trong lúc người chơi chờ (tự ẩn sau 4 giây) */}
-            {botWaitSummary && (
-              <div className="fixed top-24 sm:top-28 left-1/2 -translate-x-1/2 z-40 max-w-lg w-[90vw] pointer-events-none animate-in fade-in slide-in-from-top-3 duration-200">
-                <div className="flex items-center gap-2.5 rounded-2xl border-2 border-amber-400 bg-slate-950/95 px-4 py-2.5 shadow-[0_10px_30px_rgba(245,158,11,0.4)] backdrop-blur-md">
-                  <span className="text-xl shrink-0">⏳</span>
-                  <div className="text-xs text-amber-200 font-medium leading-snug">
-                    <strong className="text-amber-300 font-bold block mb-0.5">TRONG LÚC BẠN CHỜ:</strong>
-                    {botWaitSummary.replace('Trong lúc bạn chờ: ', '')}
+            {/* Hàng đợi thông báo dọc (Banner chờ bot & Toast sự kiện tối đa 2 cái) không bao giờ chồng nhau (Mục 12) */}
+            {(botWaitSummary || gameToasts.length > 0) && (
+              <div className="fixed top-24 sm:top-28 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center gap-2 pointer-events-none max-w-lg w-[90vw]">
+                {botWaitSummary && (
+                  <div className="w-full flex items-center gap-2.5 rounded-2xl border-2 border-amber-400 bg-slate-950/95 px-4 py-2.5 shadow-[0_10px_30px_rgba(245,158,11,0.4)] backdrop-blur-md animate-in fade-in slide-in-from-top-3 duration-200">
+                    <span className="text-xl shrink-0">⏳</span>
+                    <div className="text-xs text-amber-200 font-medium leading-snug">
+                      <strong className="text-amber-300 font-bold block mb-0.5">TRONG LÚC BẠN CHỜ:</strong>
+                      {botWaitSummary.replace('Trong lúc bạn chờ: ', '')}
+                    </div>
                   </div>
-                </div>
-              </div>
-            )}
-
-            {/* Thông báo nổi (toast) ở đầu màn hình: mỗi toast tự tắt sau 2.5 giây, tối đa 2 cái, nằm dưới HUD có khoảng cách */}
-            {gameToasts.length > 0 && (
-              <div className="fixed top-24 sm:top-28 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center gap-1.5 pointer-events-none max-w-lg w-[90vw]">
-                {gameToasts.map((toast) => (
+                )}
+                {gameToasts.slice(-2).map((toast) => (
                   <div
                     key={toast.id}
                     className="flex items-center gap-2 rounded-2xl border border-amber-400/70 bg-slate-950/95 px-4 py-2 text-xs font-bold text-amber-200 shadow-[0_8px_24px_rgba(0,0,0,0.7)] backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-200"
@@ -2040,14 +2130,14 @@ export default function PlayV2Page() {
       {bridgeState && bridgeState.logs.length > 0 && !calibrationMode && (
         <div className="fixed bottom-16 left-4 z-20 max-w-xs hidden sm:block">
           <div className="space-y-1">
-            <div className="flex items-center justify-between px-1">
-              <span className="text-[10px] font-bold text-slate-400">NHẬT KÝ</span>
+            <div className="flex items-center justify-between px-1 gap-2">
+              <span className="text-[11px] font-black text-amber-300 tracking-wider">NHẬT KÝ</span>
               <button
                 onClick={() => setShowLogModal(true)}
-                className="text-[10px] font-bold text-amber-400 hover:text-amber-300 transition flex items-center gap-1 cursor-pointer bg-[#3D2211] px-2 py-0.5 rounded-md border border-[#C9A227]/60 text-[#C9A227] pointer-events-auto active:scale-95 shadow-md"
+                className="min-h-[44px] min-w-[44px] px-3 py-2 text-[11px] font-bold text-amber-300 hover:text-amber-200 transition flex items-center justify-center gap-1.5 cursor-pointer bg-[#3D2211] rounded-xl border border-[#C9A227]/70 text-[#C9A227] pointer-events-auto active:scale-95 shadow-md"
                 title="Mở rộng xem 20 dòng gần nhất"
               >
-                <ScrollText className="h-3 w-3" />
+                <ScrollText className="h-4 w-4" />
                 <span>Mở rộng (20)</span>
               </button>
             </div>
@@ -2079,7 +2169,7 @@ export default function PlayV2Page() {
         !bridgeState.activePlayer.isBot &&
         !isAutoBotMatch &&
         !showDiceOverlay &&
-        bridgeState.gamePhase === 'AWAIT_DECISION' && (() => {
+        bridgeState.gamePhase === 'AWAIT_DECISION' && delayedPurchaseReady && (() => {
           const active = bridgeState.activePlayer;
           const tile = bridgeState.tiles[active.position];
           if (!tile) return null;
@@ -2093,8 +2183,8 @@ export default function PlayV2Page() {
               playerMoney={active.money}
               isUpgrade={isUpgrade}
               roundCount={bridgeState.roundCount}
-              onBuy={() => {
-                if (isBuy) bridgeRef.current?.buyProperty();
+              onBuy={(withHouse = false) => {
+                if (isBuy) bridgeRef.current?.buyProperty(withHouse);
                 else bridgeRef.current?.upgradeProperty();
               }}
               onSkip={() => {
@@ -2110,7 +2200,7 @@ export default function PlayV2Page() {
         !bridgeState.activePlayer.isBot &&
         !isAutoBotMatch &&
         !showDiceOverlay &&
-        bridgeState.gamePhase === 'AWAIT_TAKEOVER' && (() => {
+        bridgeState.gamePhase === 'AWAIT_TAKEOVER' && delayedPurchaseReady && (() => {
           const active = bridgeState.activePlayer;
           const tile = bridgeState.tiles[active.position];
           if (!tile || tile.ownerId == null || tile.ownerId === active.id) return null;
@@ -2123,6 +2213,7 @@ export default function PlayV2Page() {
               isTakeover={true}
               sellerName={seller?.name}
               roundCount={bridgeState.roundCount}
+              lastRentAmount={bridgeState.lastRentPaid?.amount}
               onBuy={() => {
                 bridgeRef.current?.takeoverProperty();
               }}

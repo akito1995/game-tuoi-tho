@@ -951,7 +951,7 @@ export function Board25DCanvas({
       camera.imageSourceWidth = useMobileAsset ? 2048 : 2668;
       camera.calculateCoverScale();
       cameraRef.current = camera;
-      camera.center();
+      camera.viewFullBoard();
 
       const handleResize = () => {
         camera.onResize();

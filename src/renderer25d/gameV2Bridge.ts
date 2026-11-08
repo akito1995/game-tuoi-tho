@@ -52,6 +52,7 @@ export interface GameV2State {
   netWorthHistory?: Record<string, number[]>;
   currentAuction?: AuctionState | null;
   hasRolledOnce: boolean;
+  lastRentPaid?: { amount: number; debtorId: string; creditorId: string; tileId: number } | null;
 }
 
 export class GameV2Bridge {
@@ -65,6 +66,7 @@ export class GameV2Bridge {
   public auctionOnSkip: boolean = false;
   public currentAuction: AuctionState | null = null;
   public hasRolledOnce: boolean = false;
+  public lastRentPaid: { amount: number; debtorId: string; creditorId: string; tileId: number } | null = null;
   public customPlayerName?: string;
   public botActionsBuffer: string[] = [];
 
@@ -214,6 +216,7 @@ export class GameV2Bridge {
     });
 
     this.engine.events.on('rent-paid', (payload) => {
+      this.lastRentPaid = { amount: payload.amount, debtorId: payload.debtorId, creditorId: payload.creditorId, tileId: payload.tile.id };
       const payer = this.engine.state.players.find((p) => p.id === payload.debtorId);
       const owner = this.engine.state.players.find((p) => p.id === payload.creditorId);
       const human = this.engine.state.players.find((p) => !p.isBot);
@@ -292,6 +295,7 @@ export class GameV2Bridge {
         : undefined,
       currentAuction: this.currentAuction ? { ...this.currentAuction } : null,
       hasRolledOnce: this.hasRolledOnce,
+      lastRentPaid: this.lastRentPaid,
     };
   }
 
@@ -637,8 +641,8 @@ export class GameV2Bridge {
       this.botTimer = null;
     }
 
-    const randomMs = Math.floor(Math.random() * 700) + 800; // 800..1500ms
-    const baseDelay = Math.max(100, Math.round(randomMs / this.speed));
+    const randomMs = Math.floor(Math.random() * 400) + 800; // 800..1200ms
+    const baseDelay = Math.max(150, Math.round(randomMs / this.speed));
 
     this.botTimer = setTimeout(() => {
       this.executeBotStep();
@@ -693,7 +697,9 @@ export class GameV2Bridge {
     const scheduleNextIfBot = (delayMs: number) => {
       const nextActive = this.engine.getActivePlayer();
       if ((nextActive.isBot || this.isAutoMatch) && this.engine.state.gamePhase !== 'GAME_OVER') {
-        const delay = Math.max(120, Math.round(delayMs / this.speed));
+        // Tối thiểu 800ms mỗi bước ở tốc độ 1x (hoặc tỉ lệ tương ứng ở 2x, 4x)
+        const baseDelay = Math.max(800, delayMs);
+        const delay = Math.max(150, Math.round(baseDelay / this.speed));
         this.botTimer = setTimeout(() => this.executeBotStep(), delay);
       } else {
         if (this.botTimer) {
@@ -743,10 +749,12 @@ export class GameV2Bridge {
       const tile = this.engine.getTile(active.position);
       if (tile && tile.ownerId == null) {
         if (evaluateBotBuy(active, tile, this.engine.state.tiles, this.engine.state.roundCount)) {
-          const withHouse = this.engine.state.roundCount >= 2;
+          const houseCost = tile.housePrice || 50_000;
+          const canAffordHouse = this.engine.state.roundCount >= 2 && (active.money - ((tile.price || 100_000) + houseCost) >= GAME_CONFIG.BOT_CASH_RESERVE);
+          const withHouse = canAffordHouse;
           this.engine.buyProperty(active.id, tile.id, withHouse);
-          const cost = (tile.price || 100_000) + (withHouse ? (tile.housePrice || 50_000) : 0);
-          this.botActionsBuffer.push(`${active.name} mua ${tile.name} (-${Math.round(cost / 1000)}K)`);
+          const cost = (tile.price || 100_000) + (withHouse ? houseCost : 0);
+          this.botActionsBuffer.push(`${active.name} mua ${tile.name}${withHouse ? ' (+1 nhà)' : ''} (-${Math.round(cost / 1000)}K)`);
         } else {
           if (this.auctionOnSkip && tile.price && tile.price > 0) {
             this.engine.addLog(`${active.name} bỏ qua ${tile.name}. Mở đấu giá nhanh 10 giây!`);

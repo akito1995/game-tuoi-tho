@@ -75,6 +75,10 @@ export class CameraController {
   }
 
   public onResize(): void {
+    if (this.cameraMode === 'OVERVIEW') {
+      this.viewFullBoard();
+      return;
+    }
     const oldCover = this.baseCoverScale;
     const newCover = this.calculateCoverScale();
     const relativeFactor = oldCover > 0 ? this.state.zoom / oldCover : 1.0;
@@ -92,8 +96,8 @@ export class CameraController {
       const renderedW = BOARD_PLATE_WIDTH * this.state.zoom;
       const renderedH = BOARD_PLATE_HEIGHT * this.state.zoom;
 
-      const maxPanX = Math.max(0, (renderedW - this.app.screen.width) * 0.5);
-      const maxPanY = Math.max(0, (renderedH - this.app.screen.height) * 0.5);
+      const maxPanX = Math.max(Math.abs(this.state.x) + 20, (renderedW - this.app.screen.width) * 0.5);
+      const maxPanY = Math.max(Math.abs(this.state.y) + 20, (renderedH - this.app.screen.height) * 0.5);
 
       this.state.x = Math.max(-maxPanX, Math.min(maxPanX, this.state.x));
       this.state.y = Math.max(-maxPanY, Math.min(maxPanY, this.state.y));
@@ -290,24 +294,26 @@ export class CameraController {
       const screenW = this.app.screen.width;
       const screenH = this.app.screen.height;
 
-      // Kích thước trọn vẹn 40 ô đất trên bàn cờ
-      const fullBoardW = 1520;
-      const fullBoardH = 960;
-      const boardCenterX = -15;
-      const boardCenterY = -28;
+      // Fit cả 4 góc (Xuất Phát, Trại Giam, Quán Trà Đá, Vào Tù) với lề 5% mỗi bên (90% viewport khả dụng)
+      // Tâm hồ Hoàn Kiếm nằm chính xác giữa màn hình (stage X: -15, Y: -10)
+      const lakeCenterX = -15;
+      const lakeCenterY = -10;
 
-      // Chừa lề nhẹ 16px mỗi mép để không chạm viền
-      const availW = Math.max(280, screenW - 32);
-      const availH = Math.max(280, screenH - 32);
+      // Bounding box đối xứng từ tâm hồ tới các góc (Tây: -745, Đông: +745, Bắc: -400, Nam: +475)
+      const symmetricBoardW = 1500;
+      const symmetricBoardH = 950;
 
-      const fitZoom = Math.min(availW / fullBoardW, availH / fullBoardH);
-      const targetZoom = Number(Math.max(0.65, Math.min(this.state.maxZoom, fitZoom)).toFixed(4));
+      const availW = Math.max(280, screenW * 0.90);
+      const availH = Math.max(280, screenH * 0.90);
+
+      const fitZoom = Math.min(availW / symmetricBoardW, availH / symmetricBoardH);
+      const targetZoom = Number(Math.max(0.35, Math.min(this.state.maxZoom, fitZoom)).toFixed(4));
       this.state.minZoom = Math.min(this.state.minZoom, targetZoom);
       this.state.zoom = targetZoom;
 
-      // Đưa tâm bàn cờ ra giữa màn hình
-      this.state.x = Math.round(-boardCenterX * this.state.zoom);
-      this.state.y = Math.round(-boardCenterY * this.state.zoom);
+      // Đưa tâm hồ ra giữa màn hình
+      this.state.x = Math.round(-lakeCenterX * this.state.zoom);
+      this.state.y = Math.round(-lakeCenterY * this.state.zoom);
 
       this.userZoom = this.state.zoom;
       this.userX = this.state.x;
@@ -325,30 +331,45 @@ export class CameraController {
    * - Chế độ "OVERVIEW" (Toàn cảnh): Chỉ lia nhẹ 25% và zoom nhẹ ~15%, giữ toàn cảnh bàn cờ, không gây chóng mặt.
    * - Chế độ "FOLLOW" (Theo quân cờ): Đưa camera tới thẳng vị trí quân cờ.
    */
-  public followTarget(targetPos: { x: number; y: number }, smooth: number = 0.10): void {
-    this.isAutoFollowing = true;
+  public followTarget(targetPos: { x: number; y: number }, smooth: number = 0.08): void {
+    if (!this.app || !this.app.screen) return;
+    const screenW = this.app.screen.width;
+    const screenH = this.app.screen.height;
 
-    if (this.cameraMode === 'OVERVIEW') {
-      // Zoom nhẹ tối đa 15% so với mức người dùng chọn
-      const targetZoom = Math.min(this.userZoom * 1.15, this.state.maxZoom);
-      this.state.zoom += (targetZoom - this.state.zoom) * smooth;
+    // Tọa độ màn hình của nhân vật
+    const screenX = (screenW / 2 + this.state.x) + targetPos.x * this.state.zoom;
+    const screenY = (screenH / 2 + this.state.y) + targetPos.y * this.state.zoom;
 
-      // Lia nhẹ khoảng 25% về phía nhân vật để giữ toàn cảnh
-      const fullTargetX = -targetPos.x * this.state.zoom;
-      const fullTargetY = -targetPos.y * this.state.zoom - 15;
-      const softTargetX = this.userX + (fullTargetX - this.userX) * 0.28;
-      const softTargetY = this.userY + (fullTargetY - this.userY) * 0.28;
+    // Vùng chết (Deadzone 15% mép): Camera CHỈ lia khi quân sắp ra khỏi khung
+    const marginX = screenW * 0.15;
+    const marginY = screenH * 0.15;
 
-      this.state.x += (softTargetX - this.state.x) * smooth;
-      this.state.y += (softTargetY - this.state.y) * smooth;
-    } else {
-      // Bám sát quân cờ
-      const targetCamX = -targetPos.x * this.state.zoom;
-      const targetCamY = -targetPos.y * this.state.zoom - 20;
+    let shiftX = 0;
+    let shiftY = 0;
 
-      this.state.x += (targetCamX - this.state.x) * smooth;
-      this.state.y += (targetCamY - this.state.y) * smooth;
+    if (screenX < marginX) {
+      shiftX = marginX - screenX;
+    } else if (screenX > screenW - marginX) {
+      shiftX = (screenW - marginX) - screenX;
     }
+
+    if (screenY < marginY) {
+      shiftY = marginY - screenY;
+    } else if (screenY > screenH - marginY) {
+      shiftY = (screenH - marginY) - screenY;
+    }
+
+    // Nếu quân cờ vẫn đang nằm an toàn trong khung hình (cách mép >= 15%), giữ camera tĩnh, không giật
+    if (Math.abs(shiftX) < 1 && Math.abs(shiftY) < 1) {
+      return;
+    }
+
+    this.isAutoFollowing = true;
+    const targetCamX = this.state.x + shiftX;
+    const targetCamY = this.state.y + shiftY;
+
+    this.state.x += (targetCamX - this.state.x) * smooth;
+    this.state.y += (targetCamY - this.state.y) * smooth;
 
     this.clampPan();
     this.updateTransform();

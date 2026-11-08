@@ -151,7 +151,7 @@ export const BottomRightPanel: React.FC<BottomRightPanelProps> = ({
         </div>
 
         {/* Nhãn tên kỹ năng */}
-        <span className={`font-baloo text-[9px] sm:text-[10px] font-black tracking-tight leading-tight mt-0.5 text-center ${
+        <span className={`font-baloo text-[9px] sm:text-[10px] font-black tracking-tight leading-tight mt-0.5 text-center whitespace-nowrap px-0.5 ${
           isSelected ? 'text-amber-200 drop-shadow' : 'text-amber-300'
         }`}>
           {title}
@@ -225,12 +225,12 @@ export const BottomRightPanel: React.FC<BottomRightPanelProps> = ({
           />
 
           {/* Nhãn chữ chính */}
-          <span className="font-baloo text-xs sm:text-[13px] font-black tracking-tight text-slate-950 leading-tight mt-0.5 text-center px-1">
+          <span className="font-baloo text-xs sm:text-[13px] font-black tracking-tight text-slate-950 leading-tight mt-0.5 text-center px-1 line-clamp-2 max-w-[80px] break-words">
             {rollButtonLabel}
           </span>
 
           {/* Nhãn phụ (Phím tắt hoặc tên bot) */}
-          <span className="text-[9px] font-bold text-slate-900/80 leading-none mt-0.5 truncate max-w-[72px]">
+          <span className="text-[9px] font-bold text-slate-900/90 leading-none mt-0.5 whitespace-nowrap px-1">
             {rollSubLabel}
           </span>
         </button>

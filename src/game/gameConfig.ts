@@ -85,6 +85,27 @@ export const GAME_CONFIG = {
   AUCTION_DURATION_SECONDS: 10, // Đấu giá nhanh 10 giây
   AUCTION_BOT_MAX_BID_RATIO: 0.9, // Bot đặt giá tối đa 90% giá đất
 };
+/**
+ * BẢNG QUY CHUẨN TIỀN THUÊ DUY NHẤT (Single Source of Truth)
+ * Sách luật, Bảng mua đất (TilePurchaseCard) và Logic Game Engine đều đọc từ đây.
+ */
+export const RENT_RULES = {
+  // Bất động sản thường (% so với giá mua đất gốc P)
+  EMPTY_LAND_RATIO: 0.10, // Đất trống: 10% P
+  EMPTY_LAND_MONOPOLY_RATIO: 0.20, // Đất trống khi sở hữu trọn bộ màu: 20% P
+  HOUSE_1_RATIO: 0.50, // Nhà cấp 1: 50% P
+  HOUSE_2_RATIO: 1.30, // Nhà cấp 2: 130% P
+  HOUSE_3_RATIO: 2.50, // Nhà cấp 3: 250% P
+  HOUSE_4_RATIO: 3.50, // Nhà cấp 4: 350% P
+  LANDMARK_RATIO: 5.00, // Landmark: 500% P
+
+  // 4 Ga Giao thông (25K, 50K, 100K, 200K tùy số ga sở hữu)
+  TRANSPORT_RATES: [25_000, 50_000, 100_000, 200_000] as const,
+
+  // 2 Ô Tiện ích (Thủy điện & Nhà máy nước): Xúc xắc x 10K (1 trạm) hoặc x 25K (2 trạm)
+  UTILITY_MULTIPLIER_SINGLE: 10_000,
+  UTILITY_MULTIPLIER_BOTH: 25_000,
+};
 
 /**
  * Lấy danh hiệu tương ứng với tổng tài sản

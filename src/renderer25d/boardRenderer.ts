@@ -664,6 +664,11 @@ export function createBoardRenderer(options: BoardRendererOptions): BoardRendere
         } else {
           if (tile.isMortgaged) {
             priceLabel = 'Cầm cố (0K)';
+          } else if (tile.type === 'UTILITY') {
+            const ownedUtilCount = currentTiles.filter(
+              (t) => t.type === 'UTILITY' && t.ownerId === tile.ownerId
+            ).length;
+            priceLabel = ownedUtilCount >= 2 ? 'Thuê: xx × 25K' : 'Thuê: xx × 10K';
           } else {
             const rent = calculateTileRent(tile, currentTiles, 7);
             priceLabel = rent > 0 ? `Thuê ${Math.round(rent / 1000)}K` : '';
@@ -829,25 +834,28 @@ export function createBoardRenderer(options: BoardRendererOptions): BoardRendere
       let textPos: { x: number; y: number };
 
       if (cornerId === 0 && pts && pts.length >= 6) {
-        // Đặt ở vùng mặt đá thoáng rộng phía trong (giữa center và inner apex pts[4])
+        // Nam: lệch ra ngoài bàn cờ theo đỉnh ngoài pts[1], không che Phú Yên & Cà Mau (Mục 11)
         textPos = {
-          x: geo.center.x * 0.45 + pts[4].x * 0.55,
-          y: geo.center.y * 0.45 + pts[4].y * 0.55 - 12 * geo.depthScale,
+          x: geo.center.x * 0.20 + pts[1].x * 0.80,
+          y: geo.center.y * 0.20 + pts[1].y * 0.80 + 12 * geo.depthScale,
         };
       } else if (cornerId === 10 && pts && pts.length >= 6) {
+        // Tây: lệch ra ngoài bàn cờ theo đỉnh ngoài pts[1], không che Vũng Tàu & Sa Pa (Mục 11)
         textPos = {
-          x: geo.center.x * 0.40 + pts[4].x * 0.60,
-          y: geo.center.y * 0.40 + pts[4].y * 0.60 + 8 * geo.depthScale,
+          x: geo.center.x * 0.20 + pts[1].x * 0.80 - 15 * geo.depthScale,
+          y: geo.center.y * 0.20 + pts[1].y * 0.80,
         };
       } else if (cornerId === 20 && pts && pts.length >= 6) {
+        // Bắc: lệch ra ngoài bàn cờ theo đỉnh ngoài pts[1], không che Hội An & Ninh Bình (Mục 11)
         textPos = {
-          x: geo.center.x * 0.35 + pts[4].x * 0.65,
-          y: geo.center.y * 0.35 + pts[4].y * 0.65 + 16 * geo.depthScale,
+          x: geo.center.x * 0.20 + pts[1].x * 0.80,
+          y: geo.center.y * 0.20 + pts[1].y * 0.80 - 14 * geo.depthScale,
         };
       } else if (cornerId === 30 && pts && pts.length >= 6) {
+        // Đông: lệch ra ngoài bàn cờ theo đỉnh ngoài pts[1], không che Bắc Ninh & Hà Giang (Mục 11)
         textPos = {
-          x: geo.center.x * 0.40 + pts[4].x * 0.60,
-          y: geo.center.y * 0.40 + pts[4].y * 0.60 + 8 * geo.depthScale,
+          x: geo.center.x * 0.20 + pts[1].x * 0.80 + 15 * geo.depthScale,
+          y: geo.center.y * 0.20 + pts[1].y * 0.80,
         };
       } else {
         textPos = { x: geo.center.x, y: geo.center.y };
@@ -907,9 +915,54 @@ export function createBoardRenderer(options: BoardRendererOptions): BoardRendere
     });
   };
 
+  // Thuật toán chống chồng nhãn ô (Collision offset - Mục 11)
+  const resolveLabelCollisions = () => {
+    const items: { container: Container; x: number; y: number; w: number; h: number }[] = [];
+    labelsLayer.children.forEach((child) => {
+      const bounds = child.getLocalBounds();
+      items.push({
+        container: child as Container,
+        x: child.x,
+        y: child.y,
+        w: Math.max(30, bounds.width),
+        h: Math.max(18, bounds.height),
+      });
+    });
+
+    for (let iter = 0; iter < 4; iter++) {
+      for (let i = 0; i < items.length; i++) {
+        for (let j = i + 1; j < items.length; j++) {
+          const a = items[i];
+          const b = items[j];
+          const dx = b.x - a.x;
+          const dy = b.y - a.y;
+          const minDistX = (a.w + b.w) * 0.46;
+          const minDistY = (a.h + b.h) * 0.46;
+          const overlapX = minDistX - Math.abs(dx);
+          const overlapY = minDistY - Math.abs(dy);
+
+          if (overlapX > 0 && overlapY > 0) {
+            if (overlapX < overlapY) {
+              const shift = (overlapX * 0.5) * (dx >= 0 ? 1 : -1);
+              b.x += shift;
+              a.x -= shift;
+            } else {
+              const shift = (overlapY * 0.5) * (dy >= 0 ? 1 : -1);
+              b.y += shift;
+              a.y -= shift;
+            }
+            a.container.position.set(a.x, a.y);
+            b.container.position.set(b.x, b.y);
+          }
+        }
+      }
+    }
+  };
+
   // Khởi tạo ban đầu
   buildRegularTiles();
   buildCornerTiles();
+  resolveLabelCollisions();
 
   /**
    * Cập nhật danh sách ô, màu người chơi, vị trí người chơi và cấu hình góc
@@ -930,6 +983,7 @@ export function createBoardRenderer(options: BoardRendererOptions): BoardRendere
 
     buildRegularTiles();
     buildCornerTiles();
+    resolveLabelCollisions();
   };
 
   const setSelectedTileId = (id: number | null) => {
@@ -938,14 +992,17 @@ export function createBoardRenderer(options: BoardRendererOptions): BoardRendere
       g.clear();
       if (currentSelectedTileId === tileId) {
         const geo = getTileGeometry(tileId);
-        g.poly([
-          geo.outerStart.x, geo.outerStart.y,
-          geo.outerEnd.x, geo.outerEnd.y,
-          geo.innerEnd.x, geo.innerEnd.y,
-          geo.innerStart.x, geo.innerStart.y,
-        ])
-          .fill({ color: 0xfef08a, alpha: 0.30 })
-          .stroke({ width: 2.2, color: 0xf59e0b, alpha: 0.95 });
+        const pts = geo.polygonPoints && geo.polygonPoints.length > 0
+          ? geo.polygonPoints.flatMap((p) => [p.x, p.y])
+          : [
+              geo.outerStart.x, geo.outerStart.y,
+              geo.outerEnd.x, geo.outerEnd.y,
+              geo.innerEnd.x, geo.innerEnd.y,
+              geo.innerStart.x, geo.innerStart.y,
+            ];
+        g.poly(pts)
+          .fill({ color: 0xfef08a, alpha: 0.35 })
+          .stroke({ width: 3.5, color: 0xfacc15, alpha: 1.0 });
       }
     });
   };
