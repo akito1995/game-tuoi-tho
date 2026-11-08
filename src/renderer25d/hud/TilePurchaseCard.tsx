@@ -4,6 +4,7 @@ import React from 'react';
 import Image from 'next/image';
 import { Tile, COLOR_GROUP_HEX, COLOR_GROUP_VIETNAMESE, BUILDING_COSTS, RENT_RATES } from '../../game/types';
 import { Building, Coins, ShieldCheck, X, Train, Zap, Flame } from 'lucide-react';
+import { formatMoney } from '../utils/formatMoney';
 
 interface TilePurchaseCardProps {
   tile: Tile;
@@ -64,8 +65,11 @@ export const TilePurchaseCard: React.FC<TilePurchaseCardProps> = ({
   const P = tile.price || 100000;
 
   return (
-    <div className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 w-[94vw] max-w-lg select-none pointer-events-auto animate-in fade-in slide-in-from-bottom-4 duration-200">
-      <div className="relative rounded-2xl bg-slate-950/98 border-2 border-amber-500/60 shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center sm:items-end sm:pb-6 p-4 bg-slate-950/70 backdrop-blur-md pointer-events-auto select-none animate-in fade-in duration-200">
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-lg rounded-2xl bg-slate-950 border-2 border-amber-500/70 shadow-[0_25px_60px_rgba(0,0,0,0.95)] overflow-hidden animate-in zoom-in-95 duration-150"
+      >
         {/* Banner màu nhóm di sản trên cùng */}
         <div
           className="flex items-center justify-between px-4 py-2 border-b-2 border-amber-400/40"
@@ -88,7 +92,7 @@ export const TilePurchaseCard: React.FC<TilePurchaseCardProps> = ({
         {/* Thân thẻ: Chia 2 cột */}
         <div className="p-3 sm:p-4 grid grid-cols-1 sm:grid-cols-12 gap-3">
           {/* Cột trái: Ảnh Landmark / Biểu tượng */}
-          <div className="sm:col-span-5 flex flex-col items-center justify-center rounded-xl bg-slate-900/90 border border-slate-800 p-2 text-center">
+          <div className="sm:col-span-5 flex flex-col items-center justify-center rounded-xl bg-slate-900 border border-slate-800 p-2 text-center">
             <div className="relative h-24 sm:h-28 w-full rounded-lg overflow-hidden bg-slate-950 flex items-center justify-center">
               <Image
                 src={`/art/buildings/${tile.assetKey || 'house-cap-1'}.png`}
@@ -117,13 +121,13 @@ export const TilePurchaseCard: React.FC<TilePurchaseCardProps> = ({
                 {isTakeover ? 'Giá mua lại (1.5×):' : isUpgrade ? 'Phí nâng cấp:' : 'Chi phí:'}
               </span>
               <span className="font-baloo text-base font-extrabold text-amber-400">
-                {Math.round(displayPrice / 1000).toLocaleString('vi-VN')}K
+                {formatMoney(displayPrice)}
                 <span className="text-xs font-sans text-amber-300 ml-0.5">₫</span>
               </span>
             </div>
 
             {/* BẢNG TIỀN THUÊ THEO LOẠI Ô */}
-            <div className="mt-2 space-y-1 rounded-xl bg-slate-900/60 p-2 border border-slate-800 text-[11px]">
+            <div className="mt-2 space-y-1 rounded-xl bg-slate-900 p-2 border border-slate-800 text-[11px]">
               {isUtility ? (
                 <>
                   <div className="flex items-center justify-between text-slate-300">
@@ -161,26 +165,26 @@ export const TilePurchaseCard: React.FC<TilePurchaseCardProps> = ({
                   <div className="flex items-center justify-between text-slate-300">
                     <span>• Đất trống (10% P):</span>
                     <span className="font-mono font-bold text-slate-200">
-                      {Math.round((P * RENT_RATES.EMPTY) / 1000).toLocaleString('vi-VN')}K₫
-                      <span className="text-[9px] text-amber-400 ml-1">(đủ màu {Math.round((P * RENT_RATES.EMPTY_MONOPOLY) / 1000)}K)</span>
+                      {formatMoney(P * RENT_RATES.EMPTY)}₫
+                      <span className="text-[9px] text-amber-400 ml-1">(đủ màu {formatMoney(P * RENT_RATES.EMPTY_MONOPOLY)})</span>
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-slate-400">
                     <span>• 1 Nhà ~ 2 Nhà (50% ~ 130%):</span>
                     <span className="font-mono text-emerald-400">
-                      {Math.round((P * RENT_RATES.HOUSE_1) / 1000).toLocaleString('vi-VN')}K ~ {Math.round((P * RENT_RATES.HOUSE_2) / 1000).toLocaleString('vi-VN')}K₫
+                      {formatMoney(P * RENT_RATES.HOUSE_1)} ~ {formatMoney(P * RENT_RATES.HOUSE_2)}₫
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-slate-400">
                     <span>• 3 Nhà ~ 4 Nhà (250% ~ 350%):</span>
                     <span className="font-mono text-emerald-300">
-                      {Math.round((P * RENT_RATES.HOUSE_3) / 1000).toLocaleString('vi-VN')}K ~ {Math.round((P * RENT_RATES.HOUSE_4) / 1000).toLocaleString('vi-VN')}K₫
+                      {formatMoney(P * RENT_RATES.HOUSE_3)} ~ {formatMoney(P * RENT_RATES.HOUSE_4)}₫
                     </span>
                   </div>
                   <div className="flex items-center justify-between border-t border-slate-800 pt-1 font-bold text-amber-300">
                     <span>👑 Landmark (500% P):</span>
                     <span className="font-mono text-amber-400 font-extrabold">
-                      {Math.round((P * RENT_RATES.LANDMARK) / 1000).toLocaleString('vi-VN')}K₫
+                      {formatMoney(P * RENT_RATES.LANDMARK)}₫
                     </span>
                   </div>
                 </>
@@ -190,7 +194,7 @@ export const TilePurchaseCard: React.FC<TilePurchaseCardProps> = ({
         </div>
 
         {/* Hàng 2 Nút hành động (Tối thiểu 44px) */}
-        <div className="flex items-center gap-2 p-3 bg-slate-900/80 border-t border-slate-800">
+        <div className="flex items-center gap-2 p-3 bg-slate-900 border-t border-slate-800">
           <button
             onClick={onSkip}
             className="flex-1 min-h-[44px] rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold border border-slate-700 transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"

@@ -79,14 +79,14 @@ export function GameGrid({ onPlayGame }: GameGridProps) {
 
             {/* Title */}
             <h3 className="text-2xl font-extrabold text-white sm:text-3xl">
-              Cờ Tỷ Phú 3D: Đảo Ngọc Việt Nam
+              Cờ Tỷ Phú 2.5D: Hành Trình Xuyên Việt
             </h3>
 
             {/* Description */}
             <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              Trải nghiệm bàn cờ 3D lộng lẫy với 28 địa danh danh lam thắng cảnh Việt Nam:
-              Hà Nội, Sapa, Hạ Long, Huế, Hội An, Sài Gòn, Phú Quốc... Tự do xây nhà phố, khách sạn,
-              thu thuế du lịch và rinh quỹ Heo Đất may mắn!
+              Trải nghiệm bàn cờ 2.5D Hồ Hoàn Kiếm độc đáo với 22 tỉnh thành &amp; 4 ga giao thông xuyên Việt:
+              Hà Giang, Hà Nội, Sa Pa, Huế, Đà Nẵng, Sài Gòn, Cà Mau... Tự do xây nhà, kiến tạo Landmark,
+              thu thuế và rinh quỹ Heo Đất may mắn!
             </p>
 
             {/* Tags */}
@@ -104,7 +104,7 @@ export function GameGrid({ onPlayGame }: GameGridProps) {
                 Bot AI Thông Minh
               </span>
               <span className="rounded-lg bg-slate-800/80 px-2.5 py-1 border border-slate-700/60">
-                🎮 Three.js WebGL 3D
+                🏛️ Pixi.js 2.5D & Three.js
               </span>
             </div>
           </div>

@@ -427,7 +427,8 @@ export default function PlayV2Page() {
     count: 2 | 3 | 4,
     autoBot: boolean,
     initialMoney: number = 800_000,
-    auctionOnSkip: boolean = false
+    auctionOnSkip: boolean = false,
+    customPlayerName?: string
   ) => {
     setSelectedHumanChar(char);
     setPlayerCount(count);
@@ -437,7 +438,7 @@ export default function PlayV2Page() {
     lastTitleIdRef.current = 'tay-trang';
     if (bridgeRef.current) {
       bridgeRef.current.auctionOnSkip = auctionOnSkip;
-      bridgeRef.current.resetGame(count, autoBot, char, 'NORMAL', initialMoney, auctionOnSkip);
+      bridgeRef.current.resetGame(count, autoBot, char, 'NORMAL', initialMoney, auctionOnSkip, customPlayerName);
     }
   };
 
@@ -2013,7 +2014,7 @@ export default function PlayV2Page() {
               skillCharges={skillCharges}
               isAutoBotMatch={isAutoBotMatch}
               lastRoll={
-                bridgeState
+                bridgeState && bridgeState.hasRolledOnce
                   ? {
                       dice: bridgeState.dice,
                       isDouble: bridgeState.isDouble,
@@ -2043,7 +2044,7 @@ export default function PlayV2Page() {
               <span className="text-[10px] font-bold text-slate-400">NHẬT KÝ</span>
               <button
                 onClick={() => setShowLogModal(true)}
-                className="text-[10px] font-bold text-amber-400 hover:text-amber-300 transition flex items-center gap-1 cursor-pointer bg-slate-900/95 px-2 py-0.5 rounded-md border border-slate-700/80 pointer-events-auto active:scale-95 shadow-md"
+                className="text-[10px] font-bold text-amber-400 hover:text-amber-300 transition flex items-center gap-1 cursor-pointer bg-[#3D2211] px-2 py-0.5 rounded-md border border-[#C9A227]/60 text-[#C9A227] pointer-events-auto active:scale-95 shadow-md"
                 title="Mở rộng xem 20 dòng gần nhất"
               >
                 <ScrollText className="h-3 w-3" />
@@ -2053,7 +2054,7 @@ export default function PlayV2Page() {
             {bridgeState.logs.slice(-2).map((log, idx) => (
               <div
                 key={idx}
-                className="rounded-xl border border-slate-800 bg-slate-950/90 px-2.5 py-1 text-[10px] text-slate-300 shadow-xl pointer-events-none"
+                className="rounded-xl border border-[#6B4226] bg-[#2A170C]/90 px-2.5 py-1 text-[10px] text-[#F3E6C8] shadow-xl pointer-events-none"
               >
                 {log}
               </div>
@@ -2235,7 +2236,7 @@ export default function PlayV2Page() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-lg rounded-3xl bg-slate-950 border-2 border-amber-500/50 p-5 shadow-2xl animate-in zoom-in-95 duration-150"
+            className="relative w-full max-w-lg rounded-3xl bg-[#2A170C] border-2 border-[#C9A227]/70 p-5 shadow-2xl animate-in zoom-in-95 duration-150"
           >
             <div className="flex items-center justify-between border-b border-amber-500/30 pb-3 mb-3">
               <div className="flex items-center gap-2">
@@ -2255,7 +2256,7 @@ export default function PlayV2Page() {
               {bridgeState.logs.slice(-20).map((log, idx) => (
                 <div
                   key={idx}
-                  className="rounded-xl border border-slate-800 bg-slate-900/80 px-3 py-1.5 text-xs text-slate-200 leading-relaxed font-mono flex items-start gap-2"
+                  className="rounded-xl border border-[#6B4226] bg-[#3D2211]/90 px-3 py-1.5 text-xs text-[#F3E6C8] leading-relaxed font-mono flex items-start gap-2"
                 >
                   <span className="text-amber-400/70 font-bold shrink-0">
                     {bridgeState.logs.length - bridgeState.logs.slice(-20).length + idx + 1}.

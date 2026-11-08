@@ -13,6 +13,7 @@ import { createBoardAnimationManager, BoardAnimationManager } from './boardAnima
 import { audioManager } from '../lib/audio/audioManager';
 import { createCharacterManager, CharacterManager, PlayerTokenData } from './characterRenderer';
 import { createBuildingRenderer, BuildingRenderer, BuildingsLayout, BuildingLayoutItem } from './buildingRenderer';
+import { formatMoney } from './utils/formatMoney';
 import {
   CalibratedTile,
   Point2D,
@@ -109,7 +110,15 @@ export function Board25DCanvas({
   const buildingRendererRef = useRef<BuildingRenderer | null>(null);
   const boardRendererRef = useRef<BoardRendererInstance | null>(null);
   const vfxLayerRef = useRef<Container | null>(null);
-  const floatingTextsRef = useRef<Array<{ container: Text; elapsed: number }>>([]);
+  interface PooledFloatingText {
+    label: Text;
+    active: boolean;
+    targetId: string;
+    elapsed: number;
+    startX: number;
+    startY: number;
+  }
+  const textPoolRef = useRef<PooledFloatingText[]>([]);
   const prevPositionsRef = useRef<Record<string, number>>({});
 
   const buildingsLayoutRef = useRef<BuildingsLayout>(buildingsLayout);
@@ -329,7 +338,7 @@ export function Board25DCanvas({
   // Bật/tắt bộ đếm FPS bằng phím F3 & Bật/tắt chấm neo công trình ô góc F4 (chỉ bật ở development)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'F3') {
+      if (e.key === 'F3' && process.env.NODE_ENV === 'development') {
         e.preventDefault();
         setShowFps((prev) => !prev);
       } else if (e.key === 'F4' && process.env.NODE_ENV === 'development') {
@@ -873,6 +882,38 @@ export function Board25DCanvas({
       world.addChild(vfxLayer);
       vfxLayerRef.current = vfxLayer;
 
+      // Khởi tạo Object Pool cho chữ nổi VFX (tối đa 8 nhãn dùng lại liên tục, chống rò rỉ bộ nhớ JS)
+      textPoolRef.current = Array.from({ length: 8 }).map(() => {
+        const label = new Text({
+          text: '',
+          resolution: 2.0,
+          style: {
+            fontFamily: 'Baloo 2, cursive, sans-serif',
+            fontSize: 15,
+            fontWeight: '800',
+            fill: '#ffffff',
+            stroke: { color: '#160e08', width: 3.5, join: 'round' },
+            dropShadow: {
+              alpha: 0.8,
+              blur: 4,
+              color: '#000000',
+              distance: 2.5,
+            },
+          },
+        });
+        label.anchor.set(0.5, 1.0);
+        label.visible = false;
+        vfxLayer.addChild(label);
+        return {
+          label,
+          active: false,
+          targetId: '',
+          elapsed: 0,
+          startX: 0,
+          startY: 0,
+        };
+      });
+
       // 5. Lớp vẽ Marker đặc biệt (Tàu điện, Đèn lồng)
       const markersLayer = new Container();
       markersLayer.label = 'markers-layer';
@@ -1069,11 +1110,29 @@ export function Board25DCanvas({
         }
         lastFrameTime = now;
 
+        // Cập nhật hiệu ứng chữ nổi VFX từ Object Pool (1.2s, trôi lên và mờ dần)
+        const pool = textPoolRef.current;
+        const DURATION = 1.2;
+        let hasActiveFloating = false;
+        for (let i = 0; i < pool.length; i++) {
+          const item = pool[i];
+          if (!item.active) continue;
+          hasActiveFloating = true;
+          item.elapsed += deltaSeconds;
+          const progress = Math.min(1.0, item.elapsed / DURATION);
+          item.label.y = item.startY - progress * 35;
+          item.label.alpha = Math.max(0, 1.0 - progress);
+          if (item.elapsed >= DURATION) {
+            item.active = false;
+            item.label.visible = false;
+          }
+        }
+
         // Nhận diện trạng thái có hoạt cảnh chuyển động / tương tác
         const isAnimating =
           charManager.isAnyHopping() ||
           (cameraRef.current && (cameraRef.current.isAutoFollowing || cameraRef.current.isDragging)) ||
-          floatingTextsRef.current.length > 0 ||
+          hasActiveFloating ||
           dragTargetRef.current !== null ||
           dragRingHandleRef.current !== null;
 
@@ -1100,24 +1159,6 @@ export function Board25DCanvas({
           }
         } else if (cameraRef.current && cameraRef.current.isAutoFollowing) {
           cameraRef.current.returnToUserView(0.08);
-        }
-
-        // Cập nhật hiệu ứng chữ bay VFX (thời gian hiển thị dưới 1 giây)
-        const fTexts = floatingTextsRef.current;
-        for (let i = fTexts.length - 1; i >= 0; i--) {
-          const item = fTexts[i];
-          item.elapsed += deltaSeconds;
-          item.container.y -= 45 * deltaSeconds;
-          if (item.elapsed > 0.45) {
-            item.container.alpha = Math.max(0, 1 - (item.elapsed - 0.45) / 0.45);
-          }
-          if (item.elapsed >= 0.90) {
-            if (vfxLayerRef.current) {
-              vfxLayerRef.current.removeChild(item.container);
-            }
-            item.container.destroy({ children: true });
-            fTexts.splice(i, 1);
-          }
         }
       };
 
@@ -1168,8 +1209,8 @@ export function Board25DCanvas({
       containerEl?.addEventListener('wheel', handleWheelScale, { passive: false });
 
       return () => {
-        floatingTextsRef.current.forEach((f) => f.container.destroy({ children: true }));
-        floatingTextsRef.current = [];
+        textPoolRef.current.forEach((item) => item.label.destroy({ children: true }));
+        textPoolRef.current = [];
         window.removeEventListener('resize', handleResize);
         containerEl?.removeEventListener('wheel', handleWheelScale);
         app.ticker.remove(tickerCallback);
@@ -1203,40 +1244,87 @@ export function Board25DCanvas({
   // Lắng nghe các sự kiện gameEventBus để kích hoạt hiệu ứng chữ nổi VFX
   useEffect(() => {
     if (!eventBus) return;
-    const spawnFloatingText = (text: string, color: string, tileId: number) => {
-      const vfx = vfxLayerRef.current;
-      if (!vfx) return;
-      const geo = getTileGeometry(tileId);
-      if (!geo) return;
-      const label = new Text({
-        text,
-        resolution: 2.5,
-        style: {
-          fontFamily: 'Baloo 2, cursive, sans-serif',
-          fontSize: 16,
-          fontWeight: '800',
-          fill: color,
-          stroke: { color: '#160e08', width: 3.5, join: 'round' },
-          dropShadow: {
-            alpha: 0.8,
-            blur: 4,
-            color: '#000000',
-            distance: 3,
-          },
-        },
-      });
-      label.anchor.set(0.5, 1.0);
-      // Nằm trên đầu nhân vật (-110px) và xếp tầng tự động nếu có nhiều chữ nổi liên tiếp
-      const existingCount = floatingTextsRef.current.length;
-      label.position.set(geo.center.x, geo.center.y - 110 - existingCount * 22);
-      vfx.addChild(label);
-      floatingTextsRef.current.push({ container: label, elapsed: 0 });
+    const spawnFloatingText = (
+      text: string,
+      color: string,
+      target: { playerId?: string; tileId?: number }
+    ) => {
+      const pool = textPoolRef.current;
+      if (!pool || pool.length === 0) return;
+
+      const targetKey = target.playerId
+        ? `player_${target.playerId}`
+        : target.tileId !== undefined
+        ? `tile_${target.tileId}`
+        : 'default';
+
+      // Tìm vị trí neo: ưu tiên vị trí nhân vật (trên đầu nhân vật y - 75)
+      let anchorX = 0;
+      let anchorY = 0;
+      if (target.playerId && charManagerRef.current) {
+        const charPos = charManagerRef.current.getPlayerTokenPosition(target.playerId);
+        if (charPos) {
+          anchorX = charPos.x;
+          anchorY = charPos.y - 75;
+        }
+      }
+      if (anchorX === 0 && anchorY === 0 && target.tileId !== undefined) {
+        const geo = getTileGeometry(target.tileId);
+        if (geo) {
+          anchorX = geo.center.x;
+          anchorY = geo.center.y - 65;
+        }
+      }
+
+      // Quy tắc: Tối đa 1 chữ/nhân vật (chữ mới đè chữ cũ)
+      let item = pool.find((p) => p.active && p.targetId === targetKey);
+      if (!item) {
+        item = pool.find((p) => !p.active);
+      }
+      if (!item) {
+        item = pool.reduce((oldest, cur) => (cur.elapsed > oldest.elapsed ? cur : oldest), pool[0]);
+      }
+
+      item.active = true;
+      item.targetId = targetKey;
+      item.elapsed = 0;
+      item.startX = anchorX;
+      item.startY = anchorY;
+      item.label.text = text;
+      item.label.style.fill = color;
+      item.label.position.set(anchorX, anchorY);
+      item.label.alpha = 1.0;
+      item.label.visible = true;
     };
 
     const unsubEvents: (() => void)[] = [
+      eventBus.on('match-reset', (payload) => {
+        prevPositionsRef.current = {};
+        if (charManagerRef.current) {
+          const colorMap: Record<string, number> = {
+            'be-ti': 0xe5484d,
+            'co-hoa': 0x19b8a6,
+            'ong-bay': 0xf5b83d,
+            'chi-may': 0x8b6cf0,
+          };
+          const activeData: PlayerTokenData[] = payload.players.map((p, idx) => ({
+            id: p.id,
+            name: p.name,
+            characterKey: p.character || 'be-ti',
+            colorHex: colorMap[p.character] || 0x38bdf8,
+            position: p.position || 0,
+            isCurrentTurn: idx === 0,
+          }));
+          charManagerRef.current.resetAll(activeData);
+        }
+        textPoolRef.current.forEach((item) => {
+          item.active = false;
+          item.label.visible = false;
+        });
+      }),
       eventBus.on('player-moved', (payload) => {
         if (payload.passedGo) {
-          spawnFloatingText('+200.000đ Xuất Phát', '#4ade80', 0);
+          spawnFloatingText('+200K Xuất Phát', '#4ade80', { playerId: payload.playerId, tileId: 0 });
         }
       }),
       eventBus.on('tile-landed', (payload) => {
@@ -1248,7 +1336,7 @@ export function Board25DCanvas({
         }
       }),
       eventBus.on('property-bought', (payload) => {
-        spawnFloatingText(`-${payload.price.toLocaleString('vi-VN')}đ Đã mua`, '#facc15', payload.tile.id);
+        spawnFloatingText(`-${formatMoney(payload.price)} Đã mua`, '#facc15', { playerId: payload.playerId, tileId: payload.tile.id });
         const p = effectivePlayers.find((x) => x.id === payload.playerId);
         const playerPos = p ? getTileGeometry(p.position)?.center || { x: 0, y: 0 } : { x: 0, y: 0 };
         const tileGeo = getTileGeometry(payload.tile.id);
@@ -1264,7 +1352,7 @@ export function Board25DCanvas({
       }),
       eventBus.on('property-upgraded', (payload) => {
         const tierName = payload.tier === 5 ? 'Landmark' : `Nhà cấp ${payload.tier}`;
-        spawnFloatingText(`-${payload.cost.toLocaleString('vi-VN')}đ ${tierName}`, '#38bdf8', payload.tile.id);
+        spawnFloatingText(`-${formatMoney(payload.cost)} ${tierName}`, '#38bdf8', { playerId: payload.playerId, tileId: payload.tile.id });
         const tileGeo = getTileGeometry(payload.tile.id);
         if (tileGeo) {
           animManagerRef.current?.spawnUpgradePropertyVfx(tileGeo.center, gameSpeedRef.current >= 2 ? 0.5 : 1.0, () => {
@@ -1275,7 +1363,8 @@ export function Board25DCanvas({
         boardRendererRef.current?.updateTiles(tilesRef.current, playerColorMap, standingTileIds, cornerConfigs);
       }),
       eventBus.on('rent-paid', (payload) => {
-        spawnFloatingText(`-${payload.amount.toLocaleString('vi-VN')}đ Tiền thuê`, '#f87171', payload.tile.id);
+        spawnFloatingText(`-${formatMoney(payload.amount)} Tiền thuê`, '#f87171', { playerId: payload.debtorId, tileId: payload.tile.id });
+        spawnFloatingText(`+${formatMoney(payload.amount)} Tiền thuê`, '#4ade80', { playerId: payload.creditorId, tileId: payload.tile.id });
         const debtor = effectivePlayers.find((x) => x.id === payload.debtorId);
         const creditor = effectivePlayers.find((x) => x.id === payload.creditorId);
         const debtorPos = debtor ? getTileGeometry(debtor.position)?.center || { x: -100, y: 0 } : { x: -100, y: 0 };
@@ -1283,30 +1372,30 @@ export function Board25DCanvas({
         animManagerRef.current?.spawnRentPaidVfx(debtorPos, creditorPos, payload.amount, gameSpeedRef.current >= 2 ? 0.5 : 1.0);
       }),
       eventBus.on('tax-paid', (payload) => {
-        spawnFloatingText(`-${payload.amount.toLocaleString('vi-VN')}đ Thuế`, '#fb7185', payload.tile.id);
+        spawnFloatingText(`-${formatMoney(payload.amount)} Thuế`, '#fb7185', { playerId: payload.playerId, tileId: payload.tile.id });
       }),
-      eventBus.on('jail-entered', () => {
-        spawnFloatingText('VÀO TÙ! 🔒', '#f43f5e', 10);
+      eventBus.on('jail-entered', (payload) => {
+        spawnFloatingText('VÀO TÙ! 🔒', '#f43f5e', { playerId: payload.playerId, tileId: 10 });
         const jailGeo = getTileGeometry(10);
         if (jailGeo) {
           animManagerRef.current?.spawnJailBarsVfx(jailGeo.center, gameSpeedRef.current >= 2 ? 0.5 : 1.0);
         }
       }),
-      eventBus.on('jail-exited', () => {
-        spawnFloatingText('RA TÙ! 🕊️', '#34d399', 10);
+      eventBus.on('jail-exited', (payload) => {
+        spawnFloatingText('RA TÙ! 🕊️', '#34d399', { playerId: payload.playerId, tileId: 10 });
       }),
       eventBus.on('player-bankrupt', (payload) => {
         const p = effectivePlayers.find((x) => x.id === payload.playerId);
         const pos = p ? p.position : 0;
-        spawnFloatingText('PHÁ SẢN! 💥', '#ef4444', pos);
+        spawnFloatingText('PHÁ SẢN! 💥', '#ef4444', { playerId: payload.playerId, tileId: pos });
       }),
       eventBus.on('card-applied', (payload) => {
         if (payload.card.amount) {
           const isLoss = payload.card.type === 'CASH_LOSS' || payload.card.type === 'PAY_EACH_PLAYER';
-          const sign = isLoss ? '−' : '+';
+          const sign = isLoss ? '-' : '+';
           const color = isLoss ? '#ef4444' : '#22c55e';
           const p = effectivePlayers.find((x) => x.id === payload.playerId);
-          spawnFloatingText(`${sign}${payload.card.amount.toLocaleString('vi-VN')}đ`, color, p?.position ?? 0);
+          spawnFloatingText(`${sign}${formatMoney(payload.card.amount)}`, color, { playerId: payload.playerId, tileId: p?.position ?? 0 });
         }
       }),
     ];
@@ -1321,8 +1410,8 @@ export function Board25DCanvas({
       {/* Khung chứa canvas của Pixi.js */}
       <div ref={containerRef} className="absolute inset-0 h-full w-full cursor-grab active:cursor-grabbing" />
 
-      {/* Bộ đếm FPS & Thông số độ nét (Bật/tắt bằng phím F3) */}
-      {showFps && (() => {
+      {/* Bộ đếm FPS & Thông số độ nét (Bật/tắt bằng phím F3) - CHỈ BẢN DEV */}
+      {process.env.NODE_ENV === 'development' && showFps && (() => {
         const imgSourceW = plateResolution === 'small' ? 2048 : 2668;
         const imgSourceH = plateResolution === 'small' ? 1151 : 1500;
         const dpr = typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1;
@@ -1397,8 +1486,8 @@ export function Board25DCanvas({
         </button>
       )}
 
-      {/* Nút bật/tắt F3 chỉ hiện khi bật F2 hoặc khi đang xem FPS */}
-      {(calibrationMode || showFps) && (
+      {/* Nút bật/tắt F3 chỉ hiện khi bật F2 hoặc khi đang xem FPS - CHỈ BẢN DEV */}
+      {process.env.NODE_ENV === 'development' && (calibrationMode || showFps) && (
       <button
         onClick={() => setShowFps((prev) => !prev)}
         className="absolute top-4 right-4 z-30 flex h-8 items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900/80 px-2 text-[11px] font-mono text-slate-400 hover:border-amber-500/40 hover:text-amber-300 transition"

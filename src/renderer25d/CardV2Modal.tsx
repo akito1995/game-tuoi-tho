@@ -82,12 +82,11 @@ export function CardV2Modal({
     };
   }, []);
 
-  // Xử lý tự động đóng khi đọc xong
+  // Xử lý tự động đóng khi đọc xong: CHỈ áp dụng cho BOT
+  // Người chơi thật phải chờ vô hạn cho đến khi người dùng tự bấm 'ĐỒNG Ý'
   useEffect(() => {
-    if (stage === 'IDLE') {
-      // Nếu là bot, tự động áp dụng sau 2.2 giây để người chơi kịp đọc
-      // Nếu là người thật, tự động áp dụng sau 5.0 giây phòng trường hợp người chơi quên bấm
-      const autoDelay = isBot ? 2200 : 5000;
+    if (stage === 'IDLE' && isBot) {
+      const autoDelay = 2200;
       autoCloseTimerRef.current = setTimeout(() => {
         handleConfirm();
       }, autoDelay);

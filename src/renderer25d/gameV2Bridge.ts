@@ -51,6 +51,7 @@ export interface GameV2State {
   rankings: PlayerRankingItem[];
   netWorthHistory?: Record<string, number[]>;
   currentAuction?: AuctionState | null;
+  hasRolledOnce: boolean;
 }
 
 export class GameV2Bridge {
@@ -63,6 +64,8 @@ export class GameV2Bridge {
   public initialMoney: number = 800_000;
   public auctionOnSkip: boolean = false;
   public currentAuction: AuctionState | null = null;
+  public hasRolledOnce: boolean = false;
+  public customPlayerName?: string;
   public botActionsBuffer: string[] = [];
 
   private listeners: Set<(state: GameV2State) => void> = new Set();
@@ -78,7 +81,8 @@ export class GameV2Bridge {
     humanChar: CharacterId = 'be-ti',
     botDifficulty: BotDifficulty = 'NORMAL',
     initialMoney: number = 800_000,
-    auctionOnSkip: boolean = false
+    auctionOnSkip: boolean = false,
+    customPlayerName?: string
   ) {
     this.speed = speed;
     this.isAutoMatch = allBots;
@@ -86,8 +90,9 @@ export class GameV2Bridge {
     this.botDifficulty = botDifficulty;
     this.initialMoney = initialMoney;
     this.auctionOnSkip = auctionOnSkip;
+    this.customPlayerName = customPlayerName;
     this.eventBus = new GameEventBus();
-    this.engine = this.createEngine(playerCount, allBots, humanChar, botDifficulty, initialMoney);
+    this.engine = this.createEngine(playerCount, allBots, humanChar, botDifficulty, initialMoney, customPlayerName);
     this.setupInternalListeners();
   }
 
@@ -96,7 +101,8 @@ export class GameV2Bridge {
     allBots: boolean,
     humanChar: CharacterId,
     botDifficulty: BotDifficulty,
-    initialMoney: number = 800_000
+    initialMoney: number = 800_000,
+    customPlayerName?: string
   ): GameEngine {
     const allCharList: Array<{ name: string; character: CharacterId }> = [
       { name: 'Bé Tí', character: 'be-ti' },
@@ -109,6 +115,10 @@ export class GameV2Bridge {
     const others = allCharList.filter((c) => c.character !== chosen.character);
     const orderedChars = [chosen, ...others];
 
+    const humanName = customPlayerName && customPlayerName.trim()
+      ? `${customPlayerName.trim()} (${orderedChars[0].name})`
+      : orderedChars[0].name;
+
     const characters: Array<{
       id: string;
       name: string;
@@ -118,7 +128,7 @@ export class GameV2Bridge {
     }> = [
       {
         id: 'player-1',
-        name: orderedChars[0].name,
+        name: humanName,
         character: orderedChars[0].character,
         isBot: allBots ? true : false,
       },
@@ -154,7 +164,8 @@ export class GameV2Bridge {
     humanChar: CharacterId = this.humanChar,
     botDifficulty: BotDifficulty = this.botDifficulty,
     initialMoney: number = this.initialMoney,
-    auctionOnSkip: boolean = this.auctionOnSkip
+    auctionOnSkip: boolean = this.auctionOnSkip,
+    customPlayerName?: string
   ): void {
     if (this.botTimer) {
       clearTimeout(this.botTimer);
@@ -172,8 +183,13 @@ export class GameV2Bridge {
     this.botDifficulty = botDifficulty;
     this.initialMoney = initialMoney;
     this.auctionOnSkip = auctionOnSkip;
-    this.engine = this.createEngine(playerCount, allBots, humanChar, botDifficulty, initialMoney);
+    this.hasRolledOnce = false;
+    if (customPlayerName !== undefined) {
+      this.customPlayerName = customPlayerName;
+    }
+    this.engine = this.createEngine(playerCount, allBots, humanChar, botDifficulty, initialMoney, this.customPlayerName);
     this.setupInternalListeners();
+    this.eventBus.emit('match-reset', { players: this.engine.state.players });
     this.notify();
     this.checkAutoBotTurn();
   }
@@ -275,6 +291,7 @@ export class GameV2Bridge {
         ? JSON.parse(JSON.stringify(this.engine.state.netWorthHistory))
         : undefined,
       currentAuction: this.currentAuction ? { ...this.currentAuction } : null,
+      hasRolledOnce: this.hasRolledOnce,
     };
   }
 
@@ -320,6 +337,7 @@ export class GameV2Bridge {
     ) {
       return { dice: this.engine.state.dice, isDouble: this.engine.state.isDouble };
     }
+    this.hasRolledOnce = true;
     const res = this.engine.rollDice();
     this.notify();
     return { dice: res.dice, isDouble: res.isDouble };
@@ -357,6 +375,7 @@ export class GameV2Bridge {
     const active = this.engine.getActivePlayer();
     this.engine.addLog(`🎯 ${active.name} dùng kỹ năng ${skillNameMap[skill]}.`);
     const isSkillRoll = skill === 'SHORT' || skill === 'LONG';
+    this.hasRolledOnce = true;
     const res = this.engine.rollDice(dice, { isSkillRoll });
     this.notify();
     return { dice: res.dice, isDouble: res.isDouble };
@@ -580,13 +599,22 @@ export class GameV2Bridge {
   }
 
   public checkAutoBotTurn(): void {
-    if (this.isDestroyed || this.isPausedByModal || this.currentAuction || this.engine.state.gamePhase === 'GAME_OVER') return;
+    if (this.isDestroyed || this.isPausedByModal || this.currentAuction || this.engine.state.gamePhase === 'GAME_OVER') {
+      if (this.botTimer) {
+        clearTimeout(this.botTimer);
+        this.botTimer = null;
+      }
+      return;
+    }
 
-    // 4. Khi người chơi thật phá sản hoặc chỉ còn 1 người, dừng bot ngay lập tức
+    // Khi người chơi thật phá sản hoặc chỉ còn 1 người, dừng bot ngay lập tức
     const human = this.engine.state.players.find((p) => !p.isBot);
     const alivePlayers = this.engine.state.players.filter((p) => !p.bankrupt);
     if ((human && human.bankrupt) || alivePlayers.length <= 1) {
-      if (this.botTimer) clearTimeout(this.botTimer);
+      if (this.botTimer) {
+        clearTimeout(this.botTimer);
+        this.botTimer = null;
+      }
       this.engine.checkAndApplyVictory();
       this.notify();
       return;
@@ -595,9 +623,19 @@ export class GameV2Bridge {
     const active = this.engine.getActivePlayer();
     const isBotTurn = active.isBot || this.isAutoMatch;
 
-    if (!isBotTurn) return;
+    // TUYỆT ĐỐI KHÔNG tự động chơi khi tới lượt người thật!
+    if (!isBotTurn) {
+      if (this.botTimer) {
+        clearTimeout(this.botTimer);
+        this.botTimer = null;
+      }
+      return;
+    }
 
-    if (this.botTimer) clearTimeout(this.botTimer);
+    if (this.botTimer) {
+      clearTimeout(this.botTimer);
+      this.botTimer = null;
+    }
 
     const randomMs = Math.floor(Math.random() * 700) + 800; // 800..1500ms
     const baseDelay = Math.max(100, Math.round(randomMs / this.speed));
@@ -608,33 +646,68 @@ export class GameV2Bridge {
   }
 
   private executeBotStep(): void {
-    if (this.isDestroyed || this.isPausedByModal || this.currentAuction || this.engine.state.gamePhase === 'GAME_OVER') return;
+    if (this.isDestroyed || this.isPausedByModal || this.currentAuction || this.engine.state.gamePhase === 'GAME_OVER') {
+      if (this.botTimer) {
+        clearTimeout(this.botTimer);
+        this.botTimer = null;
+      }
+      return;
+    }
 
-    // 4. Khi người chơi thật phá sản hoặc chỉ còn 1 người, dừng bot ngay lập tức
+    // Khi người chơi thật phá sản hoặc chỉ còn 1 người, dừng bot ngay lập tức
     const human = this.engine.state.players.find((p) => !p.isBot);
     const alivePlayers = this.engine.state.players.filter((p) => !p.bankrupt);
     if ((human && human.bankrupt) || alivePlayers.length <= 1) {
-      if (this.botTimer) clearTimeout(this.botTimer);
+      if (this.botTimer) {
+        clearTimeout(this.botTimer);
+        this.botTimer = null;
+      }
       this.engine.checkAndApplyVictory();
       this.notify();
       return;
     }
 
     const active = this.engine.getActivePlayer();
+    const isBotTurn = active.isBot || this.isAutoMatch;
+
+    // TUYỆT ĐỐI BẢO VỆ LƯỢT NGƯỜI CHƠI THẬT:
+    // Nếu active player là người thật và không bật autoMatch, lập tức hủy botTimer và dừng lại chờ người chơi bấm.
+    if (!isBotTurn) {
+      if (this.botTimer) {
+        clearTimeout(this.botTimer);
+        this.botTimer = null;
+      }
+      return;
+    }
+
     if (active.bankrupt) {
       this.engine.endTurn();
       this.notify();
+      this.checkAutoBotTurn();
       return;
     }
 
     const phase = this.engine.state.gamePhase;
 
+    // Hàm phụ: Chỉ lên lịch bước tiếp theo nếu người chơi kế tiếp vẫn là BOT hoặc đang bật tự động
+    const scheduleNextIfBot = (delayMs: number) => {
+      const nextActive = this.engine.getActivePlayer();
+      if ((nextActive.isBot || this.isAutoMatch) && this.engine.state.gamePhase !== 'GAME_OVER') {
+        const delay = Math.max(120, Math.round(delayMs / this.speed));
+        this.botTimer = setTimeout(() => this.executeBotStep(), delay);
+      } else {
+        if (this.botTimer) {
+          clearTimeout(this.botTimer);
+          this.botTimer = null;
+        }
+      }
+    };
+
     // 1. Cứu trợ nợ
     if (phase === 'DEBT_RELIEF') {
       executeBotDebtRelief(this.engine, active);
       this.notify();
-      const delay = Math.max(150, Math.round(600 / this.speed));
-      this.botTimer = setTimeout(() => this.executeBotStep(), delay);
+      scheduleNextIfBot(600);
       return;
     }
 
@@ -650,10 +723,10 @@ export class GameV2Bridge {
 
     // 3. Chờ đổ xúc xắc
     if (phase === 'AWAIT_ROLL') {
+      this.hasRolledOnce = true;
       this.engine.rollDice();
       this.notify();
-      const hopDelay = Math.max(200, Math.round(900 / this.speed));
-      this.botTimer = setTimeout(() => this.executeBotStep(), hopDelay);
+      scheduleNextIfBot(900);
       return;
     }
 
@@ -661,8 +734,7 @@ export class GameV2Bridge {
     if (phase === 'CARD_DRAWN' && this.engine.state.currentCard) {
       this.engine.applyCardEffect(this.engine.state.currentCard);
       this.notify();
-      const delay = Math.max(150, Math.round(600 / this.speed));
-      this.botTimer = setTimeout(() => this.executeBotStep(), delay);
+      scheduleNextIfBot(600);
       return;
     }
 
@@ -697,8 +769,7 @@ export class GameV2Bridge {
         this.engine.completeAction();
       }
       this.notify();
-      const delay = Math.max(150, Math.round(500 / this.speed));
-      this.botTimer = setTimeout(() => this.executeBotStep(), delay);
+      scheduleNextIfBot(500);
       return;
     }
 
@@ -711,8 +782,7 @@ export class GameV2Bridge {
         this.engine.skipTakeover();
       }
       this.notify();
-      const delay = Math.max(150, Math.round(500 / this.speed));
-      this.botTimer = setTimeout(() => this.executeBotStep(), delay);
+      scheduleNextIfBot(500);
       return;
     }
 
@@ -720,6 +790,7 @@ export class GameV2Bridge {
     if (phase === 'TURN_END') {
       this.engine.endTurn();
       this.notify();
+      this.checkAutoBotTurn();
       return;
     }
   }

@@ -58,6 +58,15 @@ export function createBoardAnimationManager(): BoardAnimationManager {
 
   const activeItems: ActiveItem[] = [];
 
+  const addActiveItem = (item: ActiveItem) => {
+    // Giới hạn tối đa 3 hiệu ứng bay cùng lúc (tự giải phóng hiệu ứng cũ nhất nếu quá tải)
+    while (activeItems.length >= 3) {
+      const oldest = activeItems.shift();
+      oldest?.destroy();
+    }
+    activeItems.push(item);
+  };
+
   // Nạp sẵn Texture cho các hiệu ứng
   let coinTex: any = null;
   let banknoteTex: any = null;
@@ -90,7 +99,7 @@ export function createBoardAnimationManager(): BoardAnimationManager {
     // Sprite đồng xu hoa sen (thu nhỏ 50% để không che bàn cờ và chữ nổi)
     const coin = new Sprite(coinTex);
     coin.anchor.set(0.5, 0.5);
-    coin.scale.set(0.06);
+    coin.scale.set(0.03);
     coin.position.set(startPos.x, startPos.y);
     itemContainer.addChild(coin);
 
@@ -143,7 +152,7 @@ export function createBoardAnimationManager(): BoardAnimationManager {
       itemContainer.destroy({ children: true });
     };
 
-    activeItems.push({ update, destroy });
+    addActiveItem({ update, destroy });
   };
 
   // -------------------------------------------------------------
@@ -256,7 +265,7 @@ export function createBoardAnimationManager(): BoardAnimationManager {
       itemContainer.destroy({ children: true });
     };
 
-    activeItems.push({ update, destroy });
+    addActiveItem({ update, destroy });
   };
 
   // -------------------------------------------------------------
@@ -277,7 +286,7 @@ export function createBoardAnimationManager(): BoardAnimationManager {
     // Tờ tiền giấy Đông Dương cổ thu nhỏ vừa vặn
     const note = new Sprite(banknoteTex);
     note.anchor.set(0.5, 0.5);
-    note.scale.set(0.08);
+    note.scale.set(0.04);
     note.position.set(debtorPos.x, debtorPos.y);
     itemContainer.addChild(note);
 
@@ -303,7 +312,7 @@ export function createBoardAnimationManager(): BoardAnimationManager {
       itemContainer.destroy({ children: true });
     };
 
-    activeItems.push({ update, destroy });
+    addActiveItem({ update, destroy });
   };
 
   // -------------------------------------------------------------
@@ -392,7 +401,7 @@ export function createBoardAnimationManager(): BoardAnimationManager {
       itemContainer.destroy({ children: true });
     };
 
-    activeItems.push({ update, destroy });
+    addActiveItem({ update, destroy });
   };
 
   // -------------------------------------------------------------
@@ -437,7 +446,7 @@ export function createBoardAnimationManager(): BoardAnimationManager {
     for (let i = 0; i < 24; i++) {
       const c = new Sprite(coinTex);
       c.anchor.set(0.5, 0.5);
-      c.scale.set(0.08 + Math.random() * 0.05);
+      c.scale.set(0.04 + Math.random() * 0.025);
       c.position.set(
         tileCenter.x + (Math.random() - 0.5) * 260,
         tileCenter.y - 120 - Math.random() * 70
@@ -483,7 +492,7 @@ export function createBoardAnimationManager(): BoardAnimationManager {
       itemContainer.destroy({ children: true });
     };
 
-    activeItems.push({ update, destroy });
+    addActiveItem({ update, destroy });
   };
 
   const update = (deltaSeconds: number) => {

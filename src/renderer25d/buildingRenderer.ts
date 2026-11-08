@@ -203,8 +203,8 @@ export function createBuildingRenderer(): BuildingRenderer {
       footRatio = 0.92; // Biểu tượng địa danh tráng lệ
       maxHeightRatio = 2.30;
     } else if (tierType === 'util') {
-      footRatio = 0.78;
-      maxHeightRatio = 1.80;
+      footRatio = 0.56; // Nằm gọn gàng trong ô tiện ích
+      maxHeightRatio = 1.35;
     }
 
     const targetFootW = tileWidth * footRatio * scaleMultiplier;
@@ -234,38 +234,45 @@ export function createBuildingRenderer(): BuildingRenderer {
       .fill({ color: 0x140a04, alpha: 0.20 });
     slot.shadowContainer.addChild(aoShadow);
 
-    // b) Bóng tiếp xúc: sát chân công trình (không có khe hở, độ đục 0.55, đậm nhất ngay dưới chân)
+    // b) Bóng tiếp xúc: sát chân công trình (không có khe hở, đậm dưới chân)
     const contactShadow = new Graphics();
     const rx = (metric.footW * scale) * 0.46;
     const ry = rx * 0.38;
     contactShadow
-      .ellipse(0, 0, rx, ry)
-      .fill({ color: 0x080402, alpha: 0.55 });
+      .ellipse(2, 1, rx, ry)
+      .fill({ color: 0x080402, alpha: 0.62 });
     slot.shadowContainer.addChild(contactShadow);
 
-    // c) Bóng hắt từ chân: nghiêng theo nắng (trên-trái -> dưới-phải), độ đục 0.28
+    // c) Bóng hắt từ chân: nghiêng theo nắng chiều (trên-trái -> dưới-phải), màu nâu đất thẫm
+    const isThuyDien = slot.tileId === 12 || slot.currentBuildingKey === 'util-thuy-dien';
+    const effectiveScale = isThuyDien ? scale * 0.72 : scale;
+
     const castShadow = new Sprite(texture);
-    castShadow.tint = 0x24160c;
-    castShadow.alpha = 0.28;
+    castShadow.tint = 0x1a0d06;
+    castShadow.alpha = 0.36;
     castShadow.anchor.set(metric.anchorX, metric.anchorY);
-    castShadow.scale.x = scale * 1.05;
-    castShadow.scale.y = scale * 0.28;
-    castShadow.rotation = 0.52;
+    castShadow.scale.x = effectiveScale * 1.08;
+    castShadow.scale.y = effectiveScale * 0.30;
+    castShadow.rotation = 0.55; // Góc nắng chiều chuẩn
     castShadow.position.set(0, 0);
     slot.shadowContainer.addChild(castShadow);
 
     // 4. Hiển thị công trình đặc và rõ 100%:
-    // Bỏ uốn/xiên, tuyệt đối không xoay, không xiên, chỉ scale đồng nhất.
-    // Bỏ tính năng làm mờ dần đế: alpha 1.0 hoàn toàn.
-    // Tính năng cắt đế theo hình ô chỉ bật khi được chọn trong F2 (mặc định TẮT).
+    // Thủy điện được nắn góc isometric hài hòa với bàn cờ và thu nhỏ để nằm gọn trong ô
     const shouldClip = cfg.clipBase === true;
 
     if (!shouldClip) {
       const bodySprite = new Sprite(effectiveTexture);
       bodySprite.anchor.set(metric.anchorX, metric.anchorY);
-      bodySprite.scale.set(scale, scale);
-      bodySprite.rotation = 0;
-      bodySprite.skew.set(0, 0);
+      bodySprite.scale.set(effectiveScale, effectiveScale);
+      if (isThuyDien) {
+        // Căn chỉnh góc nghiêng isometric cho Thủy Điện Hòa Bình ô 12
+        bodySprite.skew.set(-0.10, 0.05);
+        bodySprite.rotation = -0.04;
+      } else {
+        bodySprite.rotation = 0;
+        bodySprite.skew.set(0, 0);
+      }
       bodySprite.position.set(0, 0);
       bodySprite.alpha = 1.0;
       slot.buildingContainer.addChild(bodySprite);
@@ -419,6 +426,27 @@ export function createBuildingRenderer(): BuildingRenderer {
           geo.polygonPoints[0]
         );
         slot.flagContainer.position.set(nearCorner.x - finalX, nearCorner.y - finalY);
+
+        // Vẽ cán cờ, chóp vàng và lá cờ MỘT LẦN DUY NHẤT (tránh clear() vẽ lại 60 lần/giây gây tụt FPS)
+        const pH = slot.flagPoleHeight;
+        const fW = slot.flagWidth;
+        const fH = slot.flagHeight;
+
+        slot.flagPoleGraphic.clear();
+        slot.flagPoleGraphic
+          .moveTo(0, 0)
+          .lineTo(0, -pH)
+          .stroke({ width: 2.0, color: 0x78350f });
+
+        slot.flagFinialGraphic.clear();
+        slot.flagFinialGraphic
+          .circle(0, -pH, 2.5)
+          .fill({ color: 0xfacc15 });
+
+        slot.flagGraphic.clear();
+        slot.flagGraphic
+          .poly([0, -pH, fW, -pH + fH * 0.45, 0, -pH + fH])
+          .fill({ color: slot.flagColor, alpha: 0.95 });
       } else {
         slot.flagColor = null;
         slot.flagContainer.visible = false;
@@ -529,33 +557,13 @@ export function createBuildingRenderer(): BuildingRenderer {
         }
       }
 
-      // 2. Diễn hoạt lá cờ phất phới nhẹ nhàng (chu kỳ 1.5 giây)
+      // 2. Diễn hoạt lá cờ phất phới nhẹ nhàng (chu kỳ 1.5 giây) bằng phép biến đổi skew/scale siêu nhẹ
+      // TUYỆT ĐỐI KHÔNG clear() và vẽ lại geometry mỗi frame!
       if (slot.flagContainer.visible && slot.flagColor !== null) {
         slot.flagTimer += deltaSeconds;
-        const wave = Math.sin(slot.flagTimer * ((Math.PI * 2) / 1.5)) * 2.5;
-
-        const pH = slot.flagPoleHeight;
-        const fW = slot.flagWidth;
-        const fH = slot.flagHeight;
-
-        // Vẽ cán cờ mảnh màu gỗ
-        slot.flagPoleGraphic.clear();
-        slot.flagPoleGraphic
-          .moveTo(0, 0)
-          .lineTo(0, -pH)
-          .stroke({ width: 2.0, color: 0x78350f });
-
-        // Lá cờ tam giác đuôi nheo
-        slot.flagGraphic.clear();
-        slot.flagGraphic
-          .poly([0, -pH, fW, -pH + fH * 0.45 + wave, 0, -pH + fH])
-          .fill({ color: slot.flagColor, alpha: 0.95 });
-
-        // Chóp hạt vàng trên đỉnh cột cờ
-        slot.flagFinialGraphic.clear();
-        slot.flagFinialGraphic
-          .circle(0, -pH, 2.5)
-          .fill({ color: 0xfacc15 });
+        const wave = Math.sin(slot.flagTimer * ((Math.PI * 2) / 1.5));
+        slot.flagGraphic.skew.y = wave * 0.08;
+        slot.flagGraphic.scale.x = 1.0 + wave * 0.06;
       }
     });
   };

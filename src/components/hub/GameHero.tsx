@@ -53,15 +53,15 @@ export function GameHero({ onPlay, onExplore }: GameHeroProps) {
         <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">
           CỔNG TRÒ CHƠI <br className="hidden sm:inline" />
           <span className="bg-gradient-to-r from-amber-400 via-orange-300 to-rose-400 bg-clip-text text-transparent drop-shadow-sm">
-            DÂN GIAN & CỜ TỶ PHÚ 3D
+            DÂN GIAN & CỜ TỶ PHÚ 2.5D
           </span>
         </h1>
 
         {/* Hero Description */}
         <p className="mt-4 text-sm text-slate-300 sm:text-base lg:text-lg leading-relaxed">
-          Đắm mình vào Đảo Ngọc 3D bay bổng cùng 28 danh lam thắng cảnh Việt Nam,
-          gặp gỡ 4 linh vật đáng yêu (Heo Phượt, Cáo Tí, Mèo Ú, Trâu Vàng) và tận hưởng
-          những ván cờ gay cấn qua mạng P2P WebRTC mượt mà không cần cài đặt.
+          Đắm mình vào Hành Trình Xuyên Việt trên bàn cờ Hồ Gươm 2.5D độc đáo,
+          khám phá 22 tỉnh thành &amp; 4 ga giao thông, cùng tranh tài với 4 nhân vật:
+          Bé Tí (thần may mắn), Cô Hoa (tiết kiệm xây dựng), Ông Bảy (hào sảng tăng tiền thuê) và Chị Mây (nhanh nhẹn nhận thưởng).
         </p>
 
         {/* Call to Actions */}
@@ -71,7 +71,7 @@ export function GameHero({ onPlay, onExplore }: GameHeroProps) {
             className="group flex items-center gap-2.5 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 px-7 py-3.5 text-sm font-extrabold text-slate-950 shadow-xl shadow-amber-500/25 transition-all hover:scale-105 hover:brightness-110 active:scale-95"
           >
             <Play className="h-5 w-5 fill-current transition-transform group-hover:scale-110" />
-            <span>CHƠI CỜ TỶ PHÚ 3D NGAY</span>
+            <span>CHƠI CỜ TỶ PHÚ 2.5D NGAY</span>
           </button>
 
           <button
@@ -90,8 +90,8 @@ export function GameHero({ onPlay, onExplore }: GameHeroProps) {
             <span className="font-semibold">100% Thuần Việt</span>
           </div>
           <div className="flex items-center gap-2 text-xs text-slate-300">
-            <span className="text-base">🏝️</span>
-            <span className="font-semibold">Đồ Họa 3D Đảo Ngọc</span>
+            <span className="text-base">🏛️</span>
+            <span className="font-semibold">Bàn Cờ Hồ Gươm 2.5D</span>
           </div>
           <div className="flex items-center gap-2 text-xs text-slate-300">
             <span className="text-base">🌐</span>

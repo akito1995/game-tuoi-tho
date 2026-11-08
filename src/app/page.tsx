@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Volume2,
   VolumeX,
@@ -53,9 +54,11 @@ export default function HomePage() {
     setIsProfileOpen(true);
   };
 
+  const router = useRouter();
+
   const handleOpenModeSelect = () => {
     soundManager.playClickSound();
-    setIsModeSelectOpen(true);
+    router.push('/play-v2?lobby=1');
   };
 
   const handleOpenLeaderboard = () => {
@@ -83,7 +86,7 @@ export default function HomePage() {
                 </span>
               </div>
               <p className="text-[11px] text-slate-400 hidden sm:block">
-                Ký ức dân gian &amp; Cờ Tỷ Phú 3D Đảo Ngọc
+                Ký ức dân gian &amp; Cờ Tỷ Phú 2.5D Hồ Gươm
               </p>
             </div>
           </div>

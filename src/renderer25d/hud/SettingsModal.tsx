@@ -60,7 +60,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         {/* Nút đóng */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 h-11 w-11 min-h-[44px] min-w-[44px] rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition flex items-center justify-center cursor-pointer"
+          className="absolute top-4 right-4 h-11 w-11 min-h-[44px] min-w-[44px] rounded-xl text-[#F3E6C8]/70 hover:text-white hover:bg-slate-800 transition flex items-center justify-center cursor-pointer"
           aria-label="Đóng cài đặt"
         >
           <X className="h-5 w-5" />
@@ -78,7 +78,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {/* Tốc độ ván đấu */}
           <div className="rounded-2xl bg-slate-900/80 p-3 border border-slate-800">
             <div className="flex items-center justify-between mb-2">
-              <span className="font-bold text-slate-200 flex items-center gap-1.5">
+              <span className="font-bold text-[#F3E6C8] flex items-center gap-1.5">
                 <Zap className="h-4 w-4 text-amber-400" />
                 <span>Tốc độ di chuyển & ván đấu:</span>
               </span>
@@ -92,7 +92,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   className={`min-h-[44px] rounded-xl font-baloo text-sm font-bold transition flex items-center justify-center cursor-pointer ${
                     gameSpeed === spd
                       ? 'bg-amber-500 text-slate-950 border-2 border-amber-300 shadow-md shadow-amber-500/20'
-                      : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700'
+                      : 'bg-slate-800 text-[#F3E6C8] hover:text-white border border-slate-700'
                   }`}
                 >
                   {spd}x {spd === 1 ? '(Chuẩn)' : spd === 2 ? '(Nhanh)' : '(Siêu tốc)'}
@@ -104,7 +104,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {/* Chất lượng đồ họa */}
           <div className="rounded-2xl bg-slate-900/80 p-3 border border-slate-800">
             <div className="flex items-center justify-between mb-2">
-              <span className="font-bold text-slate-200 flex items-center gap-1.5">
+              <span className="font-bold text-[#F3E6C8] flex items-center gap-1.5">
                 <Monitor className="h-4 w-4 text-cyan-400" />
                 <span>Chất lượng hình ảnh & hiệu ứng:</span>
               </span>
@@ -124,7 +124,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   className={`min-h-[44px] rounded-xl font-baloo text-xs sm:text-sm font-bold transition flex items-center justify-center cursor-pointer ${
                     graphicsQuality === q.key
                       ? 'bg-cyan-600 text-white border-2 border-cyan-300 shadow-md shadow-cyan-600/30'
-                      : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700'
+                      : 'bg-slate-800 text-[#F3E6C8] hover:text-white border border-slate-700'
                   }`}
                 >
                   {q.label}
@@ -136,7 +136,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {/* Chế độ Camera */}
           <div className="rounded-2xl bg-slate-900/80 p-3 border border-slate-800">
             <div className="flex items-center justify-between mb-2">
-              <span className="font-bold text-slate-200 flex items-center gap-1.5">
+              <span className="font-bold text-[#F3E6C8] flex items-center gap-1.5">
                 <Camera className="h-4 w-4 text-emerald-400" />
                 <span>Góc quay Camera:</span>
               </span>
@@ -150,7 +150,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 className={`min-h-[44px] rounded-xl font-baloo text-xs sm:text-sm font-bold transition flex items-center justify-center cursor-pointer ${
                   cameraMode === 'OVERVIEW'
                     ? 'bg-emerald-600 text-white border-2 border-emerald-300 shadow-md shadow-emerald-600/30'
-                    : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700'
+                    : 'bg-slate-800 text-[#F3E6C8] hover:text-white border border-slate-700'
                 }`}
               >
                 Toàn cảnh (Mặc định)
@@ -160,7 +160,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 className={`min-h-[44px] rounded-xl font-baloo text-xs sm:text-sm font-bold transition flex items-center justify-center cursor-pointer ${
                   cameraMode === 'FOLLOW'
                     ? 'bg-emerald-600 text-white border-2 border-emerald-300 shadow-md shadow-emerald-600/30'
-                    : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700'
+                    : 'bg-slate-800 text-[#F3E6C8] hover:text-white border border-slate-700'
                 }`}
               >
                 Theo quân cờ
@@ -171,23 +171,23 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {/* Bot tự đấu */}
           <div className="rounded-2xl bg-slate-900/80 p-3 border border-slate-800 flex items-center justify-between">
             <div>
-              <div className="font-bold text-slate-200 flex items-center gap-1.5">
+              <div className="font-bold text-[#F3E6C8] flex items-center gap-1.5">
                 <Bot className="h-4 w-4 text-sky-400" />
                 <span>Chế độ Bot tự động đấu:</span>
               </div>
-              <p className="text-[11px] text-slate-400 mt-0.5">
+              <p className="text-[11px] text-[#F3E6C8]/70 mt-0.5">
                 Bot sẽ tự động đổ xúc xắc và mua đất thay bạn
               </p>
             </div>
             <button
               onClick={onToggleAutoBot}
-              className={`min-h-[44px] px-4 rounded-xl font-bold transition cursor-pointer border ${
+              className={`min-h-[44px] px-4 rounded-xl font-baloo text-sm font-bold transition cursor-pointer border ${
                 isAutoBot
-                  ? 'bg-sky-600 text-white border-sky-400 shadow-md shadow-sky-600/30'
-                  : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
+                  ? 'bg-emerald-600 text-white border-emerald-400 shadow-md shadow-emerald-600/30'
+                  : 'bg-slate-800 text-[#F3E6C8]/70 border-slate-700 hover:text-white'
               }`}
             >
-              {isAutoBot ? 'ĐANG BẬT' : 'ĐANG TẮT'}
+              {isAutoBot ? 'BẬT' : 'TẮT'}
             </button>
           </div>
 
@@ -195,36 +195,36 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {onToggleAuctionOnSkip && (
             <div className="rounded-2xl bg-slate-900/80 p-3 border border-slate-800 flex items-center justify-between">
               <div>
-                <div className="font-bold text-slate-200 flex items-center gap-1.5">
+                <div className="font-bold text-[#F3E6C8] flex items-center gap-1.5">
                   <Gavel className="h-4 w-4 text-amber-400" />
                   <span>Đấu giá khi bỏ qua:</span>
                 </div>
-                <p className="text-[11px] text-slate-400 mt-0.5">
+                <p className="text-[11px] text-[#F3E6C8]/70 mt-0.5">
                   Mở đấu giá 10s giữa các người chơi khi chọn bỏ qua
                 </p>
               </div>
               <button
                 onClick={onToggleAuctionOnSkip}
-                className={`min-h-[44px] px-4 rounded-xl font-bold transition cursor-pointer border ${
+                className={`min-h-[44px] px-4 rounded-xl font-baloo text-sm font-bold transition cursor-pointer border ${
                   auctionOnSkip
-                    ? 'bg-amber-600 text-white border-amber-400 shadow-md shadow-amber-600/30'
-                    : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
+                    ? 'bg-emerald-600 text-white border-emerald-400 shadow-md shadow-emerald-600/30'
+                    : 'bg-slate-800 text-[#F3E6C8]/70 border-slate-700 hover:text-white'
                 }`}
               >
-                {auctionOnSkip ? 'ĐANG BẬT' : 'ĐANG TẮT'}
+                {auctionOnSkip ? 'BẬT' : 'TẮT'}
               </button>
             </div>
           )}
 
           {/* Phím F2 hoặc mở lại Sảnh */}
           <div className="flex items-center gap-2 pt-2">
-            {onOpenCalibration && (
+            {process.env.NODE_ENV === 'development' && onOpenCalibration && (
               <button
                 onClick={() => {
                   onClose();
                   onOpenCalibration();
                 }}
-                className="flex-1 min-h-[44px] rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 font-bold transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer text-xs"
+                className="flex-1 min-h-[44px] rounded-xl bg-[#3D2211] hover:bg-[#4A2E1B] text-[#F3E6C8] border border-slate-800 font-bold transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer text-xs"
               >
                 <Sliders className="h-4 w-4 text-purple-400" />
                 <span>Hiệu chỉnh (F2)</span>
@@ -243,6 +243,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <span>Mở Sảnh Trận Mới</span>
               </button>
             )}
+          </div>
+
+          {/* Số phiên bản hiển thị trong Cài Đặt */}
+          <div className="pt-2 text-center text-[11px] text-[#C9A227]/80 font-mono tracking-wider">
+            Phiên bản: v2.5.0
           </div>
         </div>
       </div>

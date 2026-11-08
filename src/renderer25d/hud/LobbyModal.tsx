@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { CharacterId } from '../../game/types';
 import { GAME_CONFIG } from '../../game/gameConfig';
-import { Play, Users, Bot, Sparkles, Check, Coins, Gavel } from 'lucide-react';
+import { Play, Users, Bot, Sparkles, Check, Coins, Gavel, User } from 'lucide-react';
 
 interface LobbyModalProps {
   isOpen: boolean;
@@ -13,7 +13,8 @@ interface LobbyModalProps {
     count: 2 | 3 | 4,
     isAutoBot: boolean,
     initialMoney?: number,
-    auctionOnSkip?: boolean
+    auctionOnSkip?: boolean,
+    customPlayerName?: string
   ) => void;
   onClose?: () => void;
   initialAuctionOnSkip?: boolean;
@@ -79,6 +80,7 @@ export const LobbyModal: React.FC<LobbyModalProps> = ({
   const [startingMoney, setStartingMoney] = useState<number>(GAME_CONFIG.STARTING_MONEY);
   const [isAutoBot, setIsAutoBot] = useState(false);
   const [auctionOnSkip, setAuctionOnSkip] = useState(initialAuctionOnSkip);
+  const [customName, setCustomName] = useState('');
 
   if (!isOpen) return null;
 
@@ -267,6 +269,29 @@ export const LobbyModal: React.FC<LobbyModalProps> = ({
           </div>
         </div>
 
+        {/* ================= Ô NHẬP TÊN NGƯỜI CHƠI ================= */}
+        <div className="mb-4 rounded-2xl bg-slate-900/80 border border-slate-800 p-3">
+          <div className="flex items-center justify-between mb-1.5 px-1">
+            <div className="flex items-center gap-1.5 text-xs font-bold uppercase text-slate-300">
+              <User className="h-4 w-4 text-amber-400" />
+              <span>Tên Người Chơi</span>
+            </div>
+            <span className="text-[11px] text-slate-400">
+              {customName.trim()
+                ? `Hiển thị trong game: "${customName.trim()} (${CHARACTERS.find((c) => c.id === selectedChar)?.name})"`
+                : `Mặc định: "${CHARACTERS.find((c) => c.id === selectedChar)?.name}"`}
+            </span>
+          </div>
+          <input
+            type="text"
+            value={customName}
+            onChange={(e) => setCustomName(e.target.value)}
+            placeholder="Nhập tên của bạn (ví dụ: Long, Minh, Lan...)"
+            maxLength={18}
+            className="w-full h-11 px-3.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-amber-400 focus:ring-1 focus:ring-amber-400 text-sm font-semibold text-white placeholder-slate-500 outline-none transition"
+          />
+        </div>
+
         {/* ================= NÚT BẮT ĐẦU VÁN ĐẤU ================= */}
         <div className="flex items-center gap-3">
           {onClose && (
@@ -279,7 +304,7 @@ export const LobbyModal: React.FC<LobbyModalProps> = ({
           )}
 
           <button
-            onClick={() => onStartGame(selectedChar, playerCount, isAutoBot, startingMoney, auctionOnSkip)}
+            onClick={() => onStartGame(selectedChar, playerCount, isAutoBot, startingMoney, auctionOnSkip, customName.trim() || undefined)}
             className="flex-1 min-h-[48px] rounded-2xl bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 hover:brightness-110 active:scale-98 transition text-slate-950 font-baloo text-base sm:text-lg font-black tracking-wider uppercase flex items-center justify-center gap-2 border-2 border-amber-200 shadow-xl shadow-amber-500/40 cursor-pointer"
           >
             <Play className="h-5 w-5 fill-slate-950" />

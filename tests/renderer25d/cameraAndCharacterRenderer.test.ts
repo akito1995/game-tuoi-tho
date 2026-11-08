@@ -3,7 +3,7 @@ import { getTileSlotPosition } from '../../src/renderer25d/characterRenderer';
 import { getTileGeometry } from '../../src/renderer25d/isoMath';
 
 describe('Character Positioning & Grid Layout (2.5D)', () => {
-  it('đặt 1 người chơi ở ô thường lệch về mép trong (không che tên ô ở mép ngoài)', () => {
+  it('đặt 1 người chơi ở ô thường lệch về mép ngoài (không che tên ô ở mép trong)', () => {
     const tileId = 1; // Ô Tràng Tiền (ô thường)
     const pos = getTileSlotPosition(tileId, 0, 1);
     const geo = getTileGeometry(tileId);
@@ -27,7 +27,7 @@ describe('Character Positioning & Grid Layout (2.5D)', () => {
     const distToOuter = Math.hypot(pos.x - outMid.x, pos.y - outMid.y);
 
     // Phải gần mép trong hơn mép ngoài để không che tên ô và giá tiền
-    expect(distToInner).toBeLessThan(distToOuter);
+    expect(distToOuter).toBeLessThan(distToInner);
   });
 
   it('xếp 2 người chơi ở ô thường lệch trái / phải dọc theo cạnh ô', () => {
@@ -41,7 +41,7 @@ describe('Character Positioning & Grid Layout (2.5D)', () => {
     expect(distanceBetween).toBeGreaterThan(15);
   });
 
-  it('xếp 3 hoặc 4 người chơi ở ô thường theo lưới 2x2, tất cả đều lệch về mép trong', () => {
+  it('xếp 3 hoặc 4 người chơi ở ô thường theo lưới 2x2, tất cả đều lệch về mép ngoài', () => {
     const tileId = 6;
     const pos0 = getTileSlotPosition(tileId, 0, 4);
     const pos1 = getTileSlotPosition(tileId, 1, 4);

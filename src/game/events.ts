@@ -107,6 +107,9 @@ export type GameEventMap = {
   'double-roll-bonus': {
     playerId: string;
   };
+  'match-reset': {
+    players: Player[];
+  };
 };
 
 export type GameEventCallback<K extends keyof GameEventMap> = (

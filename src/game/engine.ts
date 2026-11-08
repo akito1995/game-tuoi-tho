@@ -1557,10 +1557,38 @@ export class GameEngine {
     }
 
     if (nextIndex <= this.state.activePlayerIndex) {
+      // Hết 25 vòng: kiểm tra và công bố kết quả ngay khi vòng 25 kết thúc
+      if (this.state.roundCount >= this.settings.maxRounds) {
+        this.state.roundCount = this.settings.maxRounds;
+        this.recordNetWorthSnapshot();
+        const activePlayers = this.state.players.filter((p) => !p.bankrupt);
+        let bestPlayer = activePlayers[0] || this.state.players[0];
+        let maxWorth = this.calculateNetWorth(bestPlayer);
+        for (let i = 1; i < activePlayers.length; i++) {
+          const worth = this.calculateNetWorth(activePlayers[i]);
+          if (worth > maxWorth) {
+            maxWorth = worth;
+            bestPlayer = activePlayers[i];
+          }
+        }
+        this.state.winner = bestPlayer;
+        this.state.victoryType = 'TIMEOUT_NET_WORTH';
+        this.state.victoryReason = `${bestPlayer.name} đứng đầu với tổng tài sản ${(maxWorth / 1000).toLocaleString('vi-VN')}K₫ sau ${this.settings.maxRounds} vòng đấu kịch tính!`;
+        this.state.gamePhase = 'GAME_OVER';
+        this.addLog(`👑 CHIẾN THẮNG: ${VICTORY_NAMES['TIMEOUT_NET_WORTH']}`);
+        this.addLog(`🏆 ${this.state.victoryReason}`);
+        this.events.emit('game-over', {
+          winner: bestPlayer,
+          rounds: this.settings.maxRounds,
+          victoryType: 'TIMEOUT_NET_WORTH',
+          reason: this.state.victoryReason,
+        });
+        return;
+      }
       this.state.roundCount += 1;
       this.recordNetWorthSnapshot();
-      // Kiểm tra hết vòng 25
       if (this.state.roundCount > this.settings.maxRounds) {
+        this.state.roundCount = this.settings.maxRounds;
         this.checkAndApplyVictory();
         return;
       }

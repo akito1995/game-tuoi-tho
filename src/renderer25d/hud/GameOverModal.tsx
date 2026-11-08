@@ -167,7 +167,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
                 <div className="flex items-center gap-1.5">
                   <Trophy className="h-4 w-4 text-amber-400" />
                   <span className="font-baloo text-xs sm:text-sm font-bold text-slate-200 uppercase tracking-wide">
-                    Bảng Xếp Hạng Tổng Tài Sản (Vòng {rounds}/25)
+                    Bảng Xếp Hạng Tổng Tài Sản (Vòng {Math.min(rounds || 25, 25)}/25)
                   </span>
                 </div>
                 <span className="text-[11px] text-slate-400">Tiền mặt + Đất + Nhà</span>
@@ -254,7 +254,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
                 <div className="flex items-center gap-1.5">
                   <TrendingUp className="h-4 w-4 text-emerald-400" />
                   <span className="font-baloo text-xs sm:text-sm font-bold text-slate-200 uppercase tracking-wide">
-                    Diễn Biến Tài Sản Qua {chartData.maxRounds} Vòng
+                    Diễn Biến Tài Sản Qua {Math.min(chartData.maxRounds, 25)} Vòng
                   </span>
                 </div>
                 {/* Legend màu người chơi */}

@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import { Player, Tile, COLOR_GROUP_HEX, BUILDING_COSTS, ColorGroup } from '../../game/types';
 import { calculateTileRent } from '../../game/engine';
 import { Building2, X, DollarSign, Home, RotateCcw, ShieldCheck, Tag } from 'lucide-react';
+import { formatMoney } from '../utils/formatMoney';
 
 interface PropertyListModalProps {
   player: Player;
@@ -243,7 +244,7 @@ export const PropertyListModal: React.FC<PropertyListModalProps> = ({
                             {/* Tiền thuê & Giá gốc */}
                             <div className="flex items-center gap-2 mt-1 text-[11px]">
                               <span className="text-amber-300 font-mono font-bold">
-                                Tiền thuê: {currentRent > 0 ? `${Math.round(currentRent / 1000).toLocaleString('vi-VN')}K₫` : '0₫'}
+                                Tiền thuê: {currentRent > 0 ? `${formatMoney(currentRent)}₫` : '0₫'}
                               </span>
                               <span className="text-slate-500">•</span>
                               <span className="text-slate-400">

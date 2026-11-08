@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Player, ChanceCard } from '../../game/types';
 import { WealthTitleTier, getWealthTitle } from '../../game/gameConfig';
 import { Shield, Sparkles, CreditCard, Building2 } from 'lucide-react';
+import { formatMoney } from '../utils/formatMoney';
 
 interface TopLeftPlayerCardProps {
   player: Player;
@@ -102,7 +103,7 @@ export const TopLeftPlayerCard: React.FC<TopLeftPlayerCardProps> = ({
 
   return (
     <div className="fixed top-3 left-3 z-30 pointer-events-auto select-none">
-      <div className="flex flex-col gap-1.5 rounded-2xl bg-slate-950/95 border-2 border-amber-500/40 p-2.5 shadow-2xl min-w-[210px] max-w-[270px]">
+      <div className="flex flex-col gap-1.5 rounded-2xl bg-[#2A170C]/95 border-2 border-[#C9A227]/60 shadow-amber-950/40 p-2.5 shadow-2xl min-w-[210px] max-w-[270px]">
         {/* Hàng trên: Avatar tròn + Thông tin & Tiền */}
         <div className="flex items-center gap-2.5">
           {/* Avatar có vòng nhận diện & huy hiệu VIP/Level */}
@@ -130,7 +131,7 @@ export const TopLeftPlayerCard: React.FC<TopLeftPlayerCardProps> = ({
           {/* Tên & Danh hiệu & Số tiền */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1 flex-wrap">
-              <span className="text-xs font-bold text-white truncate max-w-[85px]">
+              <span className="text-xs font-bold text-[#F3E6C8] truncate max-w-[85px]">
                 {player.name}
               </span>
               <span className="text-[10px] px-1 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
@@ -155,7 +156,7 @@ export const TopLeftPlayerCard: React.FC<TopLeftPlayerCardProps> = ({
             </div>
 
             {/* Khung số tiền viền vàng có icon xu */}
-            <div className="mt-0.5 flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-slate-900/90 border border-amber-500/50 shadow-inner">
+            <div className="mt-0.5 flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-[#3D2211]/95 border border-[#C9A227]/70 shadow-inner shadow-inner">
               <div className="relative h-4 w-4 shrink-0">
                 <Image
                   src="/art/ui/ui-dong-xu.png"
@@ -168,7 +169,7 @@ export const TopLeftPlayerCard: React.FC<TopLeftPlayerCardProps> = ({
                 />
               </div>
               <span className="font-baloo text-base font-extrabold text-amber-300 tracking-wide leading-none truncate">
-                {(displayMoney / 1000).toLocaleString('vi-VN')}K
+                {formatMoney(displayMoney)}
                 <span className="text-[11px] font-sans font-medium text-amber-400/80 ml-0.5">₫</span>
               </span>
             </div>
@@ -179,7 +180,7 @@ export const TopLeftPlayerCard: React.FC<TopLeftPlayerCardProps> = ({
         {onOpenProperties && (
           <button
             onClick={onOpenProperties}
-            className="flex items-center justify-between gap-2 px-2.5 py-1 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/40 text-slate-300 hover:text-amber-300 transition text-[11px] font-bold cursor-pointer"
+            className="flex items-center justify-between gap-2 px-2.5 py-1 rounded-xl bg-[#3D2211]/90 hover:bg-[#4A2E1B] border border-[#6B4226] hover:border-[#C9A227]/50 text-[#F3E6C8] hover:text-amber-300 transition text-[11px] font-bold cursor-pointer"
             title="Xem danh sách bất động sản đang sở hữu"
           >
             <div className="flex items-center gap-1.5 shrink-0">
@@ -193,8 +194,8 @@ export const TopLeftPlayerCard: React.FC<TopLeftPlayerCardProps> = ({
         )}
 
         {/* Hàng dưới: 4 Ô thẻ đang giữ (ẩn trên mobile hẹp để không che bảng điểm) */}
-        <div className="pt-1 border-t border-slate-800/80 hidden sm:block">
-          <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 mb-1 px-0.5">
+        <div className="pt-1 border-t border-[#6B4226]/80 hidden sm:block">
+          <div className="flex items-center justify-between text-[10px] font-bold text-[#F3E6C8]/80 mb-1 px-0.5">
             <span>THẺ NẮM GIỮ</span>
             <span className="text-amber-400 font-mono">
               {cardsList.length}/{totalSlots}
@@ -212,7 +213,7 @@ export const TopLeftPlayerCard: React.FC<TopLeftPlayerCardProps> = ({
                     className={`relative h-9 rounded-lg bg-gradient-to-b ${card.bg} border border-amber-300/80 flex flex-col items-center justify-center p-0.5 shadow cursor-pointer hover:scale-105 active:scale-95 transition-transform`}
                   >
                     <span className="text-xs">{card.icon}</span>
-                    <span className="text-[8px] font-bold text-white truncate max-w-[42px] leading-tight">
+                    <span className="text-[8px] font-bold text-[#F3E6C8] truncate max-w-[42px] leading-tight">
                       {card.label}
                     </span>
                   </div>
@@ -224,9 +225,9 @@ export const TopLeftPlayerCard: React.FC<TopLeftPlayerCardProps> = ({
                 <div
                   key={`empty-${idx}`}
                   title="Ô thẻ trống"
-                  className="h-9 rounded-lg border border-dashed border-slate-700 bg-slate-900/40 flex items-center justify-center"
+                  className="h-9 rounded-lg border border-dashed border-[#6B4226] bg-[#3D2211]/40 flex items-center justify-center"
                 >
-                  <CreditCard className="h-3.5 w-3.5 text-slate-600/70" />
+                  <CreditCard className="h-3.5 w-3.5 text-[#C9A227]/40" />
                 </div>
               );
             })}

@@ -14,6 +14,8 @@ export interface PlayerTokenData {
 export interface CharacterManager {
   container: Container;
   syncPlayers: (players: PlayerTokenData[]) => void;
+  resetAll: (players: PlayerTokenData[]) => void;
+  getPlayerTokenPosition: (playerId: string) => { x: number; y: number } | null;
   movePlayerTo: (playerId: string, targetTile: number, onComplete?: () => void) => void;
   setSpeedMultiplier: (speed: number) => void;
   update: (deltaSeconds: number) => void;
@@ -158,12 +160,12 @@ export function getTileSlotPosition(tileId: number, slotIndex: number = 0, total
 
   // 2. Ô thông thường:
   // Chia thành 4 vị trí đứng cố định dạng lưới 2×2 (Slot 0..3)
-  // Lệch về mép của ô để KHÔNG CHE tên ô và giá tiền
+  // Lệch về mép NGOÀI của ô để KHÔNG CHE tên ô và giá tiền (được đặt ở mép trong phía hồ)
   const fixedSlots = [
-    { u: 0.30, v: 0.28 }, // Slot 0: Trái - Trong
-    { u: 0.70, v: 0.28 }, // Slot 1: Phải - Trong
-    { u: 0.30, v: 0.50 }, // Slot 2: Trái - Ngoài
-    { u: 0.70, v: 0.50 }, // Slot 3: Phải - Ngoài
+    { u: 0.28, v: 0.65 }, // Slot 0: Trái - ngoài
+    { u: 0.72, v: 0.65 }, // Slot 1: Phải - ngoài
+    { u: 0.28, v: 0.82 }, // Slot 2: Trái - sát mép ngoài
+    { u: 0.72, v: 0.82 }, // Slot 3: Phải - sát mép ngoài
   ];
 
   const pos = fixedSlots[Math.abs(slotIndex) % 4];
@@ -246,7 +248,7 @@ export function createCharacterManager(): CharacterManager {
         fontFamily: 'Baloo 2, cursive, sans-serif',
         fontSize: 9.5,
         fontWeight: 'bold',
-        fill: '#ffffff',
+        fill: '#F3E6C8',
         align: 'center',
       },
     });
@@ -325,6 +327,18 @@ export function createCharacterManager(): CharacterManager {
   };
 
   const syncPlayers = (players: PlayerTokenData[]) => {
+    // 0. Xóa triệt để các token cũ không còn nằm trong danh sách người chơi (tránh hiện tượng nhân vật ma)
+    const activeIds = new Set(players.map((p) => p.id));
+    tokens.forEach((token, id) => {
+      if (!activeIds.has(id)) {
+        if (token.container.parent) {
+          token.container.parent.removeChild(token.container);
+        }
+        token.container.destroy({ children: true });
+        tokens.delete(id);
+      }
+    });
+
     // Thống kê số lượng người ở từng ô để tạo lưới 2x2
     const tileOccupancy = new Map<number, number>();
     players.forEach((p) => {
@@ -358,7 +372,7 @@ export function createCharacterManager(): CharacterManager {
       token.badgeBg.clear();
       token.badgeBg
         .roundRect(-30, -9, 60, 18, 9)
-        .fill({ color: 0x0f172a, alpha: 0.88 })
+        .fill({ color: 0x24140a, alpha: 0.92 })
         .stroke({ width: player.isCurrentTurn ? 2 : 1.2, color, alpha: 0.95 });
     });
 
@@ -482,16 +496,16 @@ export function createCharacterManager(): CharacterManager {
       // Sắp xếp Z-Index theo trục Y kết hợp slotIndex để không bao giờ đè nhau
       token.container.zIndex = Math.round(token.container.y * 10) + token.slotIndex;
 
-      // 1. Bóng đổ chân thực trên mặt đá (bám mặt đường, không bay theo bước nhảy)
+      // 1. Bóng đổ chân thực trên mặt đá (hướng nắng chiều xiên dưới-phải)
       token.shadowGraphic.clear();
-      // Bóng hắt kéo dài về dưới-phải (dài 0.6x chiều cao, màu #2A1A0A, alpha 0.3)
+      // Bóng hắt kéo dài về dưới-phải (hướng nắng chiều, màu #1A0D06, alpha 0.38)
       token.shadowGraphic
-        .ellipse(14, 8, 20, 7)
-        .fill({ color: 0x2A1A0A, alpha: 0.30 });
-      // Bóng tiếp xúc sát chân (alpha 0.45, tối mờ)
+        .ellipse(16, 9, 22, 7.5)
+        .fill({ color: 0x1A0D06, alpha: 0.38 });
+      // Bóng tiếp xúc sát chân (alpha 0.55, tối mờ)
       token.shadowGraphic
-        .ellipse(0, 0, 13, 5.5)
-        .fill({ color: 0x1A0F05, alpha: 0.45 });
+        .ellipse(0, 0, 14, 5.5)
+        .fill({ color: 0x0A0502, alpha: 0.55 });
 
       // 2. Vẽ vòng hào quang Neon Hologram dưới chân
       token.haloGraphic.clear();
@@ -563,9 +577,28 @@ export function createCharacterManager(): CharacterManager {
     tokens.clear();
   };
 
+  const resetAll = (players: PlayerTokenData[]) => {
+    tokens.forEach((token) => {
+      if (token.container.parent) {
+        token.container.parent.removeChild(token.container);
+      }
+      token.container.destroy({ children: true });
+    });
+    tokens.clear();
+    syncPlayers(players);
+  };
+
+  const getPlayerTokenPosition = (playerId: string): { x: number; y: number } | null => {
+    const token = tokens.get(playerId);
+    if (!token) return null;
+    return { x: token.container.x, y: token.container.y };
+  };
+
   return {
     container,
     syncPlayers,
+    resetAll,
+    getPlayerTokenPosition,
     movePlayerTo,
     setSpeedMultiplier,
     update,

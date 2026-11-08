@@ -112,7 +112,7 @@ export const BottomRightPanel: React.FC<BottomRightPanelProps> = ({
           isSelected
             ? 'border-amber-300 bg-amber-500/25 ring-4 ring-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.85)] scale-105 cursor-pointer z-10'
             : !isSkillDisabled
-            ? 'border-amber-500/50 bg-slate-900/90 hover:border-amber-400 hover:bg-slate-800 active:scale-95 cursor-pointer shadow-md'
+            ? 'border-amber-500/50 bg-[#3D2211]/90 hover:border-amber-400 hover:bg-slate-800 active:scale-95 cursor-pointer shadow-md'
             : 'border-slate-800 bg-slate-950/60 opacity-40 grayscale cursor-not-allowed pointer-events-none'
         }`}
         title={
@@ -133,7 +133,7 @@ export const BottomRightPanel: React.FC<BottomRightPanelProps> = ({
         )}
 
         {/* Khung ảnh thẻ kỹ năng */}
-        <div className="relative w-full h-10 sm:h-12 overflow-hidden rounded-lg shrink-0 bg-slate-900 mt-0.5">
+        <div className="relative w-full h-10 sm:h-12 overflow-hidden rounded-lg shrink-0 bg-[#3D2211] mt-0.5">
           <Image
             src={imgSrc}
             alt={title}
@@ -145,7 +145,7 @@ export const BottomRightPanel: React.FC<BottomRightPanelProps> = ({
             }}
           />
           {/* Badge số lần sử dụng còn lại */}
-          <div className="absolute top-0.5 right-0.5 px-1 py-0.2 rounded-full bg-slate-950/90 border border-amber-400/80 text-[8px] font-mono font-bold text-amber-300">
+          <div className="absolute top-0.5 right-0.5 px-1 py-0.2 rounded-full bg-slate-950/90 border border-amber-400/80 text-[8px] font-mono font-bold text-[#F3E6C8]">
             x{chargeCount}
           </div>
         </div>
@@ -164,9 +164,9 @@ export const BottomRightPanel: React.FC<BottomRightPanelProps> = ({
     <div className="fixed bottom-3 right-3 sm:bottom-4 sm:right-4 z-30 pointer-events-auto select-none flex flex-col items-end gap-1.5">
       {/* Chỉ báo xúc xắc mới nhất (Đồng bộ tức thì từ bàn cờ, không bao giờ bị trễ) */}
       {lastRoll && (
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-950/95 border border-amber-500/60 shadow-xl backdrop-blur-sm animate-in fade-in slide-in-from-bottom-1 duration-150">
+        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#2A170C]/95 border border-[#C9A227]/70 shadow-xl animate-in fade-in slide-in-from-bottom-1 duration-150">
           <Dices className="h-3.5 w-3.5 text-amber-400" />
-          <span className="font-mono text-xs font-black text-amber-300">
+          <span className="font-mono text-xs font-black text-[#F3E6C8]">
             {lastRoll.dice[0]} + {lastRoll.dice[1]} = {lastRoll.sum}
           </span>
           {lastRoll.isDouble && (
@@ -177,7 +177,7 @@ export const BottomRightPanel: React.FC<BottomRightPanelProps> = ({
         </div>
       )}
 
-      <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-3 rounded-2xl bg-slate-950/95 border-2 border-amber-500/40 p-2 sm:p-2.5 shadow-2xl">
+      <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-3 rounded-2xl bg-[#2A170C]/95 border-2 border-[#C9A227]/60 p-2 sm:p-2.5 shadow-2xl shadow-amber-950/40">
         {/* ================= 3 THẺ KỸ NĂNG XÚC XẮC ================= */}
         <div className="flex items-center gap-1.5 sm:gap-2">
           {renderSkillButton('SHORT', 'NHẢY 2~4', '/art/ui/skill-nhay-ngan.png', skillCharges.short)}
@@ -203,7 +203,7 @@ export const BottomRightPanel: React.FC<BottomRightPanelProps> = ({
               : isRolling
               ? 'bg-gradient-to-b from-amber-600 to-orange-700 border-4 border-amber-400/60 shadow-lg animate-pulse cursor-wait'
               : isInteractiveBlocked
-              ? 'bg-slate-900 border-4 border-slate-700 opacity-40 grayscale pointer-events-none cursor-not-allowed shadow-none'
+              ? 'bg-[#3D2211] border-4 border-slate-700 opacity-40 grayscale pointer-events-none cursor-not-allowed shadow-none'
               : 'bg-slate-800 border-4 border-slate-700 opacity-60 cursor-not-allowed'
           }`}
           title={

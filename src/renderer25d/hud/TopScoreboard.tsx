@@ -3,6 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { Player } from '../../game/types';
+import { formatMoney } from '../utils/formatMoney';
 
 interface TopScoreboardProps {
   players: Player[];
@@ -40,7 +41,7 @@ export const TopScoreboard: React.FC<TopScoreboardProps> = ({
     <div className="fixed top-3 left-1/2 -translate-x-1/2 z-30 pointer-events-auto select-none max-w-[96vw]">
       {isTwoPlayers ? (
         /* ================= 2 NGƯỜI CHƠI ================= */
-        <div className="flex items-center gap-1.5 sm:gap-2.5 rounded-2xl bg-slate-950/95 border-2 border-amber-500/40 px-3 py-1.5 shadow-2xl">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 rounded-2xl bg-[#2A170C]/95 border-2 border-[#C9A227]/60 shadow-amber-950/40 px-3 py-1.5 shadow-2xl">
           {/* Khối Đỏ (Player 1) */}
           {(() => {
             const p1 = players[0];
@@ -53,7 +54,7 @@ export const TopScoreboard: React.FC<TopScoreboardProps> = ({
                     : 'bg-red-950/70 border border-red-800/80 opacity-80'
                 }`}
               >
-                <div className="relative h-9 w-9 rounded-full overflow-hidden border-2 border-white/80 bg-slate-900 shrink-0">
+                <div className="relative h-9 w-9 rounded-full overflow-hidden border-2 border-white/80 bg-[#3D2211] shrink-0">
                   <Image
                     src={`/art/avatars/${p1.character}.png`}
                     alt={p1.name}
@@ -70,7 +71,7 @@ export const TopScoreboard: React.FC<TopScoreboardProps> = ({
                     {isActive && <span className="h-2 w-2 rounded-full bg-amber-300 animate-ping" />}
                   </div>
                   <div className="flex items-center gap-1 font-baloo text-sm font-bold text-amber-200">
-                    <span>{Math.round(p1.money / 1000).toLocaleString('vi-VN')}K</span>
+                    <span>{formatMoney(p1.money)}</span>
                     {p1.inJail && (
                       <span className="inline-flex items-center px-1 py-0.2 rounded bg-rose-500/20 text-rose-300 font-sans text-[9px] border border-rose-400/40 font-bold whitespace-nowrap">
                         🔒 {p1.jailTurns} lượt
@@ -83,7 +84,7 @@ export const TopScoreboard: React.FC<TopScoreboardProps> = ({
           })()}
 
           {/* Huy hiệu LƯỢT Ở GIỮA */}
-          <div className="flex flex-col items-center justify-center px-2 py-0.5 rounded-xl bg-slate-900 border border-amber-500/60 shadow-inner min-w-[70px]">
+          <div className="flex flex-col items-center justify-center px-2 py-0.5 rounded-xl bg-[#3D2211] border border-amber-500/60 shadow-inner min-w-[70px]">
             <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400/90">
               VÒNG ĐẤU
             </span>
@@ -96,7 +97,7 @@ export const TopScoreboard: React.FC<TopScoreboardProps> = ({
           {piggyBank > 0 && (
             <div className="flex items-center gap-1 px-2 py-0.5 rounded-xl bg-amber-500/20 border border-amber-400/50 shadow animate-pulse">
               <span className="text-sm">🐷</span>
-              <span className="font-baloo text-xs font-black text-amber-400">{Math.round(piggyBank / 1000)}K</span>
+              <span className="font-baloo text-xs font-black text-amber-400">{formatMoney(piggyBank)}</span>
             </div>
           )}
 
@@ -123,10 +124,10 @@ export const TopScoreboard: React.FC<TopScoreboardProps> = ({
                         🔒 {p2.jailTurns} lượt
                       </span>
                     )}
-                    <span>{Math.round(p2.money / 1000).toLocaleString('vi-VN')}K</span>
+                    <span>{formatMoney(p2.money)}</span>
                   </div>
                 </div>
-                <div className="relative h-9 w-9 rounded-full overflow-hidden border-2 border-white/80 bg-slate-900 shrink-0">
+                <div className="relative h-9 w-9 rounded-full overflow-hidden border-2 border-white/80 bg-[#3D2211] shrink-0">
                   <Image
                     src={`/art/avatars/${p2.character}.png`}
                     alt={p2.name}
@@ -143,11 +144,11 @@ export const TopScoreboard: React.FC<TopScoreboardProps> = ({
         </div>
       ) : (
         /* ================= 3–4 NGƯỜI CHƠI ================= */
-        <div className="flex items-center gap-1 sm:gap-2 rounded-2xl bg-slate-950/95 border-2 border-amber-500/40 p-1 sm:p-1.5 shadow-2xl overflow-x-auto max-w-[96vw]">
+        <div className="flex items-center gap-1 sm:gap-2 rounded-2xl bg-[#2A170C]/95 border-2 border-[#C9A227]/60 shadow-amber-950/40 p-1 sm:p-1.5 shadow-2xl overflow-x-auto max-w-[96vw]">
           {/* Huy hiệu VÒNG / LƯỢT */}
-          <div className="flex flex-col items-center justify-center px-2 py-1 rounded-xl bg-slate-900 border border-amber-500/50 min-w-[62px]">
-            <span className="text-[9px] font-bold uppercase text-amber-400">VÒNG</span>
-            <span className="font-baloo text-sm font-black text-amber-300 leading-none">
+          <div className="flex flex-col items-center justify-center px-2 py-1 rounded-xl bg-[#3D2211] border border-[#C9A227]/60 min-w-[62px]">
+            <span className="text-[9px] font-bold uppercase text-[#C9A227]">VÒNG</span>
+            <span className="font-baloo text-sm font-black text-[#F3E6C8] leading-none">
               LƯỢT {roundCount}
             </span>
           </div>
@@ -159,7 +160,7 @@ export const TopScoreboard: React.FC<TopScoreboardProps> = ({
               <div className="flex flex-col leading-none">
                 <span className="text-[8px] text-amber-300 font-bold uppercase">Quỹ Heo</span>
                 <span className="font-baloo text-xs font-black text-amber-400">
-                  {Math.round(piggyBank / 1000)}K₫
+                  {formatMoney(piggyBank)}₫
                 </span>
               </div>
             </div>
@@ -181,10 +182,10 @@ export const TopScoreboard: React.FC<TopScoreboardProps> = ({
                   key={p.id}
                   className={`relative flex items-center gap-1.5 rounded-xl transition-all duration-200 ${
                     p.bankrupt
-                      ? 'opacity-30 grayscale bg-slate-900/40 p-1'
+                      ? 'opacity-30 grayscale bg-[#3D2211]/40 p-1'
                       : isActive
-                      ? 'bg-slate-900/90 border-2 border-amber-400 pl-1.5 pr-2.5 py-1 shadow-[0_0_14px_rgba(245,158,11,0.5)] scale-105'
-                      : 'bg-slate-900/50 border border-slate-800 p-1 hover:border-slate-700'
+                      ? 'bg-[#4A2E1B] border-2 border-[#C9A227] pl-1.5 pr-2.5 py-1 shadow-[0_0_14px_rgba(201,162,39,0.5)] scale-105'
+                      : 'bg-[#3D2211]/80 border border-[#6B4226] p-1 hover:border-slate-700'
                   }`}
                 >
                   {/* Khung Avatar tròn có viền màu nhận diện & vòng đếm giờ khi đến lượt */}
@@ -216,7 +217,7 @@ export const TopScoreboard: React.FC<TopScoreboardProps> = ({
                     )}
 
                     <div
-                      className={`relative rounded-full overflow-hidden border-2 bg-slate-900 ${
+                      className={`relative rounded-full overflow-hidden border-2 bg-[#3D2211] ${
                         isActive ? 'h-9 w-9 border-amber-300' : 'h-8 w-8 ' + colorTheme.border
                       }`}
                     >
@@ -248,7 +249,7 @@ export const TopScoreboard: React.FC<TopScoreboardProps> = ({
                         <span className="text-rose-400 font-sans text-[10px]">Phá sản</span>
                       ) : (
                         <div className="flex items-center gap-1">
-                          <span>{Math.round(p.money / 1000).toLocaleString('vi-VN')}K</span>
+                          <span>{formatMoney(p.money)}</span>
                           {p.inJail && (
                             <span className="inline-flex items-center px-1 py-0.2 rounded bg-rose-500/20 text-rose-300 font-sans text-[9px] border border-rose-400/40 font-bold whitespace-nowrap">
                               🔒 {p.jailTurns} lượt

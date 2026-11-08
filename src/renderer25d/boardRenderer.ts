@@ -316,6 +316,31 @@ export function createBoardRenderer(options: BoardRendererOptions): BoardRendere
       tileContainer.eventMode = 'static';
       tileContainer.cursor = 'pointer';
 
+      // 0. Cạnh vát phiến đá gạch bát / đá ong có độ dày cạnh và bóng đổ xuống mặt nước
+      const slabThickness = Math.max(4, Math.round(5.5 * geo.depthScale));
+      const slabGraphic = new Graphics();
+      // Bóng đổ tiếp xúc xuống mặt nước hồ
+      slabGraphic
+        .poly([
+          geo.outerStart.x, geo.outerStart.y + slabThickness,
+          geo.outerEnd.x, geo.outerEnd.y + slabThickness,
+          geo.outerEnd.x + 2, geo.outerEnd.y + slabThickness + 3,
+          geo.outerStart.x + 2, geo.outerStart.y + slabThickness + 3,
+        ])
+        .fill({ color: 0x090502, alpha: 0.35 });
+
+      // Cạnh vát phiến đá gạch bát / đá ong màu gạch nung trầm
+      slabGraphic
+        .poly([
+          geo.outerStart.x, geo.outerStart.y,
+          geo.outerEnd.x, geo.outerEnd.y,
+          geo.outerEnd.x, geo.outerEnd.y + slabThickness,
+          geo.outerStart.x, geo.outerStart.y + slabThickness,
+        ])
+        .fill({ color: 0x42220f, alpha: 0.82 })
+        .stroke({ width: 0.8, color: 0x6e3a1b, alpha: 0.65 });
+      tileContainer.addChild(slabGraphic);
+
       // 1. HitArea chuẩn hình học phiến đá
       const tilePts = geo.polygonPoints.flatMap((p) => [p.x, p.y]);
       tileContainer.hitArea = new Polygon(tilePts);
@@ -360,6 +385,20 @@ export function createBoardRenderer(options: BoardRendererOptions): BoardRendere
       const isProperty = tile.type === 'PROPERTY';
       const isTransportOrUtility = tile.type === 'TRANSPORT' || tile.type === 'UTILITY';
       const hasColorBand = isProperty || isTransportOrUtility;
+
+      // Họa tiết hoa văn truyền thống in chìm trên mặt đá cho các tỉnh
+      if (isProperty) {
+        const motifG = new Graphics();
+        const mX = geo.center.x;
+        const mY = geo.center.y;
+        motifG
+          .ellipse(mX, mY, 10 * geo.depthScale, 5.5 * geo.depthScale)
+          .stroke({ width: 0.7, color: 0x6b3a1a, alpha: 0.22 });
+        motifG
+          .ellipse(mX, mY, 3 * geo.depthScale, 1.6 * geo.depthScale)
+          .fill({ color: 0x8b4513, alpha: 0.18 });
+        tileContainer.addChild(motifG);
+      }
 
       if (hasColorBand) {
         let groupColorHex = '#64748B'; // Mặc định xám đá mảnh cho giao thông & tiện ích
@@ -600,12 +639,9 @@ export function createBoardRenderer(options: BoardRendererOptions): BoardRendere
           y: (geo.outerStart.y + geo.outerEnd.y) / 2,
         };
 
-        const side = Math.floor(tile.id / 10) % 4;
-        // Dời tên ô và giá sang mép ô GẦN người xem:
-        // - Cạnh Nam (side 0 & 3): gần người xem là phía mép ngoài (outMid -> t = 0.80)
-        // - Cạnh Bắc (side 1 & 2): gần người xem là phía mép trong (inMid -> t = 0.22, cạnh dải màu)
-        const isFarSide = side === 1 || side === 2;
-        const tNear = isFarSide ? 0.22 : 0.80;
+        // Đặt tên ô và giá tiền ở mép trong (phía hồ Hoàn Kiếm, tNear = 0.22)
+        // để quân cờ đứng ở mép ngoài (v = 0.65 - 0.82) không bao giờ che chữ
+        const tNear = 0.22;
         const textPos = {
           x: inMid.x + (outMid.x - inMid.x) * tNear,
           y: inMid.y + (outMid.y - inMid.y) * tNear,
@@ -664,8 +700,8 @@ export function createBoardRenderer(options: BoardRendererOptions): BoardRendere
             fontFamily: 'Be Vietnam Pro, sans-serif',
             fontSize: nameFontSize,
             fontWeight: 'bold',
-            fill: '#FFFFFF',
-            stroke: { color: '#090d16', width: Math.max(1.8, 2.2 * geo.depthScale), join: 'round' },
+            fill: '#F3E6C8', // Màu kem giấy dó
+            stroke: { color: '#24140a', width: Math.max(1.8, 2.2 * geo.depthScale), join: 'round' },
             align: 'center',
             wordWrap: true,
             wordWrapWidth: maxTextWidth,
@@ -718,13 +754,13 @@ export function createBoardRenderer(options: BoardRendererOptions): BoardRendere
         pillBg
           .roundRect(-totalW / 2, -totalH / 2, totalW, totalH, Math.max(3.5, 5 * geo.depthScale))
           .fill({
-            color: ownerColor !== null ? ownerColor : 0x090d16,
-            alpha: ownerColor !== null ? 0.90 : 0.85,
+            color: ownerColor !== null ? ownerColor : 0x24140a, // Nâu gỗ trầm thay vì navy
+            alpha: ownerColor !== null ? 0.92 : 0.88,
           })
           .stroke({
             width: 1.2,
-            color: ownerColor !== null ? 0xffffff : 0xf59e0b,
-            alpha: ownerColor !== null ? 0.95 : 0.65,
+            color: ownerColor !== null ? 0xffffff : 0xc9a227, // Viền vàng đồng
+            alpha: ownerColor !== null ? 0.95 : 0.75,
           });
         labelGroup.addChildAt(pillBg, 0);
 

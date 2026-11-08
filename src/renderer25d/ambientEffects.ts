@@ -79,11 +79,38 @@ export function createAmbientEffects(options: AmbientOptions = {}): AmbientEffec
   lakeContainer.label = 'ambient-lake-container';
   container.addChild(lakeContainer);
 
-  const waterRipples = new Graphics();
-  lakeContainer.addChild(waterRipples);
+  // Sóng nước: Tạo sẵn 4 node cố định, điều khiển bằng transform/alpha, KHÔNG clear() mỗi frame
+  const waveCenters = [
+    { x: -30, y: 70, rx: 190, ry: 95 },
+    { x: 60, y: 120, rx: 150, ry: 75 },
+    { x: -80, y: 30, rx: 130, ry: 65 },
+    { x: 120, y: 10, rx: 160, ry: 80 },
+  ];
+  const rippleNodes = waveCenters.map((wc) => {
+    const g = new Graphics();
+    g.ellipse(0, 0, wc.rx, wc.ry).stroke({ width: 1.6, color: 0x67e8f9 });
+    g.position.set(wc.x, wc.y);
+    lakeContainer.addChild(g);
+    return { g, wc };
+  });
 
-  const sunGlintsGraphic = new Graphics();
-  lakeContainer.addChild(sunGlintsGraphic);
+  // Vệt nắng lấp lánh: Tạo sẵn node cố định
+  const sparkleCount = 20;
+  const sparkles = Array.from({ length: sparkleCount }).map((_, i) => ({
+    x: -350 + Math.sin(i * 3.7) * 450 + (i % 5) * 80,
+    y: -80 + Math.cos(i * 2.3) * 220 + (i % 4) * 55,
+    speed: 1.8 + Math.random() * 2.2,
+    phase: Math.random() * Math.PI * 2,
+    size: 2.5 + Math.random() * 2.5,
+  }));
+  const sparkleNodes = sparkles.map((s) => {
+    const g = new Graphics();
+    g.circle(0, 0, s.size).fill({ color: 0xffffff, alpha: 0.95 });
+    g.circle(0, 0, s.size * 1.8).fill({ color: 0xfef08a, alpha: 0.35 });
+    g.position.set(s.x, s.y);
+    lakeContainer.addChild(g);
+    return { g, s };
+  });
 
   // Nạp mặt nạ lake-mask.png
   let maskSprite: Sprite | null = null;
@@ -204,48 +231,59 @@ export function createAmbientEffects(options: AmbientOptions = {}): AmbientEffec
   let lastBellPlayedCycle = -1;
 
   // -------------------------------------------------------------
-  // 5. DÃY ĐÈN LỒNG PHỐ CỔ
+  // 5. DÃY ĐÈN LỒNG PHỐ CỔ (Vẽ 1 lần, điều khiển alpha)
   // -------------------------------------------------------------
-  const lanternsGraphic = new Graphics();
-  lanternsGraphic.label = 'ambient-lanterns';
-  container.addChild(lanternsGraphic);
+  const lanternsContainer = new Container();
+  lanternsContainer.label = 'ambient-lanterns';
+  container.addChild(lanternsContainer);
+
+  let lanternNodes: Array<{ node: Container; outer: Graphics; inner: Graphics; lIdx: number }> = [];
+  const rebuildLanterns = () => {
+    lanternsContainer.removeChildren();
+    const lanternsMarker = markersList.find((m) => m.type === 'lanterns');
+    const lanternPoints = lanternsMarker?.points || [];
+    lanternNodes = lanternPoints.map((pt, lIdx) => {
+      const s = imageToStage(pt);
+      const node = new Container();
+      node.position.set(s.x, s.y);
+      const outer = new Graphics().circle(0, 0, 16).fill({ color: 0xf97316, alpha: 0.22 });
+      const core = new Graphics()
+        .circle(0, 0, 7)
+        .fill({ color: 0xe11d48, alpha: 0.95 })
+        .stroke({ width: 1.5, color: 0xfef08a });
+      const inner = new Graphics().circle(0, 0, 2.8).fill({ color: 0xfffbeb, alpha: 0.9 });
+      node.addChild(outer, core, inner);
+      lanternsContainer.addChild(node);
+      return { node, outer, inner, lIdx };
+    });
+  };
+  rebuildLanterns();
 
   // -------------------------------------------------------------
-  // 6. CÁNH HOA PHƯỢNG RƠI LÃNG MẠN
+  // 6. CÁNH HOA PHƯỢNG RƠI LÃNG MẠN (Tạo 16 sprite/graphics tĩnh)
   // -------------------------------------------------------------
-  const petalsGraphic = new Graphics();
-  petalsGraphic.label = 'ambient-petals';
-  container.addChild(petalsGraphic);
+  const petalsContainer = new Container();
+  petalsContainer.label = 'ambient-petals';
+  container.addChild(petalsContainer);
 
   const petalColors = [0xef4444, 0xdc2626, 0xf87171, 0xb91c1c];
-  const petals: Petal[] = [];
   const PETAL_COUNT = 16;
-
-  for (let i = 0; i < PETAL_COUNT; i++) {
-    petals.push({
+  const petalNodes = Array.from({ length: PETAL_COUNT }).map((_, i) => {
+    const scale = 0.7 + Math.random() * 0.6;
+    const g = new Graphics();
+    g.ellipse(0, 0, 7 * scale, 4 * scale).fill({ color: petalColors[i % petalColors.length], alpha: 0.85 });
+    petalsContainer.addChild(g);
+    return {
+      g,
       x: (Math.random() - 0.5) * 1600,
       y: (Math.random() - 0.5) * 900,
-      vx: 25 + Math.random() * 30, // Trôi chéo sang phải theo gió
-      vy: 35 + Math.random() * 45, // Rơi xuống
+      vx: 25 + Math.random() * 30,
+      vy: 35 + Math.random() * 45,
       phase: Math.random() * Math.PI * 2,
-      scale: 0.7 + Math.random() * 0.6,
       rotation: Math.random() * Math.PI * 2,
       rotSpeed: (Math.random() - 0.5) * 2.5,
-      color: petalColors[i % petalColors.length],
-    });
-  }
-
-  // -------------------------------------------------------------
-  // 7. VỆT NẮNG LẤP LÁNH TRÊN MẶT HỒ
-  // -------------------------------------------------------------
-  const sparkleCount = 20;
-  const sparkles = Array.from({ length: sparkleCount }).map((_, i) => ({
-    x: -350 + Math.sin(i * 3.7) * 450 + (i % 5) * 80,
-    y: -80 + Math.cos(i * 2.3) * 220 + (i % 4) * 55,
-    speed: 1.8 + Math.random() * 2.2,
-    phase: Math.random() * Math.PI * 2,
-    size: 2.5 + Math.random() * 2.5,
-  }));
+    };
+  });
 
   let elapsed = 0;
 
@@ -268,50 +306,31 @@ export function createAmbientEffects(options: AmbientOptions = {}): AmbientEffec
 
     elapsed += deltaSeconds;
 
-    // B. MẶT HỒ GỢN SÓNG & VỆT NẮNG (HIGH)
+    // B. MẶT HỒ GỢN SÓNG & VỆT NẮNG (HIGH) - KHÔNG clear()
     if (currentQuality === 'HIGH') {
-      waterRipples.visible = true;
-      sunGlintsGraphic.visible = true;
-
-      waterRipples.clear();
-      const waveCenters = [
-        { x: -30, y: 70, rx: 190, ry: 95 },
-        { x: 60, y: 120, rx: 150, ry: 75 },
-        { x: -80, y: 30, rx: 130, ry: 65 },
-        { x: 120, y: 10, rx: 160, ry: 80 },
-      ];
-
-      waveCenters.forEach((wc, wIdx) => {
+      rippleNodes.forEach(({ g, wc }, wIdx) => {
+        g.visible = true;
         const wavePhase = (elapsed * 0.55 + wIdx * 0.6) % 1;
-        const currentRx = wc.rx * (0.65 + 0.45 * wavePhase);
-        const currentRy = wc.ry * (0.65 + 0.45 * wavePhase);
-        const waveAlpha = Math.sin(wavePhase * Math.PI) * 0.22;
-
-        waterRipples
-          .ellipse(wc.x, wc.y, currentRx, currentRy)
-          .stroke({ width: 1.6, color: 0x67e8f9, alpha: waveAlpha });
+        const currentScale = 0.65 + 0.45 * wavePhase;
+        g.scale.set(currentScale, currentScale);
+        g.alpha = Math.sin(wavePhase * Math.PI) * 0.22;
       });
 
-      // Vệt nắng lấp lánh (sparkling sun glints)
-      sunGlintsGraphic.clear();
-      sparkles.forEach((s) => {
+      sparkleNodes.forEach(({ g, s }) => {
         const pulse = Math.sin(elapsed * s.speed + s.phase);
         if (pulse > 0.2) {
+          g.visible = true;
           const alpha = (pulse - 0.2) * 0.9;
-          const sz = s.size * (0.8 + 0.4 * pulse);
-
-          // Tia sáng chữ thập kim cương nhỏ
-          sunGlintsGraphic
-            .circle(s.x, s.y, sz)
-            .fill({ color: 0xffffff, alpha: alpha * 0.95 });
-          sunGlintsGraphic
-            .circle(s.x, s.y, sz * 1.8)
-            .fill({ color: 0xfef08a, alpha: alpha * 0.35 });
+          const sz = 0.8 + 0.4 * pulse;
+          g.scale.set(sz, sz);
+          g.alpha = alpha;
+        } else {
+          g.visible = false;
         }
       });
     } else {
-      waterRipples.visible = false;
-      sunGlintsGraphic.visible = false;
+      rippleNodes.forEach(({ g }) => (g.visible = false));
+      sparkleNodes.forEach(({ g }) => (g.visible = false));
     }
 
     // C. DẬP DỀNH SEN & THUYỀN
@@ -383,49 +402,26 @@ export function createAmbientEffects(options: AmbientOptions = {}): AmbientEffec
       }
     }
 
-    // E. DÃY ĐÈN LỒNG PHỐ CỔ NHẤP NHÁY
-    lanternsGraphic.clear();
-    const lanternsMarker = markersList.find((m) => m.type === 'lanterns');
-    const lanternPoints = lanternsMarker?.points || [];
-
-    lanternPoints.forEach((pt, lIdx) => {
-      const s = imageToStage(pt);
+    // E. DÃY ĐÈN LỒNG PHỐ CỔ NHẤP NHÁY (chỉ đổi alpha, không clear)
+    lanternNodes.forEach(({ outer, inner, lIdx }) => {
       const flicker = 0.72 + 0.28 * Math.sin(elapsed * 3.2 + lIdx * 1.5);
-      // Quầng sáng ấm bên ngoài
-      lanternsGraphic
-        .circle(s.x, s.y, 16 * (0.9 + 0.1 * flicker))
-        .fill({ color: 0xf97316, alpha: 0.22 * flicker });
-      // Lõi đèn lồng đỏ cam rực rỡ
-      lanternsGraphic
-        .circle(s.x, s.y, 7)
-        .fill({ color: 0xe11d48, alpha: 0.95 })
-        .stroke({ width: 1.5, color: 0xfef08a, alpha: flicker });
-      // Đốm sáng vàng bên trong tim đèn
-      lanternsGraphic
-        .circle(s.x, s.y, 2.8)
-        .fill({ color: 0xfffbeb, alpha: 0.9 * flicker });
+      outer.alpha = 0.22 * flicker;
+      inner.alpha = 0.9 * flicker;
     });
 
-    // F. CÁNH HOA PHƯỢNG RƠI LÃNG MẠN
-    petalsGraphic.clear();
-    petals.forEach((p) => {
+    // F. CÁNH HOA PHƯỢNG RƠI LÃNG MẠN (chỉ update vị trí transform, không clear)
+    petalNodes.forEach((p) => {
       p.x += p.vx * deltaSeconds + Math.sin(elapsed * 2.2 + p.phase) * 14 * deltaSeconds;
       p.y += p.vy * deltaSeconds;
       p.rotation += p.rotSpeed * deltaSeconds;
 
-      // Hết màn hình thì quay lại phía trên bên trái
       if (p.y > 650 || p.x > 1100) {
         p.y = -650 - Math.random() * 200;
         p.x = -1100 + Math.random() * 1600;
       }
 
-      // Vẽ hình cánh hoa thon mềm mại
-      const petalW = 7 * p.scale;
-      const petalH = 4 * p.scale;
-
-      petalsGraphic
-        .ellipse(p.x, p.y, petalW, petalH)
-        .fill({ color: p.color, alpha: 0.85 });
+      p.g.position.set(p.x, p.y);
+      p.g.rotation = p.rotation;
     });
   };
 
@@ -441,6 +437,7 @@ export function createAmbientEffects(options: AmbientOptions = {}): AmbientEffec
   const setMarkers = (markers: Array<{ id: string; type: string; points: Array<{ x: number; y: number }> }>) => {
     markersList = markers;
     updateTrackPoints();
+    rebuildLanterns();
   };
 
   const destroy = () => {

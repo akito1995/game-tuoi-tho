@@ -29,7 +29,7 @@ export function GameOverV2Modal({ winner, rounds, onRestart }: GameOverV2ModalPr
           Vua Địa Ốc Việt Nam!
         </h2>
         <p className="text-xs text-slate-300 mt-1">
-          Ván đấu kết thúc sau <span className="font-bold text-amber-400">{rounds} vòng</span> tranh tài sôi nổi!
+          Ván đấu kết thúc sau <span className="font-bold text-amber-400">{Math.min(rounds, 25)} vòng</span> tranh tài sôi nổi!
         </p>
 
         {/* Chân dung người thắng */}
