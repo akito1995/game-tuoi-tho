@@ -25,7 +25,7 @@ export function ActionDecisionModal({
   const groupColor = tile.colorGroup ? COLOR_GROUP_HEX[tile.colorGroup] : '#64748B';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 animate-in fade-in duration-200">
       <div className="relative w-full max-w-sm rounded-3xl border-2 border-amber-500/60 bg-gradient-to-b from-slate-900 via-stone-950 to-slate-950 p-6 shadow-2xl shadow-black/80">
         {/* Dải màu nhóm đất */}
         <div
@@ -63,11 +63,11 @@ export function ActionDecisionModal({
             </span>
           </div>
 
-          {tile.rentMultiplier && tile.rentMultiplier.length > 0 && (
+          {tile.type === 'PROPERTY' && tile.price && (
             <div className="flex items-center justify-between border-t border-slate-800/80 pt-1.5 text-[11px]">
               <span className="text-slate-400">Tiền thuê tối đa (Landmark):</span>
               <span className="font-mono font-bold text-emerald-400">
-                {(tile.rentMultiplier[tile.rentMultiplier.length - 1] || 0).toLocaleString('vi-VN')}đ
+                {Math.round(tile.price * 5).toLocaleString('vi-VN')}đ
               </span>
             </div>
           )}

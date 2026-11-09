@@ -62,6 +62,7 @@ export interface Board25DCanvasProps {
   gameSpeed?: number;
   graphicsQuality?: GraphicsQuality;
   cameraMode?: 'OVERVIEW' | 'FOLLOW';
+  onPlayerMoveComplete?: (playerId: string, targetTile: number) => void;
 }
 
 export function Board25DCanvas({
@@ -90,6 +91,7 @@ export function Board25DCanvas({
   gameSpeed = 1,
   graphicsQuality = 'HIGH',
   cameraMode = 'OVERVIEW',
+  onPlayerMoveComplete,
 }: Board25DCanvasProps) {
   const ambientEffectsRef = useRef<AmbientEffects | null>(null);
   const animManagerRef = useRef<BoardAnimationManager | null>(null);
@@ -101,6 +103,8 @@ export function Board25DCanvas({
   graphicsQualityRef.current = graphicsQuality;
   const containerRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
+  const wakeTickerRef = useRef<() => void>(() => {});
+
   const cameraRef = useRef<CameraController | null>(null);
   const worldRef = useRef<Container | null>(null);
   const calibrationLayerRef = useRef<Container | null>(null);
@@ -213,7 +217,11 @@ export function Board25DCanvas({
     effectivePlayers.forEach((p) => {
       const prevPos = prevPositionsRef.current[p.id];
       if (prevPos !== undefined && prevPos !== p.position) {
-        cm.movePlayerTo(p.id, p.position);
+        cm.movePlayerTo(p.id, p.position, () => {
+          if (onPlayerMoveComplete) {
+            onPlayerMoveComplete(p.id, p.position);
+          }
+        });
       }
       prevPositionsRef.current[p.id] = p.position;
     });
@@ -763,7 +771,7 @@ export function Board25DCanvas({
         resizeTo: containerRef.current || window,
         antialias: true,
         autoDensity: true,
-        resolution: Math.min(window.devicePixelRatio || 1, 1.5),
+        resolution: Math.min(typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1, 2),
         roundPixels: false,
       });
 
@@ -777,6 +785,17 @@ export function Board25DCanvas({
 
       appRef.current = app;
       containerRef.current.appendChild(app.canvas);
+
+      // Xử lý sự kiện mất và phục hồi ngữ cảnh WebGL (Mục 12)
+      const handlePixiContextLost = (e: Event) => {
+        e.preventDefault();
+        console.warn('[Pixi.js 2.5D] WebGL context lost handled. Waiting for restore...');
+      };
+      const handlePixiContextRestored = () => {
+        console.info('[Pixi.js 2.5D] WebGL context restored.');
+      };
+      app.canvas.addEventListener('webglcontextlost', handlePixiContextLost, false);
+      app.canvas.addEventListener('webglcontextrestored', handlePixiContextRestored, false);
 
       // Nhóm gốc thế giới 2.5D
       const world = new Container({ isRenderGroup: true });
@@ -1160,7 +1179,32 @@ export function Board25DCanvas({
         } else if (cameraRef.current && cameraRef.current.isAutoFollowing) {
           cameraRef.current.returnToUserView(0.08);
         }
+
+        // Render on demand: kiểm tra hoạt cảnh để dừng ticker khi bàn cờ tĩnh hoàn toàn (Mục 13)
+        const isHopping = charManager.isAnyHopping();
+        const isCamActive = cameraRef.current?.isInteracting() ?? false;
+        const hasFloatingText = textPoolRef.current.some((t) => t.active);
+        const isAmbientActive = ambient.isActive();
+
+        if (!isHopping && !isCamActive && !hasFloatingText && !isAmbientActive) {
+          idleFrameCount++;
+          if (idleFrameCount > 60) {
+            app.ticker.stop();
+            return;
+          }
+        } else {
+          idleFrameCount = 0;
+        }
       };
+
+      let idleFrameCount = 0;
+      const wakeTicker = () => {
+        idleFrameCount = 0;
+        if (app && !app.ticker.started) {
+          app.ticker.start();
+        }
+      };
+      wakeTickerRef.current = wakeTicker;
 
       app.ticker.add(tickerCallback);
 
@@ -1208,11 +1252,23 @@ export function Board25DCanvas({
       const containerEl = containerRef.current;
       containerEl?.addEventListener('wheel', handleWheelScale, { passive: false });
 
+      // Đánh thức ticker khi có tương tác người dùng
+      containerEl?.addEventListener('pointerdown', wakeTicker);
+      containerEl?.addEventListener('pointermove', wakeTicker);
+      containerEl?.addEventListener('wheel', wakeTicker, { passive: true });
+      containerEl?.addEventListener('touchstart', wakeTicker, { passive: true });
+      containerEl?.addEventListener('touchmove', wakeTicker, { passive: true });
+
       return () => {
         textPoolRef.current.forEach((item) => item.label.destroy({ children: true }));
         textPoolRef.current = [];
         window.removeEventListener('resize', handleResize);
         containerEl?.removeEventListener('wheel', handleWheelScale);
+        containerEl?.removeEventListener('pointerdown', wakeTicker);
+        containerEl?.removeEventListener('pointermove', wakeTicker);
+        containerEl?.removeEventListener('wheel', wakeTicker);
+        containerEl?.removeEventListener('touchstart', wakeTicker);
+        containerEl?.removeEventListener('touchmove', wakeTicker);
         app.ticker.remove(tickerCallback);
         ambient.destroy();
         animManager.destroy();
@@ -1235,7 +1291,7 @@ export function Board25DCanvas({
       isMounted = false;
       if (cleanupFn) cleanupFn();
       if (appRef.current) {
-        appRef.current.destroy(true, { children: true });
+        appRef.current.destroy(true, { children: true, texture: true });
         appRef.current = null;
       }
     };
@@ -1499,7 +1555,7 @@ export function Board25DCanvas({
 
       {/* Nút điều khiển Camera Zoom & "CĂN GIỮA" / "TOÀN BÀN CỜ" */}
       {isReady && (
-        <div className="absolute bottom-6 right-6 z-20 flex flex-col gap-2 rounded-2xl border border-amber-500/30 bg-slate-900/90 p-2 shadow-2xl">
+        <div className="absolute right-4 bottom-44 sm:bottom-48 z-20 flex flex-col gap-2 rounded-2xl border border-amber-500/30 bg-slate-900/90 p-2 shadow-2xl">
           {/* Nút CĂN GIỮA */}
           <button
             type="button"

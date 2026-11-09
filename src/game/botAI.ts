@@ -1,5 +1,5 @@
 import { GameEngine, LINE_TILES, TRANSPORT_TILES } from './engine';
-import { Player, Tile, BotDifficulty } from './types';
+import { Player, Tile, BotDifficulty, SkillType } from './types';
 import { GAME_CONFIG } from './gameConfig';
 
 export const BOT_BANTER: Record<
@@ -299,9 +299,68 @@ export async function executeBotTurn(engine: GameEngine): Promise<void> {
       }
     }
 
-    // 3. Đổ xúc xắc
+    // 3. Đổ xúc xắc (với AI sử dụng kỹ năng thông minh)
     if (engine.state.gamePhase === 'AWAIT_ROLL') {
-      engine.rollDice();
+      const active = activePlayer;
+      let usedSkill: SkillType | null = null;
+      let chosenDice: [number, number] | undefined = undefined;
+      let isSkillRoll = false;
+
+      if (engine.state.roundCount >= 2 && rollCount === 0 && !active.inJail && active.skillCards && active.skillCards.length > 0) {
+        const curPos = active.position;
+        // Kiểm tra xem 2~4 ô tiếp theo có ô đất trống tiềm năng không
+        const shortIndex = active.skillCards.indexOf('SHORT');
+        if (shortIndex !== -1) {
+          for (let step = 2; step <= 4; step++) {
+            const targetTile = engine.state.tiles[(curPos + step) % 40];
+            if (targetTile && targetTile.ownerId == null && targetTile.price && active.money > targetTile.price + 150000) {
+              usedSkill = 'SHORT';
+              active.skillCards.splice(shortIndex, 1);
+              const choices: Array<[number, number]> = [[1, 1], [1, 2], [2, 1], [1, 3], [3, 1], [2, 2]];
+              chosenDice = choices[Math.floor(Math.random() * choices.length)];
+              isSkillRoll = true;
+              break;
+            }
+          }
+        }
+
+        // Nếu chưa dùng SHORT, kiểm tra LONG (10~12 ô tiếp theo)
+        if (!usedSkill) {
+          const longIndex = active.skillCards.indexOf('LONG');
+          if (longIndex !== -1) {
+            for (let step = 10; step <= 12; step++) {
+              const targetTile = engine.state.tiles[(curPos + step) % 40];
+              if (targetTile && targetTile.ownerId == null && targetTile.price && active.money > targetTile.price + 150000) {
+                usedSkill = 'LONG';
+                active.skillCards.splice(longIndex, 1);
+                const choices: Array<[number, number]> = [[5, 5], [4, 6], [6, 4], [5, 6], [6, 5], [6, 6]];
+                chosenDice = choices[Math.floor(Math.random() * choices.length)];
+                isSkillRoll = true;
+                break;
+              }
+            }
+          }
+        }
+
+        // Nếu chưa dùng và có DOUBLE (chỉ dùng khi không ở tù): nếu bot có tiền dồi dào
+        if (!usedSkill && !active.inJail) {
+          const doubleIndex = active.skillCards.indexOf('DOUBLE');
+          if (doubleIndex !== -1 && active.money >= 300000 && Math.random() < 0.25) {
+            usedSkill = 'DOUBLE';
+            active.skillCards.splice(doubleIndex, 1);
+            chosenDice = [6, 6];
+            isSkillRoll = false; // Đôi x6 vẫn được tính đổ đôi
+          }
+        }
+      }
+
+      if (usedSkill) {
+        const skillNameMap: Record<SkillType, string> = { SHORT: 'Nhảy 2~4', LONG: 'Nhảy 10~12', DOUBLE: 'Đôi ×6' };
+        engine.addLog(`🤖 ${active.name} dùng kỹ năng "${skillNameMap[usedSkill]}".`);
+        engine.rollDice(chosenDice, { isSkillRoll });
+      } else {
+        engine.rollDice();
+      }
       rollCount++;
     }
 

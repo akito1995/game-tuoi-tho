@@ -16,7 +16,7 @@ export interface BottomRightPanelProps {
   onRoll: () => void;
   onSelectSkill: (skill: SkillType) => void;
   selectedSkill: SkillType | null;
-  skillCharges: {
+  skillCharges?: {
     short: number;
     long: number;
     double: number;
@@ -27,6 +27,8 @@ export interface BottomRightPanelProps {
     isDouble: boolean;
     sum: number;
   } | null;
+  onPayBail?: () => void;
+  onUseJailFreeCard?: () => void;
 }
 
 export const BottomRightPanel: React.FC<BottomRightPanelProps> = ({
@@ -40,7 +42,16 @@ export const BottomRightPanel: React.FC<BottomRightPanelProps> = ({
   skillCharges,
   isAutoBotMatch,
   lastRoll,
+  onPayBail,
+  onUseJailFreeCard,
 }) => {
+  // Đọc số lượng thẻ kỹ năng trực tiếp từ activePlayer.skillCards (Single Source of Truth)
+  const actualCharges = {
+    short: activePlayer.skillCards ? activePlayer.skillCards.filter((s) => s === 'SHORT').length : 0,
+    long: activePlayer.skillCards ? activePlayer.skillCards.filter((s) => s === 'LONG').length : 0,
+    double: activePlayer.skillCards ? activePlayer.skillCards.filter((s) => s === 'DOUBLE').length : 0,
+  };
+
   const isInteractiveBlocked =
     gamePhase === 'AWAIT_DECISION' ||
     gamePhase === 'CARD_DRAWN' ||
@@ -96,7 +107,8 @@ export const BottomRightPanel: React.FC<BottomRightPanelProps> = ({
     chargeCount: number
   ) => {
     const isSelected = selectedSkill === skill;
-    const isSkillDisabled = !canRoll || isInteractiveBlocked || chargeCount <= 0;
+    const isDoubleInJail = skill === 'DOUBLE' && activePlayer.inJail;
+    const isSkillDisabled = !canRoll || isInteractiveBlocked || chargeCount <= 0 || isDoubleInJail;
 
     return (
       <button
@@ -116,7 +128,9 @@ export const BottomRightPanel: React.FC<BottomRightPanelProps> = ({
             : 'border-slate-800 bg-slate-950/60 opacity-40 grayscale cursor-not-allowed pointer-events-none'
         }`}
         title={
-          isInteractiveBlocked
+          isDoubleInJail
+            ? 'Không thể dùng thẻ ĐÔI ×6 khi đang ở trong tù'
+            : isInteractiveBlocked
             ? 'Đang mở hộp thoại tương tác'
             : isSelected
             ? `Đang chọn: ${title}. Bấm lần nữa để bỏ chọn.`
@@ -162,6 +176,66 @@ export const BottomRightPanel: React.FC<BottomRightPanelProps> = ({
 
   return (
     <div className="fixed bottom-3 right-3 sm:bottom-4 sm:right-4 z-30 pointer-events-auto select-none flex flex-col items-end gap-1.5">
+      {/* Panel 3 lựa chọn Ra Tù (P0 - Mục 3) */}
+      {activePlayer.inJail && isMyTurn && !isAutoBotMatch && (
+        <div className="w-full max-w-xs sm:max-w-sm rounded-2xl bg-gradient-to-r from-red-950/95 via-[#2A170C]/95 to-slate-900/95 border-2 border-red-500/70 p-2.5 sm:p-3 shadow-2xl flex flex-col gap-2 animate-in slide-in-from-bottom-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <span className="text-base">⚖️</span>
+              <span className="font-baloo text-xs font-black text-amber-300 uppercase tracking-wide">
+                BẠN ĐANG Ở TRẠI GIAM
+              </span>
+            </div>
+            <span className="text-[10px] font-bold text-red-300 bg-red-950/80 px-2 py-0.5 rounded-full border border-red-500/40">
+              Lượt {activePlayer.jailTurns ? 4 - activePlayer.jailTurns : 1}/3
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+            {/* Lựa chọn 1: Đổ đôi */}
+            <button
+              onClick={() => {
+                audioManager.unlockAudio();
+                if (!isRolling) onRoll();
+              }}
+              disabled={isRolling}
+              className="flex items-center justify-center gap-1 py-2 px-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-baloo font-bold text-xs shadow-md transition active:scale-95 cursor-pointer disabled:opacity-40 min-h-[44px]"
+              title="Thử vận may đổ đôi để ra tù miễn phí"
+            >
+              <Dices className="h-3.5 w-3.5" />
+              <span>Đổ Đôi</span>
+            </button>
+
+            {/* Lựa chọn 2: Nộp 50.000đ */}
+            <button
+              onClick={() => {
+                audioManager.unlockAudio();
+                if (onPayBail && activePlayer.money >= 50_000 && !isRolling) onPayBail();
+              }}
+              disabled={activePlayer.money < 50_000 || isRolling}
+              className="flex items-center justify-center gap-1 py-2 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-baloo font-bold text-xs shadow-md transition active:scale-95 cursor-pointer min-h-[44px]"
+              title={activePlayer.money < 50_000 ? 'Không đủ 50.000đ để nộp phạt' : 'Nộp 50.000đ để ra tù ngay lập tức'}
+            >
+              <span>💰 Nộp 50K</span>
+            </button>
+
+            {/* Lựa chọn 3: Dùng Thẻ Miễn Phạt (chỉ hiện khi có thẻ) */}
+            {(activePlayer.jailFreeCards ?? 0) > 0 && (
+              <button
+                onClick={() => {
+                  audioManager.unlockAudio();
+                  if (onUseJailFreeCard && !isRolling) onUseJailFreeCard();
+                }}
+                disabled={isRolling}
+                className="flex items-center justify-center gap-1 py-2 px-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-baloo font-bold text-xs shadow-md transition active:scale-95 cursor-pointer min-h-[44px]"
+                title={`Sử dụng thẻ Miễn Phạt Tù (bạn đang có ${activePlayer.jailFreeCards} thẻ)`}
+              >
+                <span>🛡️ Dùng Thẻ ({activePlayer.jailFreeCards})</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
       {/* Chỉ báo xúc xắc mới nhất (Đồng bộ tức thì từ bàn cờ, không bao giờ bị trễ) */}
       {lastRoll && (
         <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#2A170C]/95 border border-[#C9A227]/70 shadow-xl animate-in fade-in slide-in-from-bottom-1 duration-150">
@@ -180,9 +254,9 @@ export const BottomRightPanel: React.FC<BottomRightPanelProps> = ({
       <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-3 rounded-2xl bg-[#2A170C]/95 border-2 border-[#C9A227]/60 p-2 sm:p-2.5 shadow-2xl shadow-amber-950/40">
         {/* ================= 3 THẺ KỸ NĂNG XÚC XẮC ================= */}
         <div className="flex items-center gap-1.5 sm:gap-2">
-          {renderSkillButton('SHORT', 'NHẢY 2~4', '/art/ui/skill-nhay-ngan.png', skillCharges.short)}
-          {renderSkillButton('LONG', 'NHẢY 10~12', '/art/ui/skill-nhay-xa.png', skillCharges.long)}
-          {renderSkillButton('DOUBLE', 'ĐÔI ×6', '/art/ui/skill-doi.png', skillCharges.double)}
+          {renderSkillButton('SHORT', 'NHẢY 2~4', '/art/ui/skill-nhay-ngan.webp', actualCharges.short)}
+          {renderSkillButton('LONG', 'NHẢY 10~12', '/art/ui/skill-nhay-xa.webp', actualCharges.long)}
+          {renderSkillButton('DOUBLE', 'ĐÔI ×6', '/art/ui/skill-doi.webp', actualCharges.double)}
         </div>
 
         {/* ================= NÚT TRÒN VÀNG LỚN: ĐỔ XÚC XẮC ================= */}

@@ -84,6 +84,64 @@ export const GAME_CONFIG = {
   AUCTION_ON_SKIP_DEFAULT: false, // Mặc định tắt
   AUCTION_DURATION_SECONDS: 10, // Đấu giá nhanh 10 giây
   AUCTION_BOT_MAX_BID_RATIO: 0.9, // Bot đặt giá tối đa 90% giá đất
+
+  // 10. GIỚI HẠN THẺ KỸ NĂNG
+  MAX_SKILL_CARDS: 3,
+};
+
+/**
+ * NĂNG LỰC ĐẶC BIỆT CỦA 4 NHÂN VẬT (Single Source of Truth)
+ * Sách luật, Tooltip HUD và Game Engine đều đọc từ đây.
+ */
+export const CHARACTER_ABILITIES = {
+  'be-ti': {
+    id: 'be-ti',
+    name: 'Bé Tí',
+    title: 'Thần May Mắn',
+    description: 'Tăng nhẹ 5% tỷ lệ đổ đôi, giảm 20% các loại thuế (Thu nhập & Xa xỉ).',
+    doubleRateBonus: 0.05, // +5% cơ hội đổ đôi
+    taxDiscountRate: 0.20, // -20% các loại thuế
+    buildDiscountRate: 0,
+    monopolyRentBonusRate: 0,
+    passStartSalaryBonusRate: 0,
+    moveSpeedMultiplier: 1.0,
+  },
+  'co-hoa': {
+    id: 'co-hoa',
+    name: 'Cô Hoa',
+    title: 'Kinh Doanh Khéo Léo',
+    description: 'Giảm 10% chi phí xây nhà (cấp 1–4) và khánh thành Landmark.',
+    doubleRateBonus: 0,
+    taxDiscountRate: 0,
+    buildDiscountRate: 0.10, // -10% chi phí xây nhà & landmark
+    monopolyRentBonusRate: 0,
+    passStartSalaryBonusRate: 0,
+    moveSpeedMultiplier: 1.0,
+  },
+  'ong-bay': {
+    id: 'ong-bay',
+    name: 'Ông Bảy',
+    title: 'Hào Sảng Miền Tây',
+    description: 'Tăng thêm 15% tiền thuê thu về khi sở hữu độc quyền trọn bộ nhóm màu.',
+    doubleRateBonus: 0,
+    taxDiscountRate: 0,
+    buildDiscountRate: 0,
+    monopolyRentBonusRate: 0.15, // +15% tiền thuê khi có độc quyền màu
+    passStartSalaryBonusRate: 0,
+    moveSpeedMultiplier: 1.0,
+  },
+  'chi-may': {
+    id: 'chi-may',
+    name: 'Chị Mây',
+    title: 'Nhanh Nhẹn Quyết Đoán',
+    description: 'Quân cờ di chuyển nhanh hơn 25%, nhận thêm 10% tiền lương khi qua Xuất Phát.',
+    doubleRateBonus: 0,
+    taxDiscountRate: 0,
+    buildDiscountRate: 0,
+    monopolyRentBonusRate: 0,
+    passStartSalaryBonusRate: 0.10, // +10% lương Xuất Phát
+    moveSpeedMultiplier: 1.25, // Tốc độ nhảy nhanh gấp 1.25 lần
+  },
 };
 /**
  * BẢNG QUY CHUẨN TIỀN THUÊ DUY NHẤT (Single Source of Truth)

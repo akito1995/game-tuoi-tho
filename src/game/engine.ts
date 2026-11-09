@@ -20,7 +20,7 @@ import {
 import { BOARD_40_TILES } from './boardData';
 import { CHANCE_CARDS, FATE_CARDS } from './chanceCards';
 import { GameEventBus } from './events';
-import { GAME_CONFIG } from './gameConfig';
+import { GAME_CONFIG, CHARACTER_ABILITIES } from './gameConfig';
 
 export const LINE_TILES = {
   SOUTH: [1, 3, 5, 6, 8, 9],
@@ -35,7 +35,12 @@ export const UTILITY_TILES = [12, 28];
 /**
  * Tính tiền thuê của một ô bất kỳ (Dùng chung cho Engine, Canvas 2.5D và HUD)
  */
-export function calculateTileRent(tile: Tile, allTiles: Tile[], diceSum: number = 7): number {
+export function calculateTileRent(
+  tile: Tile,
+  allTiles: Tile[],
+  diceSum: number = 7,
+  players?: Player[]
+): number {
   if (tile.isMortgaged || !tile.ownerId) return 0;
 
   // 1. Ô Giao thông (4 ô): thuê 25 / 50 / 100 / 200K
@@ -59,26 +64,42 @@ export function calculateTileRent(tile: Tile, allTiles: Tile[], diceSum: number 
 
   // 3. Đất thông thường (PROPERTY) theo tỷ lệ % giá đất P
   const P = tile.price || 100000;
+  let rent = 0;
 
   if (tile.hasLandmark) {
-    return Math.round(P * RENT_RATES.LANDMARK); // 500% P
-  }
-
-  const houseCount = tile.houseCount || 0;
-  if (houseCount === 4) return Math.round(P * RENT_RATES.HOUSE_4); // 350% P
-  if (houseCount === 3) return Math.round(P * RENT_RATES.HOUSE_3); // 250% P
-  if (houseCount === 2) return Math.round(P * RENT_RATES.HOUSE_2); // 130% P
-  if (houseCount === 1) return Math.round(P * RENT_RATES.HOUSE_1); // 50% P
-
-  // Đất trống (0 nhà): Kiểm tra Monopoly nhóm màu
-  if (tile.colorGroup) {
-    const groupTiles = allTiles.filter((t) => t.colorGroup === tile.colorGroup);
-    const isMonopoly = groupTiles.length > 0 && groupTiles.every((t) => t.ownerId === tile.ownerId);
-    if (isMonopoly) {
-      return Math.round(P * RENT_RATES.EMPTY_MONOPOLY); // 20% P
+    rent = Math.round(P * RENT_RATES.LANDMARK); // 500% P
+  } else {
+    const houseCount = tile.houseCount || 0;
+    if (houseCount === 4) rent = Math.round(P * RENT_RATES.HOUSE_4); // 350% P
+    else if (houseCount === 3) rent = Math.round(P * RENT_RATES.HOUSE_3); // 250% P
+    else if (houseCount === 2) rent = Math.round(P * RENT_RATES.HOUSE_2); // 130% P
+    else if (houseCount === 1) rent = Math.round(P * RENT_RATES.HOUSE_1); // 50% P
+    else {
+      // Đất trống (0 nhà): Kiểm tra Monopoly nhóm màu
+      let isMonopoly = false;
+      if (tile.colorGroup) {
+        const groupTiles = allTiles.filter((t) => t.colorGroup === tile.colorGroup);
+        isMonopoly = groupTiles.length >= 2 && groupTiles.every((t) => t.ownerId === tile.ownerId);
+      }
+      rent = isMonopoly
+        ? Math.round(P * RENT_RATES.EMPTY_MONOPOLY) // 20% P
+        : Math.round(P * RENT_RATES.EMPTY); // 10% P
     }
   }
-  return Math.round(P * RENT_RATES.EMPTY); // 10% P
+
+  // Năng lực Ông Bảy: tăng 15% tiền thuê khi có độc quyền nhóm màu
+  if (tile.colorGroup && players) {
+    const groupTiles = allTiles.filter((t) => t.colorGroup === tile.colorGroup);
+    const isMonopoly = groupTiles.length >= 2 && groupTiles.every((t) => t.ownerId === tile.ownerId);
+    if (isMonopoly) {
+      const owner = players.find((p) => p.id === tile.ownerId);
+      if (owner?.character === 'ong-bay') {
+        rent = Math.round(rent * (1 + CHARACTER_ABILITIES['ong-bay'].monopolyRentBonusRate));
+      }
+    }
+  }
+
+  return rent;
 }
 
 export class GameEngine {
@@ -111,7 +132,7 @@ export class GameEngine {
           botDifficulty: 'NORMAL',
           jailFreeCards: 0,
           lapsCompleted: 0,
-          skillCards: [],
+          skillCards: ['SHORT', 'LONG', 'DOUBLE'],
         }))
       : [
           {
@@ -129,7 +150,7 @@ export class GameEngine {
             botDifficulty: 'NORMAL',
             jailFreeCards: 0,
             lapsCompleted: 0,
-            skillCards: [],
+            skillCards: ['SHORT', 'LONG', 'DOUBLE'],
           },
           {
             id: 'player-2',
@@ -146,7 +167,7 @@ export class GameEngine {
             botDifficulty: 'NORMAL',
             jailFreeCards: 0,
             lapsCompleted: 0,
-            skillCards: [],
+            skillCards: ['SHORT', 'LONG', 'DOUBLE'],
           },
           {
             id: 'player-3',
@@ -163,7 +184,7 @@ export class GameEngine {
             botDifficulty: 'NORMAL',
             jailFreeCards: 0,
             lapsCompleted: 0,
-            skillCards: [],
+            skillCards: ['SHORT', 'LONG', 'DOUBLE'],
           },
           {
             id: 'player-4',
@@ -180,7 +201,7 @@ export class GameEngine {
             botDifficulty: 'NORMAL',
             jailFreeCards: 0,
             lapsCompleted: 0,
-            skillCards: [],
+            skillCards: ['SHORT', 'LONG', 'DOUBLE'],
           },
         ];
 
@@ -228,15 +249,32 @@ export class GameEngine {
     return this.state.players[this.state.activePlayerIndex];
   }
 
+  /**
+   * Khôi phục trạng thái ván chơi đã lưu từ localStorage
+   */
+  public loadState(savedState: GameState): void {
+    this.state = JSON.parse(JSON.stringify(savedState));
+    this.armWatchdog();
+  }
+
   public getTile(id: number): Tile {
     return this.state.tiles[id];
   }
 
-  public getBuildingCost(tile: Tile): { houseCost: number; landmarkCost: number } {
-    if (!tile.colorGroup || !BUILDING_COSTS[tile.colorGroup]) {
-      return { houseCost: 50000, landmarkCost: 100000 };
+  public getBuildingCost(tile: Tile, player?: Player): { houseCost: number; landmarkCost: number } {
+    let costs = { houseCost: 50000, landmarkCost: 100000 };
+    if (tile.colorGroup && BUILDING_COSTS[tile.colorGroup]) {
+      costs = BUILDING_COSTS[tile.colorGroup];
     }
-    return BUILDING_COSTS[tile.colorGroup];
+    // Năng lực Cô Hoa: giảm 10% chi phí xây nhà và landmark
+    if (player?.character === 'co-hoa') {
+      const discount = CHARACTER_ABILITIES['co-hoa'].buildDiscountRate;
+      return {
+        houseCost: Math.round(costs.houseCost * (1 - discount)),
+        landmarkCost: Math.round(costs.landmarkCost * (1 - discount)),
+      };
+    }
+    return costs;
   }
 
   /**
@@ -256,7 +294,7 @@ export class GameEngine {
    * P = giá mua đất
    */
   public calculateRent(tile: Tile, diceSum: number = 7): number {
-    return calculateTileRent(tile, this.state.tiles, diceSum);
+    return calculateTileRent(tile, this.state.tiles, diceSum, this.state.players);
   }
 
   /**
@@ -265,16 +303,20 @@ export class GameEngine {
    * - Ô 38 (Thuế xa xỉ): 10% tiền mặt, tối đa 150.000₫.
    */
   public calculateTax(tile: Tile, player?: Player): number {
+    let tax = tile.taxAmount || 100000;
     if (tile.id === 4) {
       if (!player) return GAME_CONFIG.INCOME_TAX_MAX;
       const netWorth = this.calculateNetWorth(player);
-      const tax = Math.round(netWorth * GAME_CONFIG.INCOME_TAX_RATE);
-      return Math.min(GAME_CONFIG.INCOME_TAX_MAX, Math.max(10000, tax));
+      const calculated = Math.round(netWorth * GAME_CONFIG.INCOME_TAX_RATE);
+      tax = Math.min(GAME_CONFIG.INCOME_TAX_MAX, Math.max(10000, calculated));
+    } else if (tile.id === 38) {
+      tax = tile.taxAmount || 100000;
     }
-    if (tile.id === 38) {
-      return tile.taxAmount || 100000;
+    // Năng lực Bé Tí: Giảm 20% các loại thuế
+    if (player?.character === 'be-ti') {
+      tax = Math.round(tax * (1 - CHARACTER_ABILITIES['be-ti'].taxDiscountRate));
     }
-    return tile.taxAmount || 100000;
+    return tax;
   }
 
   /**
@@ -282,7 +324,8 @@ export class GameEngine {
    */
   public getInvestmentCost(tile: Tile): number {
     const P = tile.price || 0;
-    const { houseCost, landmarkCost } = this.getBuildingCost(tile);
+    const owner = tile.ownerId ? this.state.players.find((p) => p.id === tile.ownerId) : undefined;
+    const { houseCost, landmarkCost } = this.getBuildingCost(tile, owner);
     const houses = tile.houseCount || 0;
     const landmark = tile.hasLandmark ? landmarkCost : 0;
     return P + (houses * houseCost) + landmark;
@@ -312,8 +355,14 @@ export class GameEngine {
       throw new Error(`Không thể đổ xúc xắc khi đang ở trạng thái ${this.state.gamePhase}.`);
     }
 
-    const d1 = overrideDice ? overrideDice[0] : Math.floor(Math.random() * 6) + 1;
-    const d2 = overrideDice ? overrideDice[1] : Math.floor(Math.random() * 6) + 1;
+    let d1 = overrideDice ? overrideDice[0] : Math.floor(Math.random() * 6) + 1;
+    let d2 = overrideDice ? overrideDice[1] : Math.floor(Math.random() * 6) + 1;
+    // Năng lực Bé Tí: Tăng nhẹ 5% tỷ lệ đổ đôi khi đổ ngẫu nhiên
+    if (!overrideDice && !options?.isSkillRoll && !activePlayer.inJail && activePlayer.character === 'be-ti') {
+      if (d1 !== d2 && Math.random() < CHARACTER_ABILITIES['be-ti'].doubleRateBonus) {
+        d2 = d1;
+      }
+    }
     const sum = d1 + d2;
     // 4. Kỹ năng nhảy 2~4 hoặc 10~12 không được tính là đổ đôi để thưởng lượt
     const isDouble = options?.isSkillRoll ? false : d1 === d2;
@@ -463,21 +512,22 @@ export class GameEngine {
     }
 
     let reward = 0;
+    const salaryBonus = player.character === 'chi-may' ? CHARACTER_ABILITIES['chi-may'].passStartSalaryBonusRate : 0;
     if (stoppedAtGo) {
-      reward = this.settings.exactGoReward; // 300K khi dừng đúng ô Xuất Phát
+      reward = Math.round(this.settings.exactGoReward * (1 + salaryBonus)); // 300K (+10% cho Chị Mây)
       player.money += reward;
       player.lapsCompleted += 1;
       this.grantSkillCard(player);
       this.addLog(
-        `🎯 ${player.name} dừng trúng đích ô Xuất Phát, nhận phần thưởng lớn ${(reward / 1000).toLocaleString('vi-VN')}K₫!`
+        `🎯 ${player.name} dừng trúng đích ô Xuất Phát, nhận phần thưởng lớn ${(reward / 1000).toLocaleString('vi-VN')}K₫!${player.character === 'chi-may' ? ' (ưu đãi +10% Chị Mây)' : ''}`
       );
     } else if (passedGo) {
-      reward = this.settings.passGoReward; // 200K khi đi qua Xuất Phát
+      reward = Math.round(this.settings.passGoReward * (1 + salaryBonus)); // 200K (+10% cho Chị Mây)
       player.money += reward;
       player.lapsCompleted += 1;
       this.grantSkillCard(player);
       this.addLog(
-        `${player.name} đi qua ô Xuất Phát, nhận ${(reward / 1000).toLocaleString('vi-VN')}K₫ tiền lương vòng.`
+        `${player.name} đi qua ô Xuất Phát, nhận ${(reward / 1000).toLocaleString('vi-VN')}K₫ tiền lương vòng.${player.character === 'chi-may' ? ' (ưu đãi +10% Chị Mây)' : ''}`
       );
     }
 
@@ -613,7 +663,7 @@ export class GameEngine {
     // Vòng 1: Chỉ mua đất trống theo luật
     let shouldBuyHouse = withHouse && this.state.roundCount >= 2 && tile.type === 'PROPERTY';
     const basePrice = tile.price;
-    const { houseCost } = this.getBuildingCost(tile);
+    const { houseCost } = this.getBuildingCost(tile, player);
     const totalPrice = shouldBuyHouse ? basePrice + houseCost : basePrice;
 
     if (player.money < totalPrice) {
@@ -689,7 +739,7 @@ export class GameEngine {
     }
 
     const currentCount = tile.houseCount || 0;
-    const { houseCost, landmarkCost } = this.getBuildingCost(tile);
+    const { houseCost, landmarkCost } = this.getBuildingCost(tile, player);
 
     if (currentCount < 4) {
       // Nâng cấp thêm 1 nhà
@@ -947,6 +997,7 @@ export class GameEngine {
 
     if (canSellOrMortgage) {
       this.state.gamePhase = 'DEBT_RELIEF';
+      this.armWatchdog();
       this.addLog(
         `⚠️ ${debtor.name} thiếu tiền nợ ${(amount / 1000).toLocaleString('vi-VN')}K₫! Hãy bán bớt nhà hoặc cầm cố đất để gom tiền.`
       );
@@ -977,7 +1028,7 @@ export class GameEngine {
       return false;
     }
 
-    const { houseCost } = this.getBuildingCost(tile);
+    const { houseCost } = this.getBuildingCost(tile, player);
     const refund = Math.round(houseCost * 0.5); // 50% giá xây
     tile.houseCount = (tile.houseCount || 1) - 1;
     tile.investmentCost = Math.max(tile.price || 0, (tile.investmentCost || 0) - houseCost);
@@ -1508,21 +1559,72 @@ export class GameEngine {
 
   public armWatchdog(): void {
     this.cancelWatchdog();
-    const currentPhase = this.state.gamePhase as string;
-    const isInteractive =
-      currentPhase === 'AWAIT_ROLL' ||
-      currentPhase === 'AWAIT_DECISION' ||
-      currentPhase === 'AWAIT_TAKEOVER' ||
-      currentPhase === 'DEBT_RELIEF' ||
-      currentPhase === 'CARD_DRAWN' ||
-      currentPhase === 'GAME_OVER';
+    if (this.state.gamePhase === 'GAME_OVER') return;
 
-    if (!isInteractive) {
+    const currentPhase = this.state.gamePhase as string;
+    const activePlayer = this.getActivePlayer();
+    const debtor = this.state.pendingDebt
+      ? this.state.players.find((p) => p.id === this.state.pendingDebt?.debtorId)
+      : null;
+
+    // Chỉ coi là tương tác chờ người nếu người đó là người thật (không phải bot)
+    const isHumanTurn = activePlayer && !activePlayer.isBot;
+    const isHumanDebtor = debtor && !debtor.isBot;
+
+    const isWaitingForHuman =
+      (currentPhase === 'AWAIT_ROLL' && isHumanTurn) ||
+      (currentPhase === 'AWAIT_DECISION' && isHumanTurn) ||
+      (currentPhase === 'AWAIT_TAKEOVER' && isHumanTurn) ||
+      (currentPhase === 'CARD_DRAWN' && isHumanTurn) ||
+      (currentPhase === 'DEBT_RELIEF' && isHumanDebtor);
+
+    // Nếu không phải đang chờ người chơi thật thao tác (nghĩa là lượt bot hoặc các pha chuyển tiếp hệ thống)
+    if (!isWaitingForHuman) {
       this.watchdogTimer = setTimeout(() => {
         if ((this.state.gamePhase as string) === currentPhase && this.state.gamePhase !== 'GAME_OVER') {
-          console.warn(`[WATCHDOG AN TOÀN] Trạng thái ${currentPhase} đứng yên quá 8s! Tự động phục hồi và chuyển tiếp.`);
+          console.warn(`[WATCHDOG AN TOÀN] Trạng thái ${currentPhase} của bot/hệ thống đứng yên quá 8s! Tự động phục hồi.`);
           this.addLog(`⚠️ [Cơ chế an toàn] Tự động phục hồi ván cờ sau trạng thái ${currentPhase}.`);
-          this.completeAction();
+
+          if (currentPhase === 'DEBT_RELIEF') {
+            const target = debtor || activePlayer;
+            if (target) {
+              const tilesWithHouses = this.state.tiles.filter(
+                (t) => t.ownerId === target.id && (t.houseCount || 0) > 0
+              );
+              for (const t of tilesWithHouses) {
+                if (this.state.pendingDebt && target.money < this.state.pendingDebt.amountOwed) {
+                  this.sellHouse(target.id, t.id);
+                }
+              }
+              const mortgagable = this.state.tiles.filter(
+                (t) => t.ownerId === target.id && !t.isMortgaged && (t.houseCount || 0) === 0
+              );
+              for (const t of mortgagable) {
+                if (this.state.pendingDebt && target.money < this.state.pendingDebt.amountOwed) {
+                  this.mortgageProperty(target.id, t.id);
+                }
+              }
+              if (this.state.pendingDebt) {
+                if (target.money >= this.state.pendingDebt.amountOwed) {
+                  this.checkPendingDebtResolved();
+                } else {
+                  this.declareBankruptcy(target.id);
+                }
+              }
+            }
+            this.completeAction();
+          } else if (currentPhase === 'CARD_DRAWN') {
+            if (this.state.currentCard) {
+              this.applyCardEffect(this.state.currentCard);
+            }
+            this.completeAction();
+          } else if (currentPhase === 'AWAIT_DECISION' || currentPhase === 'AWAIT_TAKEOVER') {
+            this.completeAction();
+          } else if (currentPhase === 'AWAIT_ROLL') {
+            this.rollDice();
+          } else {
+            this.completeAction();
+          }
         }
       }, 8000);
     }
@@ -1600,6 +1702,7 @@ export class GameEngine {
     this.state.doubleStreak = 0;
     this.state.gamePhase = 'AWAIT_ROLL';
     this.state.currentCard = null;
+    this.armWatchdog();
 
     const nextPlayer = this.getActivePlayer();
     this.events.emit('turn-ended', {

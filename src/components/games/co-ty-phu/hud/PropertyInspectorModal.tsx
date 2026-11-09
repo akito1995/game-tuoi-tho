@@ -90,43 +90,52 @@ export function PropertyInspectorModal({ tileId, onClose }: PropertyInspectorMod
           </div>
         </div>
 
-        {/* Rent Hierarchy Table */}
-        {tile.type === 'PROPERTY' && tile.rentMultiplier && (
-          <div className="rounded-2xl bg-slate-950/60 p-3 border border-slate-800 space-y-1.5 text-xs sm:text-sm">
-            <div className="flex justify-between text-slate-400 font-semibold border-b border-slate-800 pb-1">
-              <span>Cấp độ bất động sản</span>
-              <span>Tiền thuê thu về</span>
+        {/* Rent Hierarchy Table (Quy chuẩn Single Source of Truth) */}
+        {tile.type === 'PROPERTY' && tile.price && (() => {
+          const P = tile.price;
+          return (
+            <div className="rounded-2xl bg-slate-950/60 p-3 border border-slate-800 space-y-1.5 text-xs sm:text-sm">
+              <div className="flex justify-between text-slate-400 font-semibold border-b border-slate-800 pb-1">
+                <span>Cấp độ bất động sản</span>
+                <span>Tiền thuê thu về</span>
+              </div>
+              <div className="flex justify-between items-center text-slate-300">
+                <span>Đất trống (10% P)</span>
+                <span className="font-bold text-amber-300">
+                  {Math.round(P * 0.1).toLocaleString('vi-VN')}đ
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-slate-300">
+                <span>🏠 Nhà cấp 1 (50% P)</span>
+                <span className="font-bold text-amber-300">
+                  {Math.round(P * 0.5).toLocaleString('vi-VN')}đ
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-slate-300">
+                <span>🏡 Nhà cấp 2 (130% P)</span>
+                <span className="font-bold text-amber-300">
+                  {Math.round(P * 1.3).toLocaleString('vi-VN')}đ
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-slate-300">
+                <span>🏘️ Nhà cấp 3 (250% P)</span>
+                <span className="font-bold text-amber-300">
+                  {Math.round(P * 2.5).toLocaleString('vi-VN')}đ
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-slate-300">
+                <span>🏛️ Nhà cấp 4 (350% P)</span>
+                <span className="font-bold text-amber-300">
+                  {Math.round(P * 3.5).toLocaleString('vi-VN')}đ
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-emerald-300 font-bold bg-emerald-950/40 px-1.5 py-0.5 rounded">
+                <span>👑 Landmark (500% P)</span>
+                <span>{Math.round(P * 5.0).toLocaleString('vi-VN')}đ</span>
+              </div>
             </div>
-            <div className="flex justify-between items-center text-slate-300">
-              <span>Đất trống</span>
-              <span className="font-bold text-amber-300">
-                {(tile.baseRent || 0).toLocaleString('vi-VN')}đ
-              </span>
-            </div>
-            <div className="flex justify-between items-center text-slate-300">
-              <span>🏠 Nhà cấp 1</span>
-              <span className="font-bold text-amber-300">
-                {(tile.rentMultiplier[1] || 0).toLocaleString('vi-VN')}đ
-              </span>
-            </div>
-            <div className="flex justify-between items-center text-slate-300">
-              <span>🏡 Nhà cấp 2</span>
-              <span className="font-bold text-amber-300">
-                {(tile.rentMultiplier[2] || 0).toLocaleString('vi-VN')}đ
-              </span>
-            </div>
-            <div className="flex justify-between items-center text-slate-300">
-              <span>🏰 Biệt thự mini</span>
-              <span className="font-bold text-amber-300">
-                {(tile.rentMultiplier[3] || 0).toLocaleString('vi-VN')}đ
-              </span>
-            </div>
-            <div className="flex justify-between items-center text-emerald-300 font-bold bg-emerald-950/40 px-1.5 py-0.5 rounded">
-              <span>🏖️ Siêu Resort nghỉ dưỡng</span>
-              <span>{(tile.rentMultiplier[4] || 0).toLocaleString('vi-VN')}đ</span>
-            </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Monopoly x2 Note */}
         {tile.type === 'PROPERTY' && (

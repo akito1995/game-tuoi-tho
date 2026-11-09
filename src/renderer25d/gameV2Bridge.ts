@@ -1,6 +1,6 @@
 import { GameEngine } from '../game/engine';
 import { GameEventBus, GameEventMap } from '../game/events';
-import { Player, Tile, ChanceCard, CharacterId, VictoryType, PendingDebt, BotDifficulty, PlayerRankingItem } from '../game/types';
+import { Player, Tile, ChanceCard, CharacterId, VictoryType, PendingDebt, BotDifficulty, PlayerRankingItem, GameState } from '../game/types';
 import { GAME_CONFIG } from '../game/gameConfig';
 import {
   evaluateBotBuy,
@@ -21,6 +21,7 @@ export interface AuctionState {
   highestBidderId: string | null;
   highestBidderName: string | null;
   timeLeft: number;
+  passedPlayerIds?: string[];
 }
 
 export interface GameV2Listener {
@@ -318,6 +319,24 @@ export class GameV2Bridge {
     });
   }
 
+  public payJailBail(playerId?: string): boolean {
+    const pid = playerId || this.engine.getActivePlayer().id;
+    const ok = this.engine.payJailBail(pid);
+    if (ok) {
+      this.notify();
+    }
+    return ok;
+  }
+
+  public useJailFreeCard(playerId?: string): boolean {
+    const pid = playerId || this.engine.getActivePlayer().id;
+    const ok = this.engine.useJailFreeCard(pid);
+    if (ok) {
+      this.notify();
+    }
+    return ok;
+  }
+
   public setSpeed(speed: GameSpeed): void {
     this.speed = speed;
     this.notify();
@@ -371,18 +390,36 @@ export class GameV2Bridge {
     } else if (skill === 'DOUBLE') {
       dice = [6, 6];
     }
+    const active = this.engine.getActivePlayer();
+    if (skill === 'DOUBLE' && active.inJail) {
+      return { dice: this.engine.state.dice, isDouble: this.engine.state.isDouble };
+    }
+    // Tiêu thụ thẻ kỹ năng từ kho của người chơi
+    const skillIdx = active.skillCards.indexOf(skill);
+    if (skillIdx !== -1) {
+      active.skillCards.splice(skillIdx, 1);
+    }
     const skillNameMap = {
       SHORT: 'Nhảy 2~4',
       LONG: 'Nhảy 10~12',
       DOUBLE: 'Đôi ×6',
     };
-    const active = this.engine.getActivePlayer();
     this.engine.addLog(`🎯 ${active.name} dùng kỹ năng ${skillNameMap[skill]}.`);
     const isSkillRoll = skill === 'SHORT' || skill === 'LONG';
     this.hasRolledOnce = true;
     const res = this.engine.rollDice(dice, { isSkillRoll });
     this.notify();
     return { dice: res.dice, isDouble: res.isDouble };
+  }
+
+  /**
+   * Tải lại ván chơi đã lưu từ localStorage
+   */
+  public loadSavedState(savedState: GameState): void {
+    this.engine.loadState(savedState);
+    this.hasRolledOnce = true;
+    this.notify();
+    this.checkAutoBotTurn();
   }
 
   public surrender(playerId: string = 'player-1'): void {
@@ -433,15 +470,19 @@ export class GameV2Bridge {
       highestBidderId: null,
       highestBidderName: null,
       timeLeft: GAME_CONFIG.AUCTION_DURATION_SECONDS || 10,
+      passedPlayerIds: [],
     };
     this.notify();
 
     if (this.auctionTimer) clearInterval(this.auctionTimer);
+    const tickMs = Math.max(250, Math.round(1000 / this.speed));
     this.auctionTimer = setInterval(() => {
-      if (!this.currentAuction || this.isPausedByModal) return;
+      // Đấu giá không bị chặn bởi isPausedByModal để đồng hồ 10->0 luôn chạy
+      if (!this.currentAuction) return;
 
       // Bot bidding logic
-      const bots = this.engine.state.players.filter((p) => p.isBot && !p.bankrupt);
+      const passed = this.currentAuction.passedPlayerIds || [];
+      const bots = this.engine.state.players.filter((p) => p.isBot && !p.bankrupt && !passed.includes(p.id));
       const maxBid = Math.floor(
         this.currentAuction.tilePrice * (GAME_CONFIG.AUCTION_BOT_MAX_BID_RATIO || 0.9)
       );
@@ -470,7 +511,7 @@ export class GameV2Bridge {
       if (this.currentAuction.timeLeft <= 0) {
         this.finishAuction();
       }
-    }, 1000);
+    }, tickMs);
   }
 
   public placeAuctionBid(bidderId: string, amount: number): boolean {
@@ -486,8 +527,51 @@ export class GameV2Bridge {
     return true;
   }
 
-  public passAuction(): void {
-    // Không làm gì, để người khác đấu giá hoặc đếm ngược kết thúc
+  public passAuction(playerId?: string): void {
+    if (!this.currentAuction) return;
+    const human = this.engine.state.players.find((p) => !p.isBot);
+    const pid = playerId || human?.id || this.engine.getActivePlayer().id;
+
+    if (!this.currentAuction.passedPlayerIds) {
+      this.currentAuction.passedPlayerIds = [];
+    }
+
+    if (!this.currentAuction.passedPlayerIds.includes(pid)) {
+      this.currentAuction.passedPlayerIds.push(pid);
+      const player = this.engine.state.players.find((p) => p.id === pid);
+      if (player) {
+        this.engine.addLog(`🛑 ${player.name} bỏ qua phiên đấu giá ${this.currentAuction.tileName}.`);
+      }
+    }
+
+    // Kiểm tra xem còn ai có khả năng trả giá nữa không
+    const maxBid = Math.floor(
+      this.currentAuction.tilePrice * (GAME_CONFIG.AUCTION_BOT_MAX_BID_RATIO || 0.9)
+    );
+    const nextBid = this.currentAuction.highestBidderId
+      ? this.currentAuction.currentBid + 10_000
+      : this.currentAuction.currentBid;
+
+    const remainingEligible = this.engine.state.players.filter((p) => {
+      if (p.bankrupt) return false;
+      if (p.id === this.currentAuction?.highestBidderId) return false;
+      if (this.currentAuction?.passedPlayerIds?.includes(p.id)) return false;
+      if (p.isBot) {
+        return (
+          nextBid <= maxBid &&
+          p.money - nextBid >= (GAME_CONFIG.BOT_CASH_RESERVE || 150_000)
+        );
+      }
+      return p.money >= nextBid;
+    });
+
+    // Nếu không còn ai khác có thể hoặc muốn trả giá -> Kết thúc đấu giá ngay lập tức
+    if (remainingEligible.length === 0) {
+      this.finishAuction();
+      return;
+    }
+
+    this.notify();
   }
 
   public finishAuction(): void {

@@ -136,9 +136,15 @@ export function createBuildingRenderer(): BuildingRenderer {
   };
 
   const loadBuildingTexture = (filename: string): Promise<Texture> => {
-    const cleanPath = `/art/_clean/buildings/${filename}`;
-    const rawPath = `/art/buildings/${filename}`;
-    return Assets.load(cleanPath).catch(() => Assets.load(rawPath));
+    const base = filename.replace(/\.(png|webp)$/, '');
+    const cleanWebp = `/art/_clean/buildings/${base}.webp`;
+    const rawWebp = `/art/buildings/${base}.webp`;
+    const cleanPng = `/art/_clean/buildings/${base}.png`;
+    const rawPng = `/art/buildings/${base}.png`;
+    return Assets.load(cleanWebp)
+      .catch(() => Assets.load(rawWebp))
+      .catch(() => Assets.load(cleanPng))
+      .catch(() => Assets.load(rawPng));
   };
 
   const attachBuildingVisual = async (

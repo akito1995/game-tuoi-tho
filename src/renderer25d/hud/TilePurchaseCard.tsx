@@ -96,13 +96,18 @@ export const TilePurchaseCard: React.FC<TilePurchaseCardProps> = ({
           <div className="sm:col-span-5 flex flex-col items-center justify-center rounded-xl bg-[#2A170C] border border-[#6B4226] p-2 text-center">
             <div className="relative h-24 sm:h-28 w-full rounded-lg overflow-hidden bg-black/30 flex items-center justify-center">
               <Image
-                src={`/art/buildings/${tile.assetKey || 'house-1'}.png`}
+                src={`/art/buildings/${tile.assetKey || 'house-1'}.webp`}
                 alt={tile.name}
                 fill
                 sizes="160px"
                 className="object-contain p-1"
                 onError={(e) => {
-                  (e.target as any).src = '/art/buildings/landmark-ha-noi.png';
+                  const target = e.target as HTMLImageElement;
+                  if (target.src.endsWith('.webp')) {
+                    target.src = target.src.replace(/\.webp$/, '.png');
+                  } else {
+                    target.src = '/art/buildings/landmark-ha-noi.webp';
+                  }
                 }}
               />
             </div>
