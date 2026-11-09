@@ -27,22 +27,22 @@ export interface CharacterManager {
 export const CHARACTER_PROFILES: Record<string, { name: string; avatarUrl: string; colorHex: number }> = {
   'be-ti': {
     name: 'Bé Tí',
-    avatarUrl: '/art/characters/be-ti/pose-1.png',
+    avatarUrl: '/art/characters/be-ti/pose-1.webp',
     colorHex: 0xe5484d, // Đỏ
   },
   'co-hoa': {
     name: 'Cô Hoa',
-    avatarUrl: '/art/characters/co-hoa/pose-1.png',
+    avatarUrl: '/art/characters/co-hoa/pose-1.webp',
     colorHex: 0x19b8a6, // Xanh ngọc
   },
   'ong-bay': {
     name: 'Ông Bảy',
-    avatarUrl: '/art/characters/ong-bay/pose-1.png',
+    avatarUrl: '/art/characters/ong-bay/pose-1.webp',
     colorHex: 0xf5b83d, // Vàng
   },
   'chi-may': {
     name: 'Chị Mây',
-    avatarUrl: '/art/characters/chi-may/pose-1.png',
+    avatarUrl: '/art/characters/chi-may/pose-1.webp',
     colorHex: 0x8b6cf0, // Tím
   },
 };
@@ -220,7 +220,9 @@ export function createCharacterManager(): CharacterManager {
     const profile = CHARACTER_PROFILES[profileKey];
 
     let charSprite: Sprite | null = null;
-    Assets.load(profile.avatarUrl).then(async (texture) => {
+    const webpUrl = profile.avatarUrl.replace(/\.png$/, '.webp');
+    const pngUrl = profile.avatarUrl.replace(/\.webp$/, '.png');
+    Assets.load(webpUrl).catch(() => Assets.load(pngUrl)).then(async (texture) => {
       const harmonizedTex = await getHarmonizedTexture(texture, `char_${profileKey}`, {
         tileId: player.position,
         stageY: initialPos.y,
@@ -456,7 +458,8 @@ export function createCharacterManager(): CharacterManager {
 
       // 1. Diễn hoạt chuyển động nhảy bước (Hop Animation)
       if (token.isHopping) {
-        const hopDuration = Math.max(0.04, 0.22 / speedMultiplier);
+        const charSpeed = token.data.characterKey === 'chi-may' ? 1.25 : 1.0;
+        const hopDuration = Math.max(0.03, 0.22 / (speedMultiplier * charSpeed));
         token.hopProgress += deltaSeconds / hopDuration;
 
         if (token.hopProgress >= 1.0) {

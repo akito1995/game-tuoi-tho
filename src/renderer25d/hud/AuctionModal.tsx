@@ -91,11 +91,18 @@ export function AuctionModal({
               </strong>
             </span>
           </div>
-          {isHighestBidder && (
-            <div className="mt-2 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 py-1 rounded-lg border border-emerald-500/30">
-              ✓ Bạn đang dẫn đầu phiên đấu giá!
-            </div>
-          )}
+          {/* Giữ chỗ cố định cho dòng dẫn đầu để nút bấm bên dưới không xê dịch */}
+          <div className="h-7 mt-2 flex items-center justify-center">
+            {isHighestBidder ? (
+              <div className="w-full text-[11px] font-bold text-emerald-400 bg-emerald-500/10 py-1 rounded-lg border border-emerald-500/30">
+                ✓ Bạn đang dẫn đầu phiên đấu giá!
+              </div>
+            ) : (
+              <div className="text-[11px] text-slate-500 italic">
+                {highestBidderName ? `Người dẫn đầu: ${highestBidderName}` : 'Chưa có người đặt giá'}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Nút đặt giá */}

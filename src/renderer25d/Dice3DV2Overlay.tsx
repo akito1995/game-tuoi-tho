@@ -145,6 +145,7 @@ export interface Dice3DV2OverlayProps {
   isDouble: boolean;
   playerName: string;
   speed?: number; // 1 hoặc 2
+  visible?: boolean;
   onRollComplete?: () => void;
 }
 
@@ -154,6 +155,7 @@ export function Dice3DV2Overlay({
   isDouble,
   playerName,
   speed = 1,
+  visible = true,
   onRollComplete,
 }: Dice3DV2OverlayProps) {
   const sum = dice[0] + dice[1];
@@ -185,7 +187,7 @@ export function Dice3DV2Overlay({
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex flex-col items-center justify-center pointer-events-none transition-transform duration-100 ${
+      className={`fixed inset-0 z-50 flex flex-col items-center justify-center pointer-events-none transition-all duration-200 ${
         isShaking ? 'translate-y-1 rotate-1 scale-[1.02]' : ''
       }`}
     >
@@ -194,7 +196,20 @@ export function Dice3DV2Overlay({
         {/* 1. Canvas Three.js 3D trong suốt */}
         <div className="relative w-64 h-36 sm:w-72 sm:h-40 max-h-[19vh]">
           <Canvas
+            frameloop={visible || isRolling ? 'always' : 'demand'}
             gl={{ alpha: true, antialias: true, powerPreference: 'high-performance' }}
+            onCreated={(state) => {
+              const glDom = state.gl.domElement;
+              const handleLost = (e: Event) => {
+                e.preventDefault();
+                console.warn('[Three.js Dice] WebGL Context Lost prevented default.');
+              };
+              const handleRestored = () => {
+                console.info('[Three.js Dice] WebGL Context Restored.');
+              };
+              glDom.addEventListener('webglcontextlost', handleLost, false);
+              glDom.addEventListener('webglcontextrestored', handleRestored, false);
+            }}
             camera={{ position: [0, 3.2, 2.7], fov: 38 }}
             style={{ background: 'transparent' }}
           >

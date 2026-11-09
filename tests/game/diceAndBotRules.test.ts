@@ -234,7 +234,7 @@ describe('Kiểm thử Bộ 5 Quy tắc Xúc xắc & Bot Turn Engine', () => {
 
   describe('7. Đồng bộ số liệu Thuế & Tiện ích với Engine', () => {
     it('calculateTax tính 10% tổng tài sản (tối đa 200K) cho ô 4 và 100K cho ô 38', () => {
-      const human = engine.state.players[0];
+      const human = { ...engine.state.players[1], character: 'co-hoa' as const };
       const tileTaxIncome = engine.getTile(4);
       const tileTaxLuxury = engine.getTile(38);
 
@@ -256,7 +256,8 @@ describe('Kiểm thử Bộ 5 Quy tắc Xúc xắc & Bot Turn Engine', () => {
     });
 
     it('Landing vào ô Thuế thu nhập (ô 4) nộp đúng 10% tài sản vào Quỹ Heo Đất và ghi log rõ ràng', () => {
-      const human = engine.state.players[0];
+      const human = engine.state.players[1];
+      engine.state.activePlayerIndex = 1;
       human.money = 1200000;
       human.position = 4;
 

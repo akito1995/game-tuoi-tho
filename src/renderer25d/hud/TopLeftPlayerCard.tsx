@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import { Player, ChanceCard } from '../../game/types';
-import { WealthTitleTier, getWealthTitle } from '../../game/gameConfig';
+import { WealthTitleTier, getWealthTitle, CHARACTER_ABILITIES } from '../../game/gameConfig';
 import { Shield, Sparkles, CreditCard, Building2 } from 'lucide-react';
 import { formatMoney } from '../utils/formatMoney';
 
@@ -15,6 +15,7 @@ interface TopLeftPlayerCardProps {
   netWorth?: number;
   wealthTitle?: WealthTitleTier;
   onOpenProperties?: () => void;
+  onUseJailCard?: () => void;
 }
 
 export const TopLeftPlayerCard: React.FC<TopLeftPlayerCardProps> = ({
@@ -25,9 +26,11 @@ export const TopLeftPlayerCard: React.FC<TopLeftPlayerCardProps> = ({
   netWorth,
   wealthTitle,
   onOpenProperties,
+  onUseJailCard,
 }) => {
   // Rolling number counter cho số tiền
   const currentTitle = wealthTitle || getWealthTitle(netWorth ?? player.money);
+  const ability = CHARACTER_ABILITIES[player.character as keyof typeof CHARACTER_ABILITIES];
   const [displayMoney, setDisplayMoney] = useState(player.money);
   const prevMoneyRef = useRef(player.money);
   const animRef = useRef<number | null>(null);
@@ -109,16 +112,17 @@ export const TopLeftPlayerCard: React.FC<TopLeftPlayerCardProps> = ({
           {/* Avatar có vòng nhận diện & huy hiệu VIP/Level */}
           <div className="relative shrink-0">
             <div
-              className="relative h-12 w-12 rounded-full overflow-hidden border-2 bg-slate-900 shadow-md"
+              className="relative h-12 w-12 rounded-full overflow-hidden border-2 bg-slate-900 shadow-md cursor-help"
               style={{ borderColor: characterBorderColor }}
+              title={ability ? `Năng lực ${ability.name} (${ability.title}): ${ability.description}` : undefined}
             >
               <Image
-                src={`/art/avatars/${player.character}.png`}
+                src={`/art/avatars/${player.character}.webp`}
                 alt={player.name}
                 fill
                 className="object-cover"
                 onError={(e) => {
-                  (e.target as any).src = '/art/avatars/avatar-1.png';
+                  const target = e.target as HTMLImageElement; if (target.src.endsWith('.webp')) { target.src = target.src.replace(/\.webp$/, '.png'); } else { target.src = '/art/avatars/avatar-1.webp'; }
                 }}
               />
             </div>
@@ -137,6 +141,15 @@ export const TopLeftPlayerCard: React.FC<TopLeftPlayerCardProps> = ({
               <span className="text-[10px] px-1 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
                 TÔI
               </span>
+              {ability && (
+                <span
+                  className="text-[9px] px-1.5 py-0.2 rounded font-bold border border-amber-400/50 bg-amber-500/20 text-amber-200 cursor-help flex items-center gap-0.5"
+                  title={`Năng lực ${ability.name} (${ability.title}): ${ability.description}`}
+                >
+                  <span>⚡</span>
+                  <span>{ability.title}</span>
+                </span>
+              )}
               {player.inJail && (
                 <span className="text-[9px] px-1.5 py-0.2 rounded bg-rose-500/25 text-rose-300 font-bold border border-rose-500/40 whitespace-nowrap">
                   🔒 {player.jailTurns} lượt
@@ -207,16 +220,32 @@ export const TopLeftPlayerCard: React.FC<TopLeftPlayerCardProps> = ({
               const card = cardsList[idx];
               if (card) {
                 return (
-                  <div
+                  <button
                     key={card.id}
-                    title={card.label}
-                    className={`relative h-9 rounded-lg bg-gradient-to-b ${card.bg} border border-amber-300/80 flex flex-col items-center justify-center p-0.5 shadow cursor-pointer hover:scale-105 active:scale-95 transition-transform`}
+                    type="button"
+                    onClick={() => {
+                      if (card.id.startsWith('jail-free')) {
+                        if (player.inJail && onUseJailCard) {
+                          onUseJailCard();
+                        }
+                      }
+                    }}
+                    title={
+                      card.id.startsWith('jail-free')
+                        ? player.inJail
+                          ? '🛡️ Thẻ Miễn Phạt Tù: Bấm để thoát khỏi trại giam ngay lập tức!'
+                          : '🛡️ Thẻ Miễn Phạt Tù: Giúp bạn ra tù miễn phí khi bị bắt.'
+                        : card.label
+                    }
+                    className={`relative h-9 rounded-lg bg-gradient-to-b ${card.bg} border border-amber-300/80 flex flex-col items-center justify-center p-0.5 shadow cursor-pointer hover:scale-105 active:scale-95 transition-transform ${
+                      card.id.startsWith('jail-free') && player.inJail ? 'ring-2 ring-emerald-400 animate-pulse' : ''
+                    }`}
                   >
                     <span className="text-xs">{card.icon}</span>
                     <span className="text-[8px] font-bold text-[#F3E6C8] truncate max-w-[42px] leading-tight">
                       {card.label}
                     </span>
-                  </div>
+                  </button>
                 );
               }
 

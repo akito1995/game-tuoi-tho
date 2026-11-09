@@ -16,6 +16,10 @@ export class CameraController {
   public cameraMode: 'OVERVIEW' | 'FOLLOW' = 'OVERVIEW'; // 'OVERVIEW': Toàn cảnh (mặc định); 'FOLLOW': Bám sát quân cờ
 
   public isDragging = false;
+
+  public isInteracting(): boolean {
+    return this.isDragging || this.isPinching || this.isAutoFollowing;
+  }
   private dragStartX = 0;
   private dragStartY = 0;
   private cameraStartX = 0;
@@ -63,7 +67,7 @@ export class CameraController {
       this.state.minZoom = Number(this.baseCoverScale.toFixed(4));
 
       // Giới hạn maxZoom: sao cho 1 điểm ảnh ảnh gốc không bị kéo quá 1.5 điểm ảnh màn hình
-      const dpr = typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1;
+      const dpr = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2) : 1;
       const imgW = this.imageSourceWidth || 2668;
       const maxZoomPixelLimit = (1.5 * imgW) / (BOARD_PLATE_WIDTH * Math.min(dpr, 1.5));
       this.state.maxZoom = Number(Math.max(this.baseCoverScale * 1.35, maxZoomPixelLimit).toFixed(4));

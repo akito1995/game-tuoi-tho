@@ -16,6 +16,8 @@ export interface AmbientEffects {
   destroy: () => void;
   setQuality: (quality: GraphicsQuality) => void;
   setMarkers: (markers: Array<{ id: string; type: string; points: Array<{ x: number; y: number }> }>) => void;
+  isIdle: () => boolean;
+  isActive: () => boolean;
 }
 
 interface Petal {
@@ -451,5 +453,13 @@ export function createAmbientEffects(options: AmbientOptions = {}): AmbientEffec
     container.destroy({ children: true });
   };
 
-  return { container, update, destroy, setQuality, setMarkers };
+  return {
+    container,
+    update,
+    destroy,
+    setQuality,
+    setMarkers,
+    isIdle: () => isIdle || isTabHidden,
+    isActive: () => currentQuality !== 'LOW' && !isIdle && !isTabHidden,
+  };
 }
